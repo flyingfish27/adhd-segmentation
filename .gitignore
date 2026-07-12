@@ -1,0 +1,17 @@
+# Python 虚拟环境
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# 数据文件(按你的实际数据目录/后缀调整)
+data/
+*.csv
+*.parquet
+literature/ 
