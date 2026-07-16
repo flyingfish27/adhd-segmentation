@@ -52,13 +52,14 @@
 
 ### 2.1 SDQ 列 = 问卷**原始题号**(不是按子量表分块)——裁决 confirmed
 
-数据只有列名与数字、无题目文本,故用三条客观证据裁决两个互斥假设(A=沿用问卷原始题号 / B=按子量表分块重排):
+数据只有列名与数字、无题目文本,故用四条客观证据裁决两个互斥假设(A=沿用问卷原始题号 / B=按子量表分块重排):
 
 1. **结构**:数据恰好缺 `SDQ19`、保留 `SDQ20–25` 的跳号。若按子量表分块应是连续 1–24 无跳号;跳号落在 19 ⇒ **列保留了问卷原始题号**(第 19 题未采集)。
-2. **内部一致性**:按原始题号,hyperactivity 五题(2,10,15,21*,25*)反向校正后平均题间相关 **+0.477**,为所有子量表最高、成团。
-3. **收敛效度**:按原始题号算的 SDQ-hyperactivity 与 SNAP 的注意力+多动(a1–a18)相关 **ρ=+0.574**;按"SDQ11–15"只有 **+0.305**。A ≈ B 的两倍。
+2. **组间判别(within vs between)**:反向校正后 24×24 题间相关,按 A 分组 **组内 +0.286 / 组间 +0.007(差 +0.279)**——清晰块结构;按 B(连续分块)**组内 +0.041 / 组间 +0.055(差 −0.014)**——无块结构。逐题"最近子量表"命中:**A 13/24 vs B 5/24**。三项组间指标一致判 A。
+3. **收敛效度(外部准则)**:按原始题号算的 SDQ-hyperactivity 与 SNAP 的注意力+多动(a1–a18)相关 **ρ=+0.574**;按"SDQ11–15"只有 **+0.305**。A ≈ B 的两倍。
+4. **组内一致性(强弱不一,需诚实标注)**:反向校正 Cronbach's α —— **hyperactivity +0.816、prosocial +0.774、emotional +0.669**(好至可接受);**conduct +0.188、peer −0.289(弱/失败)**。conduct/peer 弱是 SDQ 的**已知性质**(这两个子量表即便大样本 α 也常仅 0.4–0.6),叠加本数据 n≈50 且这两类问题多答"不真实"(取值挤在 1),相关被严重压低——**这不是 A 错的证据**(B 更差),但意味着 conduct/peer 两方向不能单靠内部一致性确认,它们成立主要靠证据(1)的题号结构。
 
-⇒ **SDQ 列按 Goodman 原始题号排列**,子量表如下(`*`=反向,1–3 编码下反向 = `4−x`):
+⇒ **SDQ 列按 Goodman 原始题号排列**(证据 1/2/3 决定性,ADHD 相关的 hyperactivity 方向最硬 α=0.816;conduct/peer 靠题号结构而非内部一致性)。子量表如下(`*`=反向,1–3 编码下反向 = `4−x`):
 
 | 子量表 | 题号(=列名) |
 |---|---|
@@ -104,6 +105,20 @@
 - `accelerometerAcceleration(X/Y/Z) ≈ motionUserAcceleration(X/Y/Z) + motionGravity(X/Y/Z)`(残差中位数 0.05–0.09 G ≈ 0)⇒ 自证:`accelerometer*`=**含重力原始加速度**、`motionUserAcceleration*`=**去重力用户加速度**、`motionGravity*`=**重力向量**。
 - `‖motionGravity‖ = 1.0000`(单位向量,G)、`‖motionQuaternion‖ = 1.0000`(单位姿态四元数)。
 
+**依据分层(与临床列不同,传感器列多数不是"从零推导",强弱如下)**:
+- **① 自证(最硬)**:上面的加速度分解、模长=1、欧拉角实测落在 [−π,π]/[−π/2,π/2]、时间戳差分得采样率。
+- **② 字段名 = 苹果 API + 单位在表头**:列名是 iOS Core Motion / Core Location 的属性名(`CMDeviceMotion`/`CLLocation`/`CMPedometer`/`CMAltimeter`/`CMMotionActivity`),由 SensorLog(v5.2, Bernd Thomas)原样导出;单位 `(G)/(rad)/(µT)/(kPa)/…` 写在表头括号里。参考:[Apple CLLocation](https://developer.apple.com/documentation/corelocation/cllocation)、[Core Motion](https://developer.apple.com/documentation/coremotion)、[SensorLog 列名(CloudACM)](https://www.cloudacm.com/?p=2932)。
+- **③ 实测范围佐证**:GPS 经纬度 27.56°N/110°E(中国南方真实坐标)、气压 ~98.5kPa ↔ 海拔 ~230m、电量 0–1、activity∈{unknown/walking/running}——数据值都和该含义对得上(见 `analysis/31_sensor_column_audit.py`)。
+
+**⚠️ 本数据集里"空的/哨兵"列(实测,不能用于分析)**:
+- `motionMagneticFieldX/Y/Z(µT)` = **全 0**(磁力计无数据);`motionHeading(°)` = **全 −1**、`motionMagneticFieldCalibrationAccuracy(Z)` = **全 −1**(−1 = iOS 无效哨兵;参考系是 `XArbitraryZVertical`,未绑磁北)。
+- `locationSpeed/SpeedAccuracy/Course/CourseAccuracy` 静止时 = **−1**(无有效解;运动时才有值);`locationFloor(Z)` = **−9999**(无楼层数据)。
+- 苹果的约定:精度类字段(如 `horizontal/verticalAccuracy`)**负数=该值无效,正数=有效且数值即 ±不确定度(米)**。
+
+**两点易踩坑的机制**:
+- **6–9 列(GPS 速度/航向/精度)为什么变**:GPS ~1Hz 更新、加速度 ~30–100Hz,**每个 GPS 值被前向填充在 ~30 行上**,更新时才变;无解就填 −1(实测:前 2000 行仅 63 个不同定位)。
+- **两个时间戳不同源**:`locationTimestamp_since1970(s)` = **绝对日历时间**(Unix 秒,GPS 定位时刻);`accelerometerTimestamp_sinceReboot(s)` = **开机以来的单调秒**(采样时刻,非日历,相邻行差 =1/采样率)。想给加速度配真实钟点,用第 1 列 `loggingTime`(带时区)。
+
 列清单(单位取自表头括号):
 
 | # | 列名 | 含义 | 单位 |
@@ -137,6 +152,9 @@
 | 57–58 | batteryState(N), batteryLevel(R) | 电池状态/电量 | 枚举 / 比例 |
 
 `activity(txt)`:约 **89% 为 `unknown`**(实证,S5),是 Core Motion 分类器的固有行为,非数据损坏。
+source: 
+https://developer.apple.com/documentation/corelocation
+https://developer.apple.com/documentation/coremotion
 
 ---
 
@@ -183,12 +201,16 @@
 
 **已解决(confirmed)**:BMI/身高/体重列及单位(自证);SDQ/SNAP 为 1-indexed 且标准分=数据−1;SDQ 列用原始题号、hyperactivity=2,10,15,21*,25*;SNAP 三子量表;两篇论文的算分/标签规则(均用原始尺度、论文2 缺失→0);传感器 raw/user/gravity/quaternion 各列(自证恒等式);`_F`/`_T` 采样率与时长;两对 `_T` 重复;Q27=Z27;S32 异常;58 列。
 
-**未解决(unresolved)**:
-- `F` / `T` 两字母的字面所指(仅知采样率/时长差异)。
-- 论文2 "55 列"与数据 58 列的差异(可能丢弃了 3 个文本列,未在论文明确)。
-- ID 首字母(H/Z/C…)是否编码站点/批次等信息 — 无原始证据。
-- 论文各自 N(52 / 50)的确切纳入名单 — 论文未公布 roster,本数据可复现其统计量但 roster 有 ±1 出入。
+**部分澄清(本轮新增)**:
+- `F` / `T`:论文2 正文把两种记录称 **"F-task / T-task"**(两种记录条件:F≈100Hz/~1min 短、T≈30Hz/长)。但 F、T 两字母**具体代表哪个英文词**两篇都没写 → 仍 `unresolved`。
+- **ID 首字母**:实测**不编码年级/年龄/班级**(对身高/BMI 的 eta² 在随机水平之下,`analysis/29`);频率形状与常见中国姓氏吻合 → **最可能是姓氏拼音首字母**(但数据无姓名,`hypothesis`)。
+- **age / grade**:CSV 与 `.numbers` 原始文件里**都没有** age、grade(实测扫描确认);论文1 用到的 age/年级/社会经济变量**不在公开数据里** → 无法从公开数据找回(只能从身高粗估年龄)。
+
+**仍未解决(unresolved)**:
+- 论文2 "55 列"与数据 58 列的差异(论文未列出它的 55 列,无法定位差哪 3 列)。
+- 论文各自 N(52 / 50)的确切纳入名单 — 论文未公布 roster,本数据可复现其统计量但 roster 有 ±1 出入(尤其论文2 女性问卷行差 1 人)。
 - 损坏 `_T` 表头修复仅沿用 `10_data_verify.ipynb` 逻辑,尚未在本轮独立字节级复算。
+- week2 "SDQ11–15" 之错**是否波及某个实际结果**(主结论用的是 SNAP 多动、notebook 用的是正确 SDQ 列,初判无碍;待正式核实)。
 
 ---
 *复算命令:`.venv/bin/python 20_codebook_verify.py`(全部 PASS / 与目标逐位一致)。*

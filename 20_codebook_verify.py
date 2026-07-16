@@ -86,12 +86,55 @@ print(f"  -> A 与 SNAP-ADHD 的相关约为 B 的两倍 -> hyperactivity = SDQ2
 subs = {"emotional":[3,8,13,16,24], "conduct":[5,7,12,18,22], "hyper":[2,10,15,21,25],
         "peer":[6,11,14,19,23], "prosocial":[1,4,9,17,20]}
 revset = {7, 11, 14, 21, 25}
-print("证据(2)各子量表(A)反向校正后的平均题间相关:")
+
+# 反向校正后的 24 题矩阵(用于组内一致性/组间判别)
+avail = [int(c[3:]) for c in SDQ]
+Xr = pd.DataFrame({i: (4 - num[f"SDQ{i}"]) if i in revset else num[f"SDQ{i}"] for i in avail})
+Cm = Xr.corr(method="spearman")
+
+def cronbach(items):
+    M = Xr[[i for i in items if i in avail]].dropna()
+    k = M.shape[1]
+    if k < 2 or len(M) < 3: return float("nan")
+    return k/(k-1) * (1 - M.var(ddof=1).sum() / M.sum(axis=1).var(ddof=1))
+
+def within_between(groups):
+    from itertools import combinations
+    g = {i: name for name, items in groups.items() for i in items}
+    win, bet = [], []
+    for a, b in combinations(avail, 2):
+        r = Cm.loc[a, b]
+        if np.isnan(r): continue
+        (win if g[a] == g[b] else bet).append(r)
+    return np.mean(win), np.mean(bet)
+
+def discriminant(groups):
+    g = {i: name for name, items in groups.items() for i in items}
+    hit = 0
+    for i in avail:
+        rs = {}
+        for name, items in groups.items():
+            mates = [j for j in items if j in avail and j != i]
+            if not mates: continue
+            sc = Xr[mates].sum(axis=1); m = Xr[i].notna() & sc.notna()
+            rs[name] = np.corrcoef(Xr[i][m], sc[m])[0, 1] if m.sum() > 3 else float("nan")
+        best = max(rs, key=lambda k: (-9 if np.isnan(rs[k]) else rs[k]))
+        hit += (best == g[i])
+    return hit, len(avail)
+
+print("证据(4)各子量表(A)组内一致性 Cronbach's alpha:")
 for name, items in subs.items():
-    items = [i for i in items if f"SDQ{i}" in df.columns]
-    M = pd.concat([(4 - num[f"SDQ{i}"]) if i in revset else num[f"SDQ{i}"] for i in items], axis=1)
-    cm = M.corr(method="spearman").values
-    print(f"    {name:10s} items={items} mean_rho={np.nanmean(cm[np.triu_indices_from(cm,1)]):+.3f}")
+    print(f"    {name:10s} alpha={cronbach(items):+.3f}")
+# Hypothesis B: contiguous 5-blocks (item 19 absent)
+Bgrp = {"blk1":[1,2,3,4,5],"blk2":[6,7,8,9,10],"blk3":[11,12,13,14,15],
+        "blk4":[16,17,18,20],"blk5":[21,22,23,24,25]}
+wA, bA = within_between(subs); wB, bB = within_between(Bgrp)
+dA = discriminant(subs); dB = discriminant(Bgrp)
+print("证据(2)组间判别(within vs between,越分离越支持该分组):")
+print(f"    A(原始题号): within={wA:+.3f} between={bA:+.3f} gap={wA-bA:+.3f} | 逐题命中 {dA[0]}/{dA[1]}")
+print(f"    B(连续分块): within={wB:+.3f} between={bB:+.3f} gap={wB-bB:+.3f} | 逐题命中 {dB[0]}/{dB[1]}")
+print(f"    -> A 块结构显著、命中更高 {ok((wA-bA) > (wB-bB) and dA[0] > dB[0])}")
+print("    注:hyper/pro/emo 内部一致性好;conduct/peer 弱(SDQ 已知性质),靠题号结构而非内部一致性确认")
 
 # ================================================================ 复现论文2 Table1
 hr("复现 论文2 (Biosensors 2026 16(6):323) Table 1  —— 缺失→0、demographic-present、原始尺度")
