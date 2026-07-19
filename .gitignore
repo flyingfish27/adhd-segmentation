@@ -16,3 +16,4 @@ data/
 *.parquet
 *.numbers
 literature/
+.venv/ # .venv 本身别提交，几百 MB
