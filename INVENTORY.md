@@ -1,6 +1,6 @@
 # INVENTORY.md — 项目文件清点与代码分层（只读产出）
 
-> **相关文件**：未决事项 → [BACKLOG.md](BACKLOG.md)（只进不出的待办登记册）。
+> **相关文件**：文档体系说明 → [DOC_SYSTEM.md](DOC_SYSTEM.md)；追踪 → [working/issue.md](working/issue.md) · [working/task.md](working/task.md) · [working/backlog.md](working/backlog.md)。
 
 > 本报告只读代码得出。**未读** `analysis/PROBLEM_REGISTER.md`（遵约独立判断）。
 > 已读（约定允许）：`FEATURE_MENU.md` / `MODEL_MENU.md` / `TARGET_MENU.md` 的存在被登记，但未据其结论下判断。
