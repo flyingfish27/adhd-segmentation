@@ -10,12 +10,15 @@ __pycache__/
 # macOS
 .DS_Store
 
-# 数据文件(按你的实际数据目录/后缀调整)
+# 数据文件
+# data/ = 原始下载数据(84 个 csv,约 2.7G),整个目录不入库。
+#
+# 这里【不按 *.csv 后缀挡】(2026-07-22 用户拍板)。原因:后缀规则是首个 commit
+# fef138a 从脚手架模板带进来的默认行(注释原文"按你的实际数据目录/后缀调整"),
+# 那时仓库里还没有 analysis/、唯一的 csv 就是原始数据,已被 data/ 一条完整覆盖;
+# 后来 analysis/ 下长出来的分析产物和 analysis/labels/ 的版本化配置表反而被它
+# 一起挡掉了。改回只按目录挡。
 data/
-*.csv
-# 例外:analysis/labels/ 下的是【版本化配置表】(常模数值、文献出处),不是数据产物。
-# 标签规则层靠它们复现,必须入库;否则 clone 下来跑 43_target_labels.py 会缺表。
-!analysis/labels/*.csv
 *.parquet
 *.numbers
 literature/
