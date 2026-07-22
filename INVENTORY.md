@@ -31,12 +31,12 @@
 | `analysis/28_tscore_label.py` | 逐步算论文1 的 ADHD 标签（SNAP→Z→T≥55）；并证明减不减1不改标签 | L0 探针 | 同上 | 仅 print | 验证/说明脚本（T≥55 标签逐步演示；该逻辑已并入 43）〔实证〕 |
 | `analysis/29_explore_id_letter.py` | 探索 ID 首字母编码了什么 | L0 探针 | 同上 | 仅 print | 废弃 |
 | `analysis/30_paper1_table2_verify.py` | 逐行复算论文1 Table 2 | L0 探针 | 同上 | 仅 print | 活跃（验证脚本）〔推测〕 |
-| `analysis/30_reproduce_papers.py` | 复现论文1/2 数字，裁决 1.67 阈值尺度 | L0 探针 | 同上 | 仅 print | 活跃（验证脚本）〔推测〕 |
 | `analysis/31_sensor_column_audit.py` | 传感器 CSV 逐列范围/样例审计 | L0 探针 | `data/H1_F.csv`,`data/H2_T.csv` | 仅 print | 疑似废弃（列审计，被 `20` 的传感器自证段覆盖且更严格）〔实证〕 |
 | `analysis/32_motor_feature_probe.py` | 探查运动障碍类信号（震颤带/jerk/子动作）| L0 探针 | `data/*_F.csv`(前8) | 仅 print | 废弃（无金标准的死路） |
 | `analysis/33_tremor_in_still_segments.py` | 静止段找窄震颤峰 | L0 探针 | `data/*_F.csv` | 仅 print | 废弃（同上，探索运动障碍） |
 | `analysis/34_sdq_total_bands_verify.py` | 验证 SDQ 总困难分档是否来自本样本 | L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 活跃（验证脚本）〔推测〕 |
-| `analysis/34_td_bands_local_vs_gao.py` | 同上，对照 Gao 2013 国家常模 | L0 探针 | 同上 | 仅 print | 活跃（验证脚本）〔推测〕 |
+| `analysis/35_reproduce_papers.py` | 复现论文1/2 数字，裁决 1.67 阈值尺度（原 `30_reproduce_papers.py`，TASK-13 改名） | L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 活跃（验证脚本）〔推测〕 |
+| `analysis/36_td_bands_local_vs_gao.py` | 验证 SDQ 总困难分档，对照 Gao 2013 国家常模（原 `34_td_bands_local_vs_gao.py`，TASK-13 改名） | L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 活跃（验证脚本）〔推测〕 |
 | `analysis/40_targets.py` | 算 24 人所有候选目标 y（SNAP/SDQ 子量表+总，标准尺度）| L3 建模 | `data/Demographic and mental health data.csv`,`figures/subject_audit.csv` | `analysis/targets.csv` | **活跃**（主链路）〔实证〕 |
 | `archive/41_features_min.py` | 最小特征管线（8 时间结构 + 4 时域，只为证链路通）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`temporal_features.csv`,`analysis/targets.csv` | `analysis/features.csv` | **归档**（链路通 smoke test；输出被 42 覆盖，不参与生产；D3 决定）〔实证〕 |
 | `analysis/42_features_full.py` | 全量特征（12 通道 × 时域14/频域7 + 时间结构×3阈值 + 8 复用）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`temporal_features.csv`,`analysis/targets.csv` | `analysis/features.csv` | **活跃**（当前 features.csv=276列由它产出）〔实证〕 |
@@ -178,9 +178,9 @@ graph TD
 - **当前 features.csv 有 276 列（275 特征+subject）→ 由 42 产出**〔实证〕。41 的产物已被覆盖 → 41 事实上废弃（保留作"链路通"的历史见证）。
 
 ### 编号碰撞与断层〔实证〕
-- **两个 `30_`**：`30_paper1_table2_verify.py`（复算论文1 Table2）与 `30_reproduce_papers.py`（复现论文1/2 + 1.67 阈值裁决）——不同任务，都活跃，编号撞车。
-- **两个 `34_`**：`34_sdq_total_bands_verify.py`（本样本分档）与 `34_td_bands_local_vs_gao.py`（对照 Gao 常模）——主题相关（都查 SDQ 总困难分档），编号撞车。
-- **断层**：20 之后 21-34 是一大片 SDQ/论文验证探针（L0），35-39 空缺，40 起才是建模主链路。〔推测〕反映：先花大量精力搞清"数据到底是什么"（问卷编码/尺度/论文口径），确认后才进入 40+ 的建模；21-34 多为一次性、跑完即弃的验证脚本。
+- **编号碰撞已消除**（TASK-13，2026-07-22）：此前 `analysis/` 有两个 `30_`、两个 `34_`。处理方式是把其中各一个改到空号段——`30_reproduce_papers.py` → `35_reproduce_papers.py`，`34_td_bands_local_vs_gao.py` → `36_td_bands_local_vs_gao.py`；`30_paper1_table2_verify.py` 与 `34_sdq_total_bands_verify.py` 保留原号。4 个脚本互不 import，改名不改变任何运行结果。TASK-13 只处理 `30_`/`34_` 这两组。
+- **仍存在的数字前缀重复**（TASK-13 范围外，未处理）〔实证〕：两个 `10_`——`10_activity_verify.ipynb` 与 `10_data_verify.ipynb`（均为 notebook）；两个 `31_`——`31_chinese_norms.md`（Markdown 文档）与 `31_sensor_column_audit.py`（Python 脚本）。
+- **断层**：20 之后 21-36 是一大片 SDQ/论文验证探针（L0），37-39 空缺，40 起才是建模主链路。〔推测〕反映：先花大量精力搞清"数据到底是什么"（问卷编码/尺度/论文口径），确认后才进入 40+ 的建模；21-36 多为一次性、跑完即弃的验证脚本。
 
 ### 根目录散落文件〔实证〕
 - **`temporal_features.csv`**：notebook `10_activity_verify` cell14 生成（8 时间结构特征）；**被 41/42 读**，是主链路真实上游。**活跃**。
