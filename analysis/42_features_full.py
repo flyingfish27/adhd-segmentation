@@ -19,11 +19,27 @@ GYRO    =[f"motionRotationRate{a}(rad/s)"    for a in "XYZ"]
 ATT     =["motionPitch(rad)","motionRoll(rad)","motionYaw(rad)"]
 REF_HEADER=[c.strip() for c in pd.read_csv(DATA/"H45_T.csv",sep=";",nrows=0).columns]
 
+# ---------- TASK-102:把所有人截到相同长度 ----------
+# 为什么要截:24 人录制时长不等(3 人 41-44 分钟,21 人 58.4-59.75 分钟),特征因此
+#   同时受"时长"和"信号非平稳"污染,人和人不可比(见 ISSUE-107 / ISSUE-113)。
+# 截多长:取最短那人的长度,保留【前半段】。
+# 口径 = P1「相同采样点数」(2026-07-22 用户裁决;另一口径 P2 是「相同时长」)。
+#   实测依据 = analysis/46_duration_audit.py 的输出:
+#     · 最短者 F55 恰为 73643 点(41.32 分钟),与本常量一致;
+#     · 24 人 fs 全部落在 29.708-29.717 Hz(极差 0.0088 Hz),各人内部采样完全规则、无 >1s 断档;
+#     · 因此 P1 与 P2 保留的点数最多相差 32 点(约 1.08 秒)。
+#   选 P1 的客观后果:所有人的特征向量长度完全相同;各人实际时长相差最多约 1.08 秒。
+#   截断丢弃全体合计 389.6 分钟,占原始总记录时长的 28.2%。
+# 怎么关掉:把 N_TRUNC 设为 None 即完全不截断。
+#   TASK-1 的「先证等价」回归测试必须在【未截断】信号上跑——参照表
+#   temporal_features.BACKUP.csv 是全长信号的产物,截断后无法逐列复现。
+N_TRUNC=73643
+
 def sniff(path):
     with open(path) as f: line=f.readline()
     return ";" if line.count(";")>line.count(",") else ","
 
-def load_T(path):
+def load_T(path,n_max=N_TRUNC):
     df=pd.read_csv(path,sep=sniff(path),low_memory=False)
     cols=[c.strip() for c in df.columns]
     if "accelerometerTimestamp_sinceReboot(s)" not in cols:     # 表头损坏 -> 按列位移植
@@ -31,11 +47,15 @@ def load_T(path):
         df.columns=REF_HEADER
     else:
         df.columns=cols
+    n_full=len(df)                                              # 截断前的原始点数
+    if n_max is not None:
+        assert n_full>=n_max, f"{path.name}: 仅 {n_full} 点,短于截断长度 {n_max}"
+        df=df.iloc[:n_max]                                      # 取前半段
     t=df["accelerometerTimestamp_sinceReboot(s)"].astype(float).to_numpy(); t=t-t[0]
     fs=1.0/np.median(np.diff(t))
     raw=np.linalg.norm(df[RAW_ACC].astype(float).to_numpy(),axis=1)   # 重力自检
     g=float(np.median(raw)); assert 0.9<g<1.1, f"{path.name}: |a| median={g:.3f}"
-    return df,fs,t
+    return df,fs,t,n_full
 
 # ---------- 配方:时域(14 个统计量) ----------
 def f_time(x):
@@ -101,9 +121,10 @@ aud=pd.read_csv(ROOT/"figures/subject_audit.csv")
 SUBJ=sorted(aud[(aud.status=="usable")&(aud["_T"].astype(str).str.lower()=="yes")].subject.tolist())
 assert len(SUBJ)==24
 
-rows=[]
+rows=[]; n_full_all={}
 for i,s in enumerate(SUBJ,1):
-    df,fs,t=load_T(DATA/f"{s}_T.csv")
+    df,fs,t,n_full=load_T(DATA/f"{s}_T.csv")
+    n_full_all[s]=n_full
     ua=df[USER_ACC].astype(float).to_numpy()
     gy=df[GYRO].astype(float).to_numpy()
     att=df[ATT].astype(float).to_numpy()
@@ -122,15 +143,38 @@ for i,s in enumerate(SUBJ,1):
     for pct in (50,75,90):
         feat.update(f_tstruct(uaMag,fs,pct))
     rows.append(feat)
-    print(f"[{i:2}/24] {s:5} fs={fs:.2f} n={len(uaMag):6d} 特征数={len(feat)-1}")
+    cut=n_full-len(uaMag)
+    print(f"[{i:2}/24] {s:5} fs={fs:.2f} n={len(uaMag):6d} (原 {n_full:6d}, 截掉 {cut:6d}) 特征数={len(feat)-1}")
+
+# ---- TASK-102 截断自检:数据集若变动,这里会显性报错而不是静默算错 ----
+if N_TRUNC is not None:
+    n_min=min(n_full_all.values()); who=min(n_full_all,key=n_full_all.get)
+    assert n_min==N_TRUNC, (f"最短记录已不是 {N_TRUNC} 点,而是 {n_min} 点(被试 {who})"
+                            f" —— 数据集已变动,N_TRUNC 需按 analysis/46_duration_audit.py 重新核定")
+    print(f"\n[TASK-102] 截断口径 P1:每人取前 {N_TRUNC} 点(约 41.32 分钟,取前半段)")
+    print(f"           最短者 {who} 恰为 {n_min} 点,与 N_TRUNC 一致(自检通过)")
+    print(f"           全体原始合计 {sum(n_full_all.values()):,} 点 -> 截断后 {24*N_TRUNC:,} 点"
+          f",丢弃 {100*(1-24*N_TRUNC/sum(n_full_all.values())):.1f}%")
+else:
+    print("\n[TASK-102] N_TRUNC=None -> 未截断,使用全长信号")
 
 new=pd.DataFrame(rows).set_index("subject")
 # 复用已验证的 8 个时间结构特征(median 阈值那套)
+# ⚠ TASK-102 口径不一致(2026-07-22 用户已知情裁决,详见 working/task.md 的 TASK-102):
+#   这 8 列来自 temporal_features.csv,是 notebook 在【全长信号】上算的,未随本脚本截断。
+#   即本表 = 267 列(截断到 41.32 分钟) + 8 列(全长 58-60 分钟)。
+#   这 8 列恰属 ISSUE-107 指出的"时长敏感"一类,故截断后差异不可忽略。
+#   该不一致将由 TASK-1 消除——它会删掉这个 join、把 8 列在本脚本内原生重算。
+#   在 TASK-1 完成前,features.csv 不用于任何结论性分析。
 old=pd.read_csv(ROOT/"temporal_features.csv").set_index("subject")
 keep=["switch_per_min","act_bout_median","stl_bout_median","act_bout_cv","stl_bout_cv",
       "frac_act_short","within_win_sd","mag_median"]
 feats=new.join(old[keep]).loc[SUBJ]
 feats.to_csv(ROOT/"analysis/features.csv")
+if N_TRUNC is not None:
+    print(f"\n⚠ 口径不一致(已知,待 TASK-1 消除):{new.shape[1]} 列算自截断信号"
+          f"({N_TRUNC} 点);join 进来的 {len(keep)} 列 {keep} 算自全长信号。"
+          f"\n  在 TASK-1 完成前,features.csv 不用于任何结论性分析。")
 
 # ---- 汇报 ----
 tgt=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")
