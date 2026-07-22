@@ -38,7 +38,7 @@
 | `analysis/34_sdq_total_bands_verify.py` | 验证 SDQ 总困难分档是否来自本样本 | L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 活跃（验证脚本）〔推测〕 |
 | `analysis/34_td_bands_local_vs_gao.py` | 同上，对照 Gao 2013 国家常模 | L0 探针 | 同上 | 仅 print | 活跃（验证脚本）〔推测〕 |
 | `analysis/40_targets.py` | 算 24 人所有候选目标 y（SNAP/SDQ 子量表+总，标准尺度）| L3 建模 | `data/Demographic and mental health data.csv`,`figures/subject_audit.csv` | `analysis/targets.csv` | **活跃**（主链路）〔实证〕 |
-| `analysis/41_features_min.py` | 最小特征管线（8 时间结构 + 4 时域，只为证链路通）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`temporal_features.csv`,`analysis/targets.csv` | `analysis/features.csv` | **归档**（链路通 smoke test；输出被 42 覆盖，不参与生产；D3 决定）〔实证〕 |
+| `archive/41_features_min.py` | 最小特征管线（8 时间结构 + 4 时域，只为证链路通）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`temporal_features.csv`,`analysis/targets.csv` | `analysis/features.csv` | **归档**（链路通 smoke test；输出被 42 覆盖，不参与生产；D3 决定）〔实证〕 |
 | `analysis/42_features_full.py` | 全量特征（12 通道 × 时域14/频域7 + 时间结构×3阈值 + 8 复用）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`temporal_features.csv`,`analysis/targets.csv` | `analysis/features.csv` | **活跃**（当前 features.csv=276列由它产出）〔实证〕 |
 | `analysis/43_target_labels.py` | 连续 y 切分组标签（分位数二/三/四分 + 常模T≥55）| L3 建模 | `analysis/targets.csv` | `analysis/target_labels.csv` | **活跃**〔实证〕 |
 | `analysis/44_univariate_screen.py` | A 轨：单变量筛查（Spearman/AUC + 置换 + 留一 + BH-FDR）| L3 建模 | `analysis/features.csv`,`analysis/targets.csv`,`analysis/target_labels.csv` | `analysis/A_univariate.csv` | **活跃**〔实证〕 |
@@ -259,7 +259,7 @@ graph TD
   2. `data/temporal_features.csv` **不存在**；因此 notebook 内部的画图链 `cell 16`(写 data/) → `cell 18`(读 data/) **现已整体断裂**（写被 data/ 只读钩子拦、读取不到）。 ⚠️**更正见 2026-07-19·B4：hook 拦不到 notebook，"写被钩子拦"是错的；文件不存在真因未知。断裂结论仍成立（读取不到 cell18 确会断），但原因不是 hook。**
      _证据来源：`md5 data/temporal_features.csv` 报 No such file；`grep -o` 显示 cell 18 为 `pd.read_csv(DATA / 'temporal_features.csv')`。_
   3. 存活的唯一数据源是**根目录** `temporal_features.csv`（md5 `c51fe8b14499f4852e6637d4e00cfebd`），由 `cell 14` 生成，被 `41/42` 消费。
-     _证据来源：`md5 temporal_features.csv`；`grep temporal_features analysis/41_features_min.py analysis/42_features_full.py`。_
+     _证据来源：`md5 temporal_features.csv`；`grep temporal_features analysis/41_features_min.py analysis/42_features_full.py`（41 号脚本已于 TASK-3 移至 `archive/41_features_min.py`，命令为当时原文）。_
 
   **仍 OPEN**
 
