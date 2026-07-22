@@ -116,74 +116,124 @@ def f_tstruct(mag,fs,thr_pct):
         out[f"actbout_med_p{thr_pct}"]=0.0; out[f"actbout_cv_p{thr_pct}"]=0.0; out[f"actshort_p{thr_pct}"]=0.0
     return out
 
-# ================= 主循环 =================
-aud=pd.read_csv(ROOT/"figures/subject_audit.csv")
-SUBJ=sorted(aud[(aud.status=="usable")&(aud["_T"].astype(str).str.lower()=="yes")].subject.tolist())
-assert len(SUBJ)==24
+# ---------- TASK-1:统一的「时间结构」函数(路径 A 的原生实现) ----------
+# 这是原 notebook analysis/10_activity_verify.ipynb 里 temporal_features() 那条路子
+# 的脚本内实现:先把信号按【滑动窗口】聚合成 w_mean / w_sd,再对【窗均值】卡百分位
+# 阈值二值化,最后对【活动段与静止段同时】做游程统计。
+#   它与本文件上面的 f_tstruct()(路径 B:在【逐个采样点】上直接卡阈值)是两条
+#   方法不同的做法。TASK-1 的做法是把"先滑窗平滑、再二值化"保留成一个显式选项,
+#   而不是把它删掉。两条路径目前并存。
+#
+# 参数全部 keyword-only 且【不给默认值】——调用方必须把每个数字显式写出来,
+#   代码里不留隐藏的魔法数字。
+#     win_s   滑动窗口长度(秒)      step_s  滑动窗口步长(秒)
+#     pct     二值化用的阈值百分位   short_s "短活动段"的判定上限(秒)
+#
+# 返回值是【未取整】的原始浮点数。原 notebook 对每个键都做了 round(),那是写 csv 时
+#   的显示精度、不属于计算本身;等价比对时由 analysis/verify_temporal_provenance.py
+#   施加同一套取整后再逐列比。
+def time_structure(mag,t,fs,*,win_s,step_s,pct,short_s):
+    mag=np.asarray(mag,float)
+    win,step=int(win_s*fs),int(step_s*fs)
+    idx=range(0,len(mag)-win,step)
+    w_mean=np.array([mag[s:s+win].mean() for s in idx])
+    w_sd  =np.array([mag[s:s+win].std()  for s in idx])
 
-rows=[]; n_full_all={}
-for i,s in enumerate(SUBJ,1):
-    df,fs,t,n_full=load_T(DATA/f"{s}_T.csv")
-    n_full_all[s]=n_full
-    ua=df[USER_ACC].astype(float).to_numpy()
-    gy=df[GYRO].astype(float).to_numpy()
-    att=df[ATT].astype(float).to_numpy()
-    uaMag=np.linalg.norm(ua,axis=1); gyMag=np.linalg.norm(gy,axis=1)
-    jerk=np.diff(uaMag)*fs
-    channels={
-        "uaX":ua[:,0],"uaY":ua[:,1],"uaZ":ua[:,2],"uaMag":uaMag,
-        "gyX":gy[:,0],"gyY":gy[:,1],"gyZ":gy[:,2],"gyMag":gyMag,
-        "pitch":att[:,0],"roll":att[:,1],"yaw":att[:,2],
-        "jerk":jerk,
+    thr=np.percentile(w_mean,pct)          # 阈值卡在【窗均值】上,不是逐样本
+    active=w_mean>thr
+
+    edges=np.concatenate([[0],np.where(np.diff(active.astype(int))!=0)[0]+1,[len(active)]])
+    durs  =np.diff(edges)*step_s           # 每段时长(秒)= 窗数 × 步长
+    states=active[edges[:-1]]              # True = 活动段
+    act,stl=durs[states],durs[~states]
+    dur_min=t[-1]/60.0
+
+    def cv(x): return float(x.std()/x.mean()) if len(x)>1 and x.mean()>0 else np.nan
+    return {
+        "switch_per_min" : (len(durs)-1)/dur_min,
+        "act_bout_median": float(np.median(act)) if len(act) else np.nan,
+        "stl_bout_median": float(np.median(stl)) if len(stl) else np.nan,
+        "act_bout_cv"    : cv(act),
+        "stl_bout_cv"    : cv(stl),
+        "frac_act_short" : float((act<=short_s).mean()) if len(act) else np.nan,
+        "within_win_sd"  : float(np.median(w_sd)),
+        "mag_median"     : float(np.median(mag)),
+        "dur_min"        : dur_min,
+        "n_bouts"        : len(durs),
     }
-    feat={"subject":s}
-    for name,x in channels.items():
-        for k,v in f_time(x).items():  feat[f"{name}_{k}"]=v
-        for k,v in f_freq(x,fs).items():feat[f"{name}_{k}"]=v
-    for pct in (50,75,90):
-        feat.update(f_tstruct(uaMag,fs,pct))
-    rows.append(feat)
-    cut=n_full-len(uaMag)
-    print(f"[{i:2}/24] {s:5} fs={fs:.2f} n={len(uaMag):6d} (原 {n_full:6d}, 截掉 {cut:6d}) 特征数={len(feat)-1}")
 
-# ---- TASK-102 截断自检:数据集若变动,这里会显性报错而不是静默算错 ----
-if N_TRUNC is not None:
-    n_min=min(n_full_all.values()); who=min(n_full_all,key=n_full_all.get)
-    assert n_min==N_TRUNC, (f"最短记录已不是 {N_TRUNC} 点,而是 {n_min} 点(被试 {who})"
-                            f" —— 数据集已变动,N_TRUNC 需按 analysis/46_duration_audit.py 重新核定")
-    print(f"\n[TASK-102] 截断口径 P1:每人取前 {N_TRUNC} 点(约 41.32 分钟,取前半段)")
-    print(f"           最短者 {who} 恰为 {n_min} 点,与 N_TRUNC 一致(自检通过)")
-    print(f"           全体原始合计 {sum(n_full_all.values()):,} 点 -> 截断后 {24*N_TRUNC:,} 点"
-          f",丢弃 {100*(1-24*N_TRUNC/sum(n_full_all.values())):.1f}%")
-else:
-    print("\n[TASK-102] N_TRUNC=None -> 未截断,使用全长信号")
+# ================= 主循环 =================
+# 收进 __main__ 保护:让本文件既能当脚本跑(行为与之前完全一致),
+#   也能被 analysis/verify_temporal_provenance.py import 进去、直接调用上面那些
+#   函数做等价回归测试——测的是【生产代码本身】,不是它的一份副本。
+if __name__=="__main__":
+    aud=pd.read_csv(ROOT/"figures/subject_audit.csv")
+    SUBJ=sorted(aud[(aud.status=="usable")&(aud["_T"].astype(str).str.lower()=="yes")].subject.tolist())
+    assert len(SUBJ)==24
 
-new=pd.DataFrame(rows).set_index("subject")
-# 复用已验证的 8 个时间结构特征(median 阈值那套)
-# ⚠ TASK-102 口径不一致(2026-07-22 用户已知情裁决,详见 working/task.md 的 TASK-102):
-#   这 8 列来自 temporal_features.csv,是 notebook 在【全长信号】上算的,未随本脚本截断。
-#   即本表 = 267 列(截断到 41.32 分钟) + 8 列(全长 58-60 分钟)。
-#   这 8 列恰属 ISSUE-107 指出的"时长敏感"一类,故截断后差异不可忽略。
-#   该不一致将由 TASK-1 消除——它会删掉这个 join、把 8 列在本脚本内原生重算。
-#   在 TASK-1 完成前,features.csv 不用于任何结论性分析。
-old=pd.read_csv(ROOT/"temporal_features.csv").set_index("subject")
-keep=["switch_per_min","act_bout_median","stl_bout_median","act_bout_cv","stl_bout_cv",
-      "frac_act_short","within_win_sd","mag_median"]
-feats=new.join(old[keep]).loc[SUBJ]
-feats.to_csv(ROOT/"analysis/features.csv")
-if N_TRUNC is not None:
-    print(f"\n⚠ 口径不一致(已知,待 TASK-1 消除):{new.shape[1]} 列算自截断信号"
-          f"({N_TRUNC} 点);join 进来的 {len(keep)} 列 {keep} 算自全长信号。"
-          f"\n  在 TASK-1 完成前,features.csv 不用于任何结论性分析。")
+    rows=[]; n_full_all={}
+    for i,s in enumerate(SUBJ,1):
+        df,fs,t,n_full=load_T(DATA/f"{s}_T.csv")
+        n_full_all[s]=n_full
+        ua=df[USER_ACC].astype(float).to_numpy()
+        gy=df[GYRO].astype(float).to_numpy()
+        att=df[ATT].astype(float).to_numpy()
+        uaMag=np.linalg.norm(ua,axis=1); gyMag=np.linalg.norm(gy,axis=1)
+        jerk=np.diff(uaMag)*fs
+        channels={
+            "uaX":ua[:,0],"uaY":ua[:,1],"uaZ":ua[:,2],"uaMag":uaMag,
+            "gyX":gy[:,0],"gyY":gy[:,1],"gyZ":gy[:,2],"gyMag":gyMag,
+            "pitch":att[:,0],"roll":att[:,1],"yaw":att[:,2],
+            "jerk":jerk,
+        }
+        feat={"subject":s}
+        for name,x in channels.items():
+            for k,v in f_time(x).items():  feat[f"{name}_{k}"]=v
+            for k,v in f_freq(x,fs).items():feat[f"{name}_{k}"]=v
+        for pct in (50,75,90):
+            feat.update(f_tstruct(uaMag,fs,pct))
+        rows.append(feat)
+        cut=n_full-len(uaMag)
+        print(f"[{i:2}/24] {s:5} fs={fs:.2f} n={len(uaMag):6d} (原 {n_full:6d}, 截掉 {cut:6d}) 特征数={len(feat)-1}")
 
-# ---- 汇报 ----
-tgt=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")
-print("\n===== features.csv:",feats.shape," targets.csv:",tgt.shape,"=====")
-print("总特征列数:",feats.shape[1])
-print("样本对齐?",list(feats.index)==list(tgt.index))
-print("特征缺失合计:",int(feats.isna().sum().sum())," | 非有限值:",int((~np.isfinite(feats.to_numpy(float))).sum()))
-# 每通道特征数概览
-import collections
-pref=collections.Counter(c.split("_")[0] for c in feats.columns)
-print("每前缀特征数:",dict(pref))
-print("\n示例列(前30):",list(feats.columns[:30]))
+    # ---- TASK-102 截断自检:数据集若变动,这里会显性报错而不是静默算错 ----
+    if N_TRUNC is not None:
+        n_min=min(n_full_all.values()); who=min(n_full_all,key=n_full_all.get)
+        assert n_min==N_TRUNC, (f"最短记录已不是 {N_TRUNC} 点,而是 {n_min} 点(被试 {who})"
+                                f" —— 数据集已变动,N_TRUNC 需按 analysis/46_duration_audit.py 重新核定")
+        print(f"\n[TASK-102] 截断口径 P1:每人取前 {N_TRUNC} 点(约 41.32 分钟,取前半段)")
+        print(f"           最短者 {who} 恰为 {n_min} 点,与 N_TRUNC 一致(自检通过)")
+        print(f"           全体原始合计 {sum(n_full_all.values()):,} 点 -> 截断后 {24*N_TRUNC:,} 点"
+              f",丢弃 {100*(1-24*N_TRUNC/sum(n_full_all.values())):.1f}%")
+    else:
+        print("\n[TASK-102] N_TRUNC=None -> 未截断,使用全长信号")
+
+    new=pd.DataFrame(rows).set_index("subject")
+    # 复用已验证的 8 个时间结构特征(median 阈值那套)
+    # ⚠ TASK-102 口径不一致(2026-07-22 用户已知情裁决,详见 working/task.md 的 TASK-102):
+    #   这 8 列来自 temporal_features.csv,是 notebook 在【全长信号】上算的,未随本脚本截断。
+    #   即本表 = 267 列(截断到 41.32 分钟) + 8 列(全长 58-60 分钟)。
+    #   这 8 列恰属 ISSUE-107 指出的"时长敏感"一类,故截断后差异不可忽略。
+    #   该不一致将由 TASK-1 消除——它会删掉这个 join、把 8 列在本脚本内原生重算。
+    #   在 TASK-1 完成前,features.csv 不用于任何结论性分析。
+    old=pd.read_csv(ROOT/"temporal_features.csv").set_index("subject")
+    keep=["switch_per_min","act_bout_median","stl_bout_median","act_bout_cv","stl_bout_cv",
+          "frac_act_short","within_win_sd","mag_median"]
+    feats=new.join(old[keep]).loc[SUBJ]
+    feats.to_csv(ROOT/"analysis/features.csv")
+    if N_TRUNC is not None:
+        print(f"\n⚠ 口径不一致(已知,待 TASK-1 消除):{new.shape[1]} 列算自截断信号"
+              f"({N_TRUNC} 点);join 进来的 {len(keep)} 列 {keep} 算自全长信号。"
+              f"\n  在 TASK-1 完成前,features.csv 不用于任何结论性分析。")
+
+    # ---- 汇报 ----
+    tgt=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")
+    print("\n===== features.csv:",feats.shape," targets.csv:",tgt.shape,"=====")
+    print("总特征列数:",feats.shape[1])
+    print("样本对齐?",list(feats.index)==list(tgt.index))
+    print("特征缺失合计:",int(feats.isna().sum().sum())," | 非有限值:",int((~np.isfinite(feats.to_numpy(float))).sum()))
+    # 每通道特征数概览
+    import collections
+    pref=collections.Counter(c.split("_")[0] for c in feats.columns)
+    print("每前缀特征数:",dict(pref))
+    print("\n示例列(前30):",list(feats.columns[:30]))
