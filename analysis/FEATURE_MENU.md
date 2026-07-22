@@ -63,7 +63,7 @@
 
 ## 5. 复用的已验证时间结构特征(8 个,join 自 `temporal_features.csv`)
 
-来自 `10_activity_verify.ipynb` 的 `temporal_features()`(滑窗 10s/步 5s,窗内 50 百分位二值化,run-length)。已在阶段1前独立验证过,保留:
+来自 `11_activity_verify.ipynb` 的 `temporal_features()`(滑窗 10s/步 5s,窗内 50 百分位二值化,run-length)。已在阶段1前独立验证过,保留:
 
 `switch_per_min` `act_bout_median` `stl_bout_median` `act_bout_cv` `stl_bout_cv`
 `frac_act_short` `within_win_sd` `mag_median`(**mag_median 作负对照**:代表"总运动量",用来区分发现来自"结构"还是"总量")。
