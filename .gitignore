@@ -22,4 +22,14 @@ data/
 *.parquet
 *.numbers
 literature/
+
+# 手工备份副本:不入库,也不在 git status 里露面(2026-07-22 用户拍板)。
+# 写 *.BACKUP*.csv 而不是 *.BACKUP.csv —— 现有两个文件是
+#   temporal_features.BACKUP.csv
+#   analysis/features.BACKUP_pre_task102.csv   <- BACKUP 后面还跟着 _pre_task102
+# 只写 *.BACKUP.csv 挡不住第二个。
+# 注意:analysis/47_truncation_impact.py:11 会读 features.BACKUP_pre_task102.csv。
+# 忽略只是不入库、文件仍在磁盘上,本机跑 47 不受影响;但新 clone 没有这个文件,
+# 47 会因缺输入而失败。
+*.BACKUP*.csv
 .venv/ # .venv 本身别提交，几百 MB
