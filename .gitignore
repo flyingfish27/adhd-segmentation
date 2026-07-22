@@ -13,6 +13,9 @@ __pycache__/
 # 数据文件(按你的实际数据目录/后缀调整)
 data/
 *.csv
+# 例外:analysis/labels/ 下的是【版本化配置表】(常模数值、文献出处),不是数据产物。
+# 标签规则层靠它们复现,必须入库;否则 clone 下来跑 43_target_labels.py 会缺表。
+!analysis/labels/*.csv
 *.parquet
 *.numbers
 literature/
