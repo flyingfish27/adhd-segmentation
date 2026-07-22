@@ -2,7 +2,7 @@
 
 > **相关文件**：文档体系说明 → [DOC_SYSTEM.md](DOC_SYSTEM.md)；追踪 → [working/issue.md](working/issue.md) · [working/task.md](working/task.md) · [working/backlog.md](working/backlog.md)。
 
-> 本报告只读代码得出。**未读** `analysis/PROBLEM_REGISTER.md`（遵约独立判断）。
+> 本报告只读代码得出。**未读** `archive/PROBLEM_REGISTER.md`（遵约独立判断）。
 > 已读（约定允许）：`FEATURE_MENU.md` / `MODEL_MENU.md` / `TARGET_MENU.md` 的存在被登记，但未据其结论下判断。
 > 标注约定：〔实证〕= 从代码/数据直接读出；〔推测〕= 推断，可能错。
 > 读入/写出路径均从代码里实际读出，非从文件名推断。
