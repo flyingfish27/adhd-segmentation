@@ -1,0 +1,344 @@
+# =============================================================================
+# rules.yaml — 分组标签规则表(TASK-8)
+#
+# 一条规则 = target_labels.csv 里的一个输出标签列。
+# 引擎是 analysis/43_target_labels.py,它【只读这张表拿数字】——切点、组数、阈值
+# 一律写在这里,代码里一个都没有。改切法 = 改这个文件,不动代码。
+#
+# 每条规则的字段:
+#   label_name     输出列名(必须唯一)
+#   target         切哪个连续分;取值是 analysis/targets.csv 的列名。
+#                  method: symptom_count 不用连续分,此处写 null。
+#   method         切法,见下方词表
+#   params         该 method 的参数(形状随 method 变,这正是用 YAML 不用 CSV 的原因)
+#   group_names    第 0..k-1 组各叫什么。只进 meta 表供人读;
+#                  target_labels.csv 里存的是整数码 0..k-1,不是这些名字。
+#   source_id      出处,对应 analysis/labels/sources.csv 的 source_id 列
+#   on_degenerate  声明的 k 组里【有组 0 人】时怎么办:
+#                    keep — 照常写进 target_labels.csv,并在 meta 里标 degenerate=true
+#                    skip — 不写这一列,但 meta 里【仍然留一行】记下它退化了
+#                  两种情况下"我们试过这个切点、结果如何"都留在 meta 里,不只活在终端输出。
+#   note           可选。跟着数据走的人话说明,会原样抄进 meta 表。
+#
+# method 词表(引擎里各一个小函数,加新 method 才需要动代码):
+#   quantile       样本内分位切。params: k(切几组)、duplicates(边界重复时 drop/raise)
+#   zscore_cut     样本内 z/T 分切。params: ddof、t_mean、t_sd、t_cut
+#                  (T = (v-mean)/std(ddof) * t_sd + t_mean;T >= t_cut 记 1)
+#   norm_band      查 analysis/labels/norms.csv 取分档。params: norm_id
+#   raw_cut        绝对切点。params: cuts(升序列表);组号 = 有几个切点 <= 本人取值
+#   symptom_count  题目级症状计数,读 analysis/items.csv。
+#                  params: items(题目列名列表)、item_min(该题记为"有症状"的最低分)、
+#                          n_min(达标题数下限);计数 >= n_min 记 1
+#
+# norms.csv 的列契约(method: norm_band 按 norm_id 查它;一个分档一行):
+#   norm_id     这套分档的名字,规则用 params.norm_id 指过来
+#   source_id   出处,对应 sources.csv
+#   scale       这套分档适用于哪个量表/子量表(给人读的)
+#   band_index  组码 0,1,2...;引擎把它原样写进 target_labels.csv
+#   band_name   这一档叫什么(如 normal / borderline / abnormal)
+#   lower,upper 该档的取值区间,【两端都是闭区间】。落不进任何档的人记 NaN,
+#               引擎会在 meta 的 n_unassigned 里报出来。
+#   note        这一档的说明
+# 现在 norms.csv 只有表头、没有数据行 —— 常模数值的录入是 TASK-9 的事。
+#
+# 出处约定:source_id = sample_internal 表示"这个切点没有外部文献,是在本数据自己
+# 的 24 人分布上算出来的",换一批人切点就变、不可外推。见 sources.csv 该行。
+# =============================================================================
+
+version: 1
+
+rules:
+
+  # ---------------------------------------------------------------------------
+  # 样本内分位切:10 个连续目标 × {二分, 三分, 四分} = 30 列
+  # 这 30 列不依赖任何常模,是纯相对排名。duplicates: drop —— 连续分并列太多时
+  # pandas 会丢掉重复的分位边界,实际组数可能少于 k,引擎会把实际组数记进 meta。
+  # ---------------------------------------------------------------------------
+
+  - label_name: snap_inatt__qbin
+    target: snap_inatt
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_inatt__qter
+    target: snap_inatt
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_inatt__qquar
+    target: snap_inatt
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_hyper__qbin
+    target: snap_hyper
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_hyper__qter
+    target: snap_hyper
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_hyper__qquar
+    target: snap_hyper
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_odd__qbin
+    target: snap_odd
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_odd__qter
+    target: snap_odd
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_odd__qquar
+    target: snap_odd
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_total__qbin
+    target: snap_total
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_total__qter
+    target: snap_total
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: snap_total__qquar
+    target: snap_total
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_hyper__qbin
+    target: sdq_hyper
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_hyper__qter
+    target: sdq_hyper
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_hyper__qquar
+    target: sdq_hyper
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_emo__qbin
+    target: sdq_emo
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_emo__qter
+    target: sdq_emo
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  # ISSUE-120:sdq_emo 只有少数几个不同取值,切 4 组会塌。实测只切出 3 组。
+  - label_name: sdq_emo__qquar
+    target: sdq_emo
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_cond__qbin
+    target: sdq_cond
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  # ISSUE-120:实测第 1 组(mid)0 人,只有 low/high 两组有人。
+  - label_name: sdq_cond__qter
+    target: sdq_cond
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_cond__qquar
+    target: sdq_cond
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_peer__qbin
+    target: sdq_peer
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  # ISSUE-120:sdq_peer 取值极少,切 3 组实际只切出 2 组。
+  - label_name: sdq_peer__qter
+    target: sdq_peer
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_peer__qquar
+    target: sdq_peer
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_pro__qbin
+    target: sdq_pro
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  # 注意 sdq_pro 是反向量表(低分=亲社会差),low/high 指的是【分数】高低,不是好坏。
+  - label_name: sdq_pro__qter
+    target: sdq_pro
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_pro__qquar
+    target: sdq_pro
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_totdiff__qbin
+    target: sdq_totdiff
+    method: quantile
+    params: {k: 2, duplicates: drop}
+    group_names: [low, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_totdiff__qter
+    target: sdq_totdiff
+    method: quantile
+    params: {k: 3, duplicates: drop}
+    group_names: [low, mid, high]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  - label_name: sdq_totdiff__qquar
+    target: sdq_totdiff
+    method: quantile
+    params: {k: 4, duplicates: drop}
+    group_names: [q1, q2, q3, q4]
+    source_id: sample_internal
+    on_degenerate: keep
+
+  # ---------------------------------------------------------------------------
+  # 参考论文1(Wang, Sensors 2025)的 ADHD 口径,在本项目 24 人内重算
+  #
+  # 改名记录(TASK-8 决定2):本列旧名 snap_total__normT55。旧名里的 "norm"(常模)
+  # 名不副实——下面 t_mean/t_sd 只是把 z 分线性搬到 T 分刻度上,而 z 的 mean/sd
+  # 取自【这 24 个孩子自己】,不是任何人群常模。所以 t_cut: 55 实为"样本内 z >= 0.5"
+  # (约取本样本前 31%)。analysis/31_chinese_norms.md:54,88 独立写了同一结论。
+  # 新名字点名它是谁的口径:Wang 2025 用 T>=55,故 wang2025T55。
+  # ---------------------------------------------------------------------------
+  - label_name: snap_total__wang2025T55
+    target: snap_total
+    method: zscore_cut
+    params: {ddof: 1, t_mean: 50, t_sd: 10, t_cut: 55}
+    group_names: [below_cut, at_or_above_cut]
+    source_id: wang2025_sensors
+    on_degenerate: keep
+    note: >-
+      切点 55 来自参考论文1(Wang, Sensors 2025, 25(20):6459)的 ADHD 定义。
+      注意两点:(1) 该 T 分是样本内 z 分换刻度,不是人群常模,论文层面无任何中国
+      SNAP-IV 人群阈值(31_chinese_norms.md:54);(2) 论文在它自己的 50 人内算,
+      本列在本项目建模子集 24 人内重算,故与论文的 13/37 不可直接比。
+
+  # ---------------------------------------------------------------------------
+  # 大陆家长版 SDQ 常模的多动异常线(标准 0-10 计分,>=8 判异常)
+  #
+  # on_degenerate: skip —— 本样本 0/24 人达到 8 分,列会是常数,不写进
+  # target_labels.csv(与 TASK-8 之前的行为一致,保住"逐列复现 31 列"的等价性)。
+  # 但 meta 表里仍留一行,把"我们试过大陆常模异常线、本样本无人达标"这条事实
+  # 写在数据旁边,而不是只留在终端输出里。想让它变成常数列进表,把 skip 改 keep。
+  # ---------------------------------------------------------------------------
+  - label_name: sdq_hyper__norm8
+    target: sdq_hyper
+    method: raw_cut
+    params: {cuts: [8]}
+    group_names: [normal_or_borderline, abnormal]
+    source_id: cn_sdq_parent_2013
+    on_degenerate: skip
+    note: >-
+      切点 8 来自大陆 22,108 人家长版 SDQ 常模(PMC4054577)的多动/注意力子量表
+      异常线(正常 0-6 / 边界 7 / 异常 8-10,按大陆本样本 90 百分位定)。
+      前提是 SDQ 标准 0/1/2 计分,本数据 1-indexed 已在 40_targets.py 里减 1、
+      反向题已翻转,故 targets.csv 的 sdq_hyper 就是 0-10 标准分,可直接对照。
+      本列只用了异常线一条切点,没有把"边界 7"单独切出来;要三分组见 TASK-9。

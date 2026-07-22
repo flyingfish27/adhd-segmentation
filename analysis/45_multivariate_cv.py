@@ -27,6 +27,7 @@ loo=LeaveOneOut()
 X=pd.read_csv(ROOT/"analysis/features.csv").set_index("subject")
 Yc=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")
 Yl=pd.read_csv(ROOT/"analysis/target_labels.csv").set_index("subject")
+Ylm=pd.read_csv(ROOT/"analysis/target_labels_meta.csv")
 Xv=X.to_numpy(float); n=len(X); KS=[5,10]
 mag=X[["mag_median"]].to_numpy(float)
 
@@ -46,9 +47,15 @@ def reg_skill(y,pred):
 def cvp(pipe,data,y): return cross_val_predict(pipe,data,y,cv=loo,n_jobs=-1)
 
 CONT=list(Yc.columns)
-BIN=[c for c in Yl.columns if c.endswith("__qbin")]+["snap_total__normT55"]
+# TASK-8 决定5:退化列(声明切 k 组、实际某组 0 人)在 meta 里标 degenerate=true,
+# 下游必须过滤掉,否则常数列进模型会重演 ISSUE-101(ConstantInputWarning / NaN 相关)。
+DEGEN=set(Ylm.loc[Ylm["degenerate"]==True,"label_name"])
+# snap_total__wang2025T55 旧名 snap_total__normT55(TASK-8 决定2 改名,取值不变)。
+BIN=[c for c in Yl.columns if c.endswith("__qbin")]+["snap_total__wang2025T55"]
+BIN=[c for c in BIN if c not in DEGEN]
 MULTI=[f"{b}__{s}" for b in ["snap_inatt","snap_hyper","snap_odd","snap_total","sdq_hyper","sdq_totdiff"]
        for s in ["qter","qquar"] if Yl[f"{b}__{s}"].nunique()==(3 if s=="qter" else 4)]
+MULTI=[c for c in MULTI if c not in DEGEN]
 
 rows=[]
 # ---------- 回归 ----------
