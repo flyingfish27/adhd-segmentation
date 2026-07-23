@@ -39,7 +39,8 @@
 #   lower,upper 该档的取值区间,【两端都是闭区间】。落不进任何档的人记 NaN,
 #               引擎会在 meta 的 n_unassigned 里报出来。
 #   note        这一档的说明
-# 现在 norms.csv 只有表头、没有数据行 —— 常模数值的录入是 TASK-9 的事。
+# norms.csv 的数据行由 TASK-9 录入:6 套大陆家长版 SDQ 分档 × 3 档 = 18 行,
+# 全部出自来源 A(PMC4054577,22,108 人)。
 #
 # 出处约定:source_id = sample_internal 表示"这个切点没有外部文献,是在本数据自己
 # 的 24 人分布上算出来的",换一批人切点就变、不可外推。见 sources.csv 该行。
@@ -342,3 +343,154 @@ rules:
       前提是 SDQ 标准 0/1/2 计分,本数据 1-indexed 已在 40_targets.py 里减 1、
       反向题已翻转,故 targets.csv 的 sdq_hyper 就是 0-10 标准分,可直接对照。
       本列只用了异常线一条切点,没有把"边界 7"单独切出来;要三分组见 TASK-9。
+
+  # ===========================================================================
+  # TASK-9:中国常模三分组(正常 / 边界 / 异常)
+  #
+  # 下面这一整块是【只改规则表、不动引擎】加进来的——TASK-8 验收②。
+  # 用到的两个 method(norm_band、symptom_count)在 TASK-8 时就已实现,
+  # 本次没有给 43_target_labels.py 加过一行代码。
+  #
+  # 两组规则的性质【完全不同】,不要混着解释:
+  #   A. SDQ 6 条 —— 人群百分位常模(大陆 22,108 名小学生家长评分,PMC4054577),
+  #      异常 = >90 百分位、边界 = 80-90 百分位。数值存在 norms.csv。
+  #   B. SNAP 3 条 —— 【不是常模】。中国大陆/台湾都没有 SNAP-IV 的人群百分位或
+  #      T 分切点(chinese_norms.md:51-54),所以 SNAP 只能走 DSM/MTA 式
+  #      症状计数,且该规则来自 n=327 的【临床确诊组】(PMC10326278),不是社区常模。
+  #
+  # on_degenerate 一律 keep:本样本 n=24,常模异常线本就按人群 90 百分位定,
+  # 预期会出现空组(TASK-9 硬事实 5)。keep = 列照写进 target_labels.csv 并在
+  # meta 标 degenerate=true,把"我们按这套常模切了、结果某组 0 人"这个事实
+  # 留在数据里;下游 44/45 会按 degenerate 字段自行过滤,不让常数列进模型。
+  # ===========================================================================
+
+  # --------------------------------------------------------------- A. SDQ 常模
+  - label_name: sdq_hyper__cn2013band3
+    target: sdq_hyper
+    method: norm_band
+    params: {norm_id: cn2013_parent_hyper}
+    group_names: [normal, borderline, abnormal]
+    source_id: cn_sdq_parent_2013
+    on_degenerate: keep
+    note: >-
+      大陆家长版 SDQ 常模三分组:正常 0-6 / 边界 7 / 异常 8-10。
+      与上面的 sdq_hyper__norm8 用的是同一套常模、同一条异常线(8),区别只在
+      本列把"边界 7"单独切成一组(3 组),norm8 只做二分(2 组)。
+      来源 B(Du 2008 上海 n=1,965 家长版)对多动给出完全相同的 0-6/7/8-10,
+      两套大陆常模在这个子量表上不冲突。
+
+  - label_name: sdq_emo__cn2013band3
+    target: sdq_emo
+    method: norm_band
+    params: {norm_id: cn2013_parent_emo}
+    group_names: [normal, borderline, abnormal]
+    source_id: cn_sdq_parent_2013
+    on_degenerate: keep
+    note: >-
+      大陆家长版 SDQ 情绪子量表:正常 0-3 / 边界 4 / 异常 5-10。
+      常模文自报该子量表 alpha=0.57。
+
+  - label_name: sdq_cond__cn2013band3
+    target: sdq_cond
+    method: norm_band
+    params: {norm_id: cn2013_parent_cond}
+    group_names: [normal, borderline, abnormal]
+    source_id: cn_sdq_parent_2013
+    on_degenerate: keep
+    note: >-
+      大陆家长版 SDQ 品行子量表:正常 0-3 / 边界 4 / 异常 5-10。
+      常模文自报 alpha=0.50;本数据上 CODEBOOK 2.1 独立算出 conduct alpha=0.188。
+
+  - label_name: sdq_peer__cn2013band3
+    target: sdq_peer
+    method: norm_band
+    params: {norm_id: cn2013_parent_peer}
+    group_names: [normal, borderline, abnormal]
+    source_id: cn_sdq_parent_2013
+    on_degenerate: keep
+    note: >-
+      大陆家长版 SDQ 同伴子量表:正常 0-4 / 边界 5 / 异常 6-10。
+      ⚠️量表长度对不上:常模按 5 题(0-10)定,本数据的 sdq_peer 只有 4 题(0-8)
+      ——原始临床表缺 SDQ19(CODEBOOK 2.1)。少一题使本数据分数系统性偏低,
+      按本档切会把人往 normal 推。常模文自报同伴子量表 alpha=0.22。
+
+  - label_name: sdq_pro__cn2013band3
+    target: sdq_pro
+    method: norm_band
+    params: {norm_id: cn2013_parent_pro}
+    group_names: [normal, borderline, abnormal]
+    source_id: cn_sdq_parent_2013
+    on_degenerate: keep
+    note: >-
+      大陆家长版 SDQ 亲社会子量表(反向):正常 5-10 / 边界 4 / 异常 0-3。
+      ⚠️本列的组码与分数【不同向】:0=normal 是【高】分(亲社会好),
+      2=abnormal 是【低】分。读 target_labels.csv 时勿按"码越大分越高"理解。
+
+  - label_name: sdq_totdiff__cn2013band3
+    target: sdq_totdiff
+    method: norm_band
+    params: {norm_id: cn2013_parent_totdiff}
+    group_names: [normal, borderline, abnormal]
+    source_id: cn_sdq_parent_2013
+    on_degenerate: keep
+    note: >-
+      大陆家长版 SDQ 总困难:正常 0-16 / 边界 17-18 / 异常 19-40(来源 A,22,108 人)。
+      ⚠️两套大陆常模在这一项上【不一致】:来源 B(Du 2008 上海 n=1,965 家长版,
+      PMC2409296)给的是 正常 0-14 / 边界 15-16 / 异常 17-40。本列用的是来源 A,
+      由 source_id=cn_sdq_parent_2013 指明;要换成来源 B,在 norms.csv 加一套
+      新 norm_id + 在 sources.csv 加一行,再复制本条规则改 params.norm_id 即可,
+      同样不必碰引擎。
+      ⚠️量表长度对不上:常模按 20 题(0-40)定,本数据的 sdq_totdiff 只有 19 题
+      (0-38),因同伴子量表缺 SDQ19,总分系统性偏低。
+
+  # --------------------------------------- B. SNAP 症状计数(不是常模,见上方说明)
+  #
+  # 计分口径(这一条最容易搞错,写清楚):
+  #   Huang 2023 的原文规则是"某题评分 >= 2(0-3 尺度)记为有该症状"。
+  #   data/ 里的原始问卷是 1-indexed(存 1-4),按原始数据算就得用 >= 3;
+  #   但引擎读的不是原始问卷,而是 analysis/items.csv —— 那张表由 40_targets.py
+  #   产出时【已经每题减 1】,存的就是 0-3 标准计分(实测 min=0 / max=3)。
+  #   所以这里 item_min 填【2】,不是 3。填 3 会漏掉所有"标准分恰为 2"的症状。
+  - label_name: snap_inatt__dsm_count7
+    target: null
+    method: symptom_count
+    params:
+      items: [snap_a1, snap_a2, snap_a3, snap_a4, snap_a5, snap_a6, snap_a7, snap_a8, snap_a9]
+      item_min: 2
+      n_min: 7
+    group_names: [below_count_threshold, at_or_above_count_threshold]
+    source_id: cn_snap_huang2023
+    on_degenerate: keep
+    note: >-
+      注意力缺陷子量表 a1-a9(CODEBOOK 2.2)。9 题中 >=7 题达症状阈即判异常
+      (原文 "more than 6")。⚠️这是 DSM/MTA 式症状计数临界,不是中国人群常模;
+      规则来自 n=327 DSM-5 确诊 ADHD 的临床组(PMC10326278),不是社区样本。
+      item_min=2 是因为 items.csv 已是 0-3 标准计分(原始问卷 1-4 已减 1)。
+
+  - label_name: snap_hyper__dsm_count7
+    target: null
+    method: symptom_count
+    params:
+      items: [snap_a10, snap_a11, snap_a12, snap_a13, snap_a14, snap_a15, snap_a16, snap_a17, snap_a18]
+      item_min: 2
+      n_min: 7
+    group_names: [below_count_threshold, at_or_above_count_threshold]
+    source_id: cn_snap_huang2023
+    on_degenerate: keep
+    note: >-
+      多动/冲动子量表 a10-a18(CODEBOOK 2.2)。9 题中 >=7 题达症状阈即判异常。
+      口径与 snap_inatt__dsm_count7 完全相同,同样是临床组的症状计数临界、非常模。
+
+  - label_name: snap_odd__dsm_count5
+    target: null
+    method: symptom_count
+    params:
+      items: [snap_a19, snap_a20, snap_a21, snap_a22, snap_a23, snap_a24, snap_a25, snap_a26]
+      item_min: 2
+      n_min: 5
+    group_names: [below_count_threshold, at_or_above_count_threshold]
+    source_id: cn_snap_huang2023
+    on_degenerate: keep
+    note: >-
+      对立违抗子量表 a19-a26(CODEBOOK 2.2,8 题)。>=5 题达症状阈即判异常
+      (原文 "more than 4")。同为临床组的症状计数临界,非人群常模。
