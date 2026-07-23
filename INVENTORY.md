@@ -44,6 +44,7 @@
 | `analysis/44_univariate_screen.py` | A 轨：单变量筛查（Spearman/AUC + 置换 + 留一 + BH-FDR）| L3 建模 | `analysis/features.csv`,`analysis/targets.csv`,`analysis/target_labels.csv` | `analysis/A_univariate.csv` | **活跃**〔实证〕 |
 | `analysis/45_multivariate_cv.py` | B 轨：多变量 CV（Ridge/SVM/RF，留一，折内选特征 + 置换）| L3 建模 | `analysis/features.csv`,`analysis/targets.csv`,`analysis/target_labels.csv` | `analysis/B_multivariate.csv` | **活跃**〔实证〕 |
 | `analysis/48_temporal_design_probes.py` | TASK-1 设计探针×2：①未截断 uaMag 自相关衰减尺度（给"平滑窗长该取几秒"一个数据锚点）②合池 vs 各人阈值 下结构特征与运动总量 uaMag_median 的秩相关（量化"合池的总量泄漏代价"）| L0 探针 | `data/{s}_T.csv`,`figures/subject_audit.csv`（未截断读全长；根目录可用 `ADHD_ROOT` 覆盖）| 仅 print（不写盘、不进 features.csv）| 活跃（TASK-1 决策支持；关联 ISSUE-101/102/115）〔实证〕 |
+| `analysis/49_jerk_channel_audit.py` | jerk 通道 21 列逐列体检：四项判据（退化/单尖峰主导/求导噪声/求导频谱指纹），给"哪几列删/换/留"提供依据（TASK-1 决策7）| L0 探针 | `data/{s}_T.csv`,`figures/subject_audit.csv`（截断口径匹配 features.csv；`ADHD_ROOT` 可覆盖）| 仅 print（不写盘）| 活跃（TASK-1 决策支持；关联 ISSUE-104/110）〔实证〕 |
 | `consistency_explained.py`（根目录）| 教学版：逐行讲解 20_codebook_verify 的 SDQ 一致性段 | L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 废弃（教学副本，逻辑与 20 的 C4 段重复）|
 | `.claude/hooks/protect_data.py` | PreToolUse 钩子：拦截对 data/ 的写操作 | 基础设施 | — | — | 活跃（保护 data/ 只读）〔推测〕 |
 
