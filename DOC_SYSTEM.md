@@ -199,7 +199,7 @@ adhd-segmentation/
 │   └── figures/             #     *.png
 ├── docs/                    # ④ 文档：知识层
 │   ├── CODEBOOK.md  PAPER_DATA_USAGE.md
-│   ├── menus/               #     FEATURE/MODEL/TARGET_MENU  31_chinese_norms
+│   ├── menus/               #     FEATURE/MODEL/TARGET_MENU  chinese_norms
 │   ├── decisions/           #     ADR(待建)
 │   ├── literature/  refs/   #     文献 + ref
 ├── working/                 # ⑤ 过程：追踪层(issue·task·backlog·checkpoint)
@@ -218,7 +218,7 @@ adhd-segmentation/
 
 移动**代码/产物**会**静默打断硬编码路径**（脚本里路径写死、且不一致：有的绝对、`20_*` 用 `__file__` 相对）。故整理**分两批**：
 
-- **安全批**（无代码依赖，可随时手动搬）：`literature/`、`ref/`、`CODEBOOK`、`PAPER_DATA_USAGE`、`*_MENU`、`31_chinese_norms` → `docs/`；`consistency_explained.py`、`fingerprints.csv` → `archive/`。
+- **安全批**（无代码依赖，可随时手动搬）：`literature/`、`ref/`、`CODEBOOK`、`PAPER_DATA_USAGE`、`*_MENU`、`chinese_norms` → `docs/`；`consistency_explained.py`、`fingerprints.csv` → `archive/`。
 - **耦合批**（会断路径，须随 **pipeline 重构 + 路径参数化** 一起搬）：主链路代码 → `src/`；所有产物 csv → `outputs/`；`figures/subject_audit.csv` 挪位；`INVENTORY/DOC_SYSTEM/working` 若搬须同步改交叉链接。
 
 详细"能搬/不能搬"清单见 `working/backlog.md` §2「仓库结构整理」与 `working/checkpoint-2026-07-20.md`。
