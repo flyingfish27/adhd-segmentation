@@ -13,11 +13,20 @@ NPERM=5000
 X=pd.read_csv(ROOT/"analysis/features.csv").set_index("subject")
 Ycont=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")
 Ybin =pd.read_csv(ROOT/"analysis/target_labels.csv").set_index("subject")
+Ymeta=pd.read_csv(ROOT/"analysis/target_labels_meta.csv")
 assert list(X.index)==list(Ycont.index)==list(Ybin.index)
 FEATS=list(X.columns); n=len(X)
 
-# 只取“干净二分”标签(qbin + normT55);多分类留给 B 轨
-BIN=[c for c in Ybin.columns if c.endswith("__qbin")]+["snap_total__normT55"]
+# TASK-8 决定5:退化列(声明切 k 组、实际某组 0 人)由标签引擎照常写进 target_labels.csv
+# 并在 meta 里标 degenerate=true;下游必须按该字段主动过滤,否则常数列进模型会重演
+# ISSUE-101(sklearn 报 ConstantInputWarning、相关系数出 NaN)。
+DEGEN=set(Ymeta.loc[Ymeta["degenerate"]==True,"label_name"])
+
+# 只取“干净二分”标签(qbin + 论文1 口径的 T>=55);多分类留给 B 轨
+# snap_total__wang2025T55 旧名 snap_total__normT55,TASK-8 决定2 改名:那个 T 分的
+# mean/sd 取自这 24 个孩子自己、不是人群常模,叫 "norm" 名不副实。
+BIN=[c for c in Ybin.columns if c.endswith("__qbin")]+["snap_total__wang2025T55"]
+BIN=[c for c in BIN if c not in DEGEN]
 
 def spearman(xr,yr):                       # 已是秩;Pearson on ranks
     xr=xr-xr.mean(); yr=yr-yr.mean()

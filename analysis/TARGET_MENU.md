@@ -1,7 +1,10 @@
 # 目标菜单(阶段2产物)
 
 - 连续目标:`analysis/40_targets.py` → `analysis/targets.csv`(24 人 × 10 列,标准尺度)。
+- 题目级标准分:`analysis/40_targets.py` → `analysis/items.csv`(24 人 × 50 列:SNAP 26 题 0–3、SDQ 24 题 0–2,反向题已翻转)。标签引擎按题计数(`symptom_count` 切法)时读它,不碰 `data/` 里的原始问卷。
 - 分组标签:`analysis/43_target_labels.py` → `analysis/target_labels.csv`(24 人 × 31 列)。
+  **TASK-8 起该脚本是规则表驱动的引擎,切点数字一个都不在代码里**:切法/切点/组数/出处全写在 `analysis/labels/rules.yaml`(规则表)、`analysis/labels/norms.csv`(常模数值表)、`analysis/labels/sources.csv`(出处表)。改切法 = 改这三张表,不动代码。
+- 标签元数据:`analysis/target_labels_meta.csv`(每条规则一行:method、params、各组人数、`degenerate`/`constant` 标记、`source_id` 与文献全称)。"这列怎么切的、依据是谁"跟着数据走,不必回去读代码。下游 `44`/`45` 按其中的 `degenerate` 字段剔除退化列。
 - 样本 = 24 人(同 features.csv)。标准计分见 CODEBOOK §1(数据 1-indexed,标准分=数据−1;SDQ 反向题 7/11/14/21/25 标准分=3−数据)。
 
 ---
@@ -45,10 +48,12 @@
 | `__qbin` | 中位数二分 | 2 | 样本内中位数 | 相对排名,永远成立 |
 | `__qter` | 三分位 | 3 | 样本内 33/67 百分位 | 相对排名 |
 | `__qquar` | 四分位 | 4 | 样本内 25/50/75 百分位 | 相对排名 |
-| `__normT55` | 常模锚定二分 | 2 | SNAP总分→T分,T≥55 | **论文1 的 ADHD 定义**(样本内重算,n=24≠论文 n=50) |
-| ~~`__norm8`~~ | SDQ常模异常≥8 | — | 大陆常模 | **退化:0/24 达标 → 未生成** |
+| `__wang2025T55` | 样本内 z/T 分二分 | 2 | SNAP总分→T分,T≥55 | **论文1(Wang, Sensors 2025)的 ADHD 定义**(样本内重算,n=24≠论文 n=50)。TASK-8 决定2 由 `__normT55` 改名:mean/sd 取自这 24 个孩子自己、不是任何人群常模,"norm" 名不副实,实为样本内 z≥0.5 |
+| ~~`__norm8`~~ | SDQ常模异常≥8 | — | 大陆家长版 22,108 人常模(PMC4054577) | **退化:0/24 达标 → 不写进 `target_labels.csv`**(规则的 `on_degenerate: skip`);但规则本身仍在 `rules.yaml` 里、并在 `target_labels_meta.csv` 留一行记着 `degenerate=true, group_sizes={0:24, 1:0}` |
 
 分位数切法用 `pd.qcut(..., duplicates='drop')`:目标唯一值太少时并列会把边界丢掉,实际组数 < 目标组数(下表标出)。
+
+`degenerate` 的判定口径(TASK-8 决定5):**声明要切 k 组、结果 0..k−1 里有组 0 人**。现有 31 列中有 6 列命中(`sdq_emo__qquar`、`sdq_cond__qter`、`sdq_peer__qter`、`sdq_peer__qquar`、`sdq_pro__qter`、`sdq_pro__qquar`),它们照常写进标签表并被标记;这 6 列没有一列是常数列,且本来就都不在 `44`/`45` 用的目标列表里,所以按 `degenerate` 过滤对现有建模结果是零影响。
 
 ## 3. 实际生成的 31 个标签列(各组人数 / 退化标记)
 
@@ -70,7 +75,7 @@
 | `sdq_pro__qbin` | 2 | 15·9 | 干净 |
 | `sdq_pro__qter` | 3→2 | 11·13 | ⚠ 塌成 2 组 |
 | `sdq_pro__qquar` | 4→3 | 6·9·9 | ⚠ 只 3 组 |
-| `snap_total__normT55` | 2 | 17·7 | 论文 ADHD 口径 |
+| `snap_total__wang2025T55` | 2 | 17·7 | 论文1 ADHD 口径(旧名 `snap_total__normT55`,TASK-8 决定2 改名,取值不变) |
 
 ## 4. 阶段3 的用法约定(据本表)
 - **多分类目标**只用能干净切出 k 组的:`snap_inatt/hyper/odd/total`、`sdq_hyper`、`sdq_totdiff`。

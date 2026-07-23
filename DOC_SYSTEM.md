@@ -163,7 +163,7 @@ agent：搭结构（建 working/ 三件套等）
 | `archive/` | 冻结 | **待用**（每轮快照，或靠 git tag）|
 | `CLAUDE.md` | 配置 | **待建/待配**（把本约定写给后续 agent，本轮不配）|
 
-**已进 backlog 的体系类待定项**：ADR 落地方式、INVENTORY 拆解方案、CLAUDE.md 配置、`analysis/PROBLEM_REGISTER.md` 与本体系的关系（该文件至今未读）。
+**已进 backlog 的体系类待定项**：ADR 落地方式、INVENTORY 拆解方案、CLAUDE.md 配置、`archive/PROBLEM_REGISTER.md` 与本体系的关系（该文件至今未读）。
 
 ---
 
