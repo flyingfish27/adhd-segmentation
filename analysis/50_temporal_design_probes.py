@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# 48_temporal_design_probes.py  —  TASK-1「时间结构特征族重写」的两只设计探针
+# 50_temporal_design_probes.py  —  TASK-1「时间结构特征族重写」的两只设计探针
 # =============================================================================
 # 这是什么(给未来任何一个不了解本项目的人):
 #   这个文件【不是】生产管线的一部分,不产生任何特征、不写任何文件、不进 features.csv。
@@ -44,7 +44,7 @@
 # 为什么在【未截断】信号上跑:这两个问题问的是信号本身的时间结构与幅度组织,
 #   与 TASK-102 的"截到 41 分钟"无关,故一律 load_T(..., n_max=None) 读全长。
 #
-# 怎么跑:  <项目根>/.venv/bin/python analysis/48_temporal_design_probes.py
+# 怎么跑:  <项目根>/.venv/bin/python analysis/50_temporal_design_probes.py
 #   依赖 numpy / pandas / scipy(见 requirements 环境)。首跑约 25 秒(读 24 人)。
 #
 # 溯源:2026-07-23 首次运行的原始输出,记录在 TASK-1 的会话决策过程中;本脚本是
@@ -59,7 +59,7 @@ from scipy.stats import spearmanr
 #   正常检出里 analysis/ 与 data/ 同级,这就对了,陌生人 clone 下来直接能跑。
 #   例外:在 git worktree 里跑时,worktree 不检出 data/(只在主检出里),这时用
 #   环境变量 ADHD_ROOT 指到数据实际所在的仓库根即可。例:
-#     ADHD_ROOT=/path/to/main-checkout  python analysis/48_temporal_design_probes.py
+#     ADHD_ROOT=/path/to/main-checkout  python analysis/50_temporal_design_probes.py
 HERE = pathlib.Path(__file__).resolve().parent          # .../analysis
 ROOT = pathlib.Path(os.environ.get("ADHD_ROOT", HERE.parent)).resolve()
 DATA = ROOT / "data"

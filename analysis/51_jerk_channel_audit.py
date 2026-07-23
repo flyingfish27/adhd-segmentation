@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# 49_jerk_channel_audit.py  —  jerk 通道 21 列的逐列体检(TASK-1 决策7)
+# 51_jerk_channel_audit.py  —  jerk 通道 21 列的逐列体检(TASK-1 决策7)
 # =============================================================================
 # 这是什么:一只【探针】(探索性、只读 data/、只打印、供人决策,不进生产链路)。
 #   背景:features.csv 里 jerk 通道有 21 列(jerk = |a| 的时间导数 = diff(uaMag)*fs,
@@ -23,7 +23,7 @@
 # 口径:用 features.csv 的默认口径(N_TRUNC 截断信号),以匹配现表里那 21 列的实际值。
 #   (jerk_median=0 在截断前后都成立,见 TASK-102 记录。)
 # 只读、不写盘。可移植:路径按 __file__ 相对解析;worktree 里跑用 ADHD_ROOT 覆盖。
-#   跑法: <根>/.venv/bin/python analysis/49_jerk_channel_audit.py
+#   跑法: <根>/.venv/bin/python analysis/51_jerk_channel_audit.py
 # 关联:working/task.md TASK-1 的 jerk_median 项;working/issue.md ISSUE-104/110。
 # =============================================================================
 import importlib.util, os, pathlib
