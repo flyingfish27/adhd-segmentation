@@ -30,7 +30,7 @@
 | `snap_inatt` | SNAP-IV | 注意力缺陷 | a1–a9(9题) | 0–3 | 0–27 | 1–19,中位 6.5 |
 | `snap_hyper` | SNAP-IV | 多动/冲动 | a10–a18(9题) | 0–3 | 0–27 | **0–14**,中位 4 |
 | `snap_odd` | SNAP-IV | 对立违抗 | a19–a26(8题) | 0–3 | 0–24 | 1–16,中位 6 |
-| `snap_total` | SNAP-IV | 总分 | a1–a26(26题) | 0–3 | 0–78 | 4–48,中位 15.5 |
+| `snap_adhd_total` | SNAP-IV | ADHD 总分(注意力+多动) | a1–a18(18题) | 0–3 | 0–54 | 1–33,中位 12 |
 | `sdq_hyper` | SDQ | 多动 | 2,10,15,21*,25* | 0–2 | 0–10 | 0–7,中位 3 |
 | `sdq_emo` | SDQ | 情绪症状 | 3,8,13,16,24 | 0–2 | 0–10 | 0–5,中位 1.5 |
 | `sdq_cond` | SDQ | 品行问题 | 5,7*,12,18,22 | 0–2 | 0–10 | 0–4,中位 2 |
@@ -48,21 +48,28 @@
 | `__qbin` | 中位数二分 | 2 | 样本内中位数 | 相对排名,永远成立 |
 | `__qter` | 三分位 | 3 | 样本内 33/67 百分位 | 相对排名 |
 | `__qquar` | 四分位 | 4 | 样本内 25/50/75 百分位 | 相对排名 |
-| `__wang2025T55` | 样本内 z/T 分二分 | 2 | SNAP总分→T分,T≥55 | **论文1(Wang, Sensors 2025)的 ADHD 定义**(样本内重算,n=24≠论文 n=50)。TASK-8 决定2 由 `__normT55` 改名:mean/sd 取自这 24 个孩子自己、不是任何人群常模,"norm" 名不副实,实为样本内 z≥0.5 |
 | ~~`__norm8`~~ | SDQ常模异常≥8 | — | 大陆家长版 22,108 人常模(PMC4054577) | **退化:0/24 达标 → 不写进 `target_labels.csv`**(规则的 `on_degenerate: skip`);但规则本身仍在 `rules.yaml` 里、并在 `target_labels_meta.csv` 留一行记着 `degenerate=true, group_sizes={0:24, 1:0}` |
 
 分位数切法用 `pd.qcut(..., duplicates='drop')`:目标唯一值太少时并列会把边界丢掉,实际组数 < 目标组数(下表标出)。
 
-`degenerate` 的判定口径(TASK-8 决定5):**声明要切 k 组、结果 0..k−1 里有组 0 人**。现有 31 列中有 6 列命中(`sdq_emo__qquar`、`sdq_cond__qter`、`sdq_peer__qter`、`sdq_peer__qquar`、`sdq_pro__qter`、`sdq_pro__qquar`),它们照常写进标签表并被标记;这 6 列没有一列是常数列,且本来就都不在 `44`/`45` 用的目标列表里,所以按 `degenerate` 过滤对现有建模结果是零影响。
+`degenerate` 的判定口径(TASK-8 决定5):**声明要切 k 组、结果 0..k−1 里有组 0 人**。30 个分位列中有 6 列命中(`sdq_emo__qquar`、`sdq_cond__qter`、`sdq_peer__qter`、`sdq_peer__qquar`、`sdq_pro__qter`、`sdq_pro__qquar`),它们照常写进标签表并被标记;这 6 列没有一列是常数列,且本来就都不在 `44`/`45` 用的目标列表里,所以按 `degenerate` 过滤对现有建模结果是零影响。
 
-## 3. 实际生成的 31 个标签列(各组人数 / 退化标记)
+> 2026-07-25 计数订正(执行 TASK-109 时实测):上一段原写"现有 31 列中有 6 列命中"。**"31 列"与"6 列"两个数都已过期**——现产出 39 列、命中 13 条规则。多出的 7 条命中全部来自下面「计数订正」提到的那 9 条新增规则:`sdq_hyper__cn2013band3`、`sdq_cond__cn2013band3`、`sdq_peer__cn2013band3`、`sdq_pro__cn2013band3`、`sdq_totdiff__cn2013band3`、`snap_hyper__dsm_count7`,外加一直存在但不写进标签表的 `sdq_hyper__norm8`。其中 `sdq_peer__cn2013band3`、`sdq_totdiff__cn2013band3`、`snap_hyper__dsm_count7`、`sdq_hyper__norm8` 是**常数列**。逐条实况以 `analysis/target_labels_meta.csv` 的 `degenerate`/`constant` 两列为准。
+
+## 3. 实际生成的标签列(各组人数 / 退化标记)
+
+> 2026-07-25 计数订正:本节标题原写"31 个标签列",实测 `43_target_labels.py` 现产出
+> **39 列**(`analysis/target_labels.csv` 形状 24×39)。差额 9 列是冻结这张表之后新增的规则:
+> `sdq_{hyper,emo,cond,peer,pro,totdiff}__cn2013band3`(6 列,TASK-9 中国常模三分组)与
+> `snap_{inatt,hyper}__dsm_count7`、`snap_odd__dsm_count5`(3 列,Huang 2023 症状计数)。
+> **下表只逐行列出 30 个分位列**,那 9 列未逐行补齐(补不补属另一件事,未在 TASK-109 范围内)。
 
 | 标签列 | 切法 | 各组人数 | 备注 |
 |---|---|---|---|
 | `snap_inatt__qbin/qter/qquar` | 2/3/4 | 12·12 / 8·8·8 / 8·4·6·6 | 干净 |
 | `snap_hyper__qbin/qter/qquar` | 2/3/4 | 13·11 / 11·6·7 / 11·2·7·4 | 干净(多动主目标) |
 | `snap_odd__qbin/qter/qquar` | 2/3/4 | 15·9 / 8·10·6 / 7·8·3·6 | 干净 |
-| `snap_total__qbin/qter/qquar` | 2/3/4 | 12·12 / 8·8·8 / 6·6·7·5 | 干净 |
+| `snap_adhd_total__qbin/qter/qquar` | 2/3/4 | 12·12 / 8·8·8 / 7·5·7·5 | 干净 |
 | `sdq_hyper__qbin/qter/qquar` | 2/3/4 | 14·10 / 8·8·8 / 8·6·6·4 | 干净 |
 | `sdq_totdiff__qbin/qter/qquar` | 2/3/4 | 15·9 / 9·8·7 / 7·8·5·4 | 干净 |
 | `sdq_emo__qbin/qter` | 2/3 | 12·12 / 8·9·7 | 干净;**四分塌成3组** |
@@ -75,10 +82,14 @@
 | `sdq_pro__qbin` | 2 | 15·9 | 干净 |
 | `sdq_pro__qter` | 3→2 | 11·13 | ⚠ 塌成 2 组 |
 | `sdq_pro__qquar` | 4→3 | 6·9·9 | ⚠ 只 3 组 |
-| `snap_total__wang2025T55` | 2 | 17·7 | 论文1 ADHD 口径(旧名 `snap_total__normT55`,TASK-8 决定2 改名,取值不变) |
 
 ## 4. 阶段3 的用法约定(据本表)
-- **多分类目标**只用能干净切出 k 组的:`snap_inatt/hyper/odd/total`、`sdq_hyper`、`sdq_totdiff`。
+- **多分类目标**只用能干净切出 k 组的:`snap_inatt/hyper/odd/adhd_total`、`sdq_hyper`、`sdq_totdiff`(与 `45_multivariate_cv.py` 的 `MULTI` 列表同名单)。
 - **SDQ 情绪/品行/同伴/亲社会**:唯一值太少 → **只做二分 + 回归**,不做三/四分类(标注⚠的列不喂多分类)。
-- **主目标 = `snap_hyper`(多动,0–14)**;其余作共病对照,不预判"专属多动"。
+- **主目标 = 4 个**(ISSUE-116 于 2026-07-25 裁定;此前写的"主目标 = `snap_hyper`"是被本次裁决取代的旧口径):
+  `snap_inatt`(SNAP 注意力,a1–a9)、`snap_hyper`(SNAP 多动冲动,a10–a18)、
+  `sdq_hyper`(SDQ 多动/注意力,题 2/10/15/21*/25*)、`snap_adhd_total`(SNAP a1–a18,0–54)。
+  其余 6 个(`snap_odd`、`sdq_emo`、`sdq_cond`、`sdq_peer`、`sdq_pro`、`sdq_totdiff`)**保留为对照/探索性**,
+  不删——ISSUE-103 要判定"运动信号是 ADHD 专属还是跨子量表共病",必须有非 ADHD 子量表当对照。
+  主家族检验规模:4 主目标 × 351 特征 = 1,404 次(TASK-108 完成后 4 × 571 = 2,284 次)。
 - 负对照目标侧:所有分组都会和"打乱 y 的置换基线"比。

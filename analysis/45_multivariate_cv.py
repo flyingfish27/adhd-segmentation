@@ -50,10 +50,11 @@ CONT=list(Yc.columns)
 # TASK-8 决定5:退化列(声明切 k 组、实际某组 0 人)在 meta 里标 degenerate=true,
 # 下游必须过滤掉,否则常数列进模型会重演 ISSUE-101(ConstantInputWarning / NaN 相关)。
 DEGEN=set(Ylm.loc[Ylm["degenerate"]==True,"label_name"])
-# snap_total__wang2025T55 旧名 snap_total__normT55(TASK-8 决定2 改名,取值不变)。
-BIN=[c for c in Yl.columns if c.endswith("__qbin")]+["snap_total__wang2025T55"]
+# ISSUE-116/TASK-109:原先这里还硬编了一个论文1 口径的 T>=55 标签
+# (snap_total__wang2025T55),已连同其上游列 snap_total 一并删除,故不再拼接。
+BIN=[c for c in Yl.columns if c.endswith("__qbin")]
 BIN=[c for c in BIN if c not in DEGEN]
-MULTI=[f"{b}__{s}" for b in ["snap_inatt","snap_hyper","snap_odd","snap_total","sdq_hyper","sdq_totdiff"]
+MULTI=[f"{b}__{s}" for b in ["snap_inatt","snap_hyper","snap_odd","snap_adhd_total","sdq_hyper","sdq_totdiff"]
        for s in ["qter","qquar"] if Yl[f"{b}__{s}"].nunique()==(3 if s=="qter" else 4)]
 MULTI=[c for c in MULTI if c not in DEGEN]
 

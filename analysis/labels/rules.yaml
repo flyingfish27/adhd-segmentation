@@ -128,24 +128,24 @@ rules:
     source_id: sample_internal
     on_degenerate: keep
 
-  - label_name: snap_total__qbin
-    target: snap_total
+  - label_name: snap_adhd_total__qbin
+    target: snap_adhd_total
     method: quantile
     params: {k: 2, duplicates: drop}
     group_names: [low, high]
     source_id: sample_internal
     on_degenerate: keep
 
-  - label_name: snap_total__qter
-    target: snap_total
+  - label_name: snap_adhd_total__qter
+    target: snap_adhd_total
     method: quantile
     params: {k: 3, duplicates: drop}
     group_names: [low, mid, high]
     source_id: sample_internal
     on_degenerate: keep
 
-  - label_name: snap_total__qquar
-    target: snap_total
+  - label_name: snap_adhd_total__qquar
+    target: snap_adhd_total
     method: quantile
     params: {k: 4, duplicates: drop}
     group_names: [q1, q2, q3, q4]
@@ -299,28 +299,6 @@ rules:
     group_names: [q1, q2, q3, q4]
     source_id: sample_internal
     on_degenerate: keep
-
-  # ---------------------------------------------------------------------------
-  # 参考论文1(Wang, Sensors 2025)的 ADHD 口径,在本项目 24 人内重算
-  #
-  # 改名记录(TASK-8 决定2):本列旧名 snap_total__normT55。旧名里的 "norm"(常模)
-  # 名不副实——下面 t_mean/t_sd 只是把 z 分线性搬到 T 分刻度上,而 z 的 mean/sd
-  # 取自【这 24 个孩子自己】,不是任何人群常模。所以 t_cut: 55 实为"样本内 z >= 0.5"
-  # (约取本样本前 31%)。analysis/chinese_norms.md:54,88 独立写了同一结论。
-  # 新名字点名它是谁的口径:Wang 2025 用 T>=55,故 wang2025T55。
-  # ---------------------------------------------------------------------------
-  - label_name: snap_total__wang2025T55
-    target: snap_total
-    method: zscore_cut
-    params: {ddof: 1, t_mean: 50, t_sd: 10, t_cut: 55}
-    group_names: [below_cut, at_or_above_cut]
-    source_id: wang2025_sensors
-    on_degenerate: keep
-    note: >-
-      切点 55 来自参考论文1(Wang, Sensors 2025, 25(20):6459)的 ADHD 定义。
-      注意两点:(1) 该 T 分是样本内 z 分换刻度,不是人群常模,论文层面无任何中国
-      SNAP-IV 人群阈值(chinese_norms.md:54);(2) 论文在它自己的 50 人内算,
-      本列在本项目建模子集 24 人内重算,故与论文的 13/37 不可直接比。
 
   # ---------------------------------------------------------------------------
   # 大陆家长版 SDQ 常模的多动异常线(标准 0-10 计分,>=8 判异常)
