@@ -65,7 +65,7 @@
 | `figures/*.png`（9 张）| 汇报图 | DOC | notebook10 / 脚本23/24/26/27 | 无脚本读（人看）| 最终产物〔推测〕 |
 | `temporal_features.csv`（根目录）| 8 时间结构特征（win10s/step5s/pct50，30Hz）| L2 产物 | notebook11_activity cell14 | `verify_temporal_provenance.py`(PASS A) + notebook11 自身画图〔实证〕 | TASK-1 后**不再是主链路上游**（42 已删 join、原生算）；仅剩溯源校验+画图用〔实证〕 |
 | `fingerprints.csv`（根目录）| 每人 placement 指纹（时长/fs/mag/rot/still）| L1 产物 | notebook11_activity cell6 | 无脚本读〔实证〕 | 孤儿（生成后无下游读取）〔实证〕 |
-| `analysis/probe_outputs/*.md`（3 个）| 探针 50/51 的原样 stdout 快照（autocorr_timescale / pooling_leakage / jerk_channel_audit），各带溯源头注 | 结果快照 | 人工由 50/51 重跑覆盖 | 无脚本读（人看/追溯）| 活跃（TASK-1 决策留痕；勿手改，重跑脚本更新）〔实证〕 |
+| `analysis/probe_outputs/*.md`（7 个）| 探针 50/51/52/53 的原样 stdout 快照，各带溯源头注（产出脚本·日期·脚本版本 commit·复现命令）。50/51 产：autocorr_timescale（自相关衰减尺度）/ pooling_leakage（合池总量泄漏）/ jerk_channel_audit（jerk 21 列体检）；52 产：scan_window_cost（滑窗扫描算力与列数）/ feature_class_feasibility（待补特征大类可行性）；53 产：fdr_family_growth（特征数增长的 FDR 代价）/ power_n24（n=24 效能与置信区间）| 结果快照 | 人工由 50/51/52/53 重跑覆盖 | 无脚本读（人看/追溯）| 活跃（TASK-1/TASK-108/TASK-10 决策留痕；勿手改，重跑脚本更新）〔实证〕 |
 | `analysis/targets.csv` | 24 人 × 10 候选连续目标 | L3 产物 | 40 | 43/44/45 | 活跃〔实证〕 |
 | `analysis/target_labels.csv` | 分组标签 | L3 产物 | 43 | 44/45 | 活跃〔实证〕 |
 | `analysis/features.csv` | 24 人 × 351 特征（TASK-1 起；旧 275）| L2 产物 | **42**（当前）/41（被覆盖）| 44/45 | 活跃〔实证〕 |
