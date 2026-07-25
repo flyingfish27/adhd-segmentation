@@ -8,7 +8,12 @@
 #   gyX/gyY/gyZ/gyMag   角速度(motionRotationRate，rad/s)
 #   pitch/roll/yaw      姿态角(motionPitch/Roll/Yaw，rad)
 #   jerk                |a| 的时间导数(爆发性)
-# 配方:时域(14)/频域(7)/时间结构×多阈值(在 |a| 上)。
+# 配方:时域(14)/频域(7)/时间结构。
+#   时间结构有两条方法不同的路径,TASK-1 起【都在本脚本内原生算】(不再 join 外部表
+#   temporal_features.csv),并各扫全部百分位档(见 PCTS):
+#     路径A time_structure() 滑窗法,阈值=【各人自己】的百分位(保 amplitude-invariant);
+#     路径B f_tstruct()      逐样本法,阈值=【24人合池】线(每人一票,故 actfrac 不再恒常数)。
+#   两路的合并成"一个可复用统一函数"这件事按用户裁决推迟(见 backlog);此处两函数并存。
 import numpy as np, pandas as pd, pathlib
 from scipy.stats import skew, kurtosis
 ROOT=pathlib.Path("/Users/shiyu/Projects/adhd-segmentation")
@@ -99,8 +104,12 @@ def run_lengths(mask):
     lens=np.array([len(s) for s in segs]); vals=np.array([s[0] for s in segs])
     return lens[vals==1],lens[vals==0]     # 活动段, 静止段(单位: 样本数)
 
-def f_tstruct(mag,fs,thr_pct):
-    thr=np.percentile(mag,thr_pct)
+def f_tstruct(mag,fs,thr_pct,thr=None):
+    # thr=None -> 用本人自己的第 thr_pct 百分位(旧行为、也是路径B原来的口径);
+    # 传入 thr  -> 用这条现成阈值(TASK-1 决策3 最小改动:让路径B改用 24 人【合池】
+    #   阈值,合池线怎么算见主循环。列名仍用 thr_pct 后缀,不受 thr 影响)。
+    if thr is None:
+        thr=np.percentile(mag,thr_pct)
     active=mag>thr
     act_len,stl_len=run_lengths(active)
     dur_min=len(mag)/fs/60.0
@@ -162,6 +171,13 @@ def time_structure(mag,t,fs,*,win_s,step_s,pct,short_s):
         "n_bouts"        : len(durs),
     }
 
+# ---------- TASK-1:时间结构的扫描档位与固定窗参数 ----------
+# 阈值百分位【全范围粗扫】(决策8,2026-07-25 用户拍板):路径A、路径B 都扫这9档。
+#   进 features.csv 是固定表结构,故用固定网格;"粗扫→细化"若将来要做,是换网格重生成表。
+PCTS=(10,20,30,40,50,60,70,80,90)
+# 路径A滑窗参数(决策8只扫百分位,窗/步/短段判定沿用现状;其数值依据待 ISSUE-115)。
+TS_WIN_S, TS_STEP_S, TS_SHORT_S = 10, 5, 10
+
 # ================= 主循环 =================
 # 收进 __main__ 保护:让本文件既能当脚本跑(行为与之前完全一致),
 #   也能被 analysis/verify_temporal_provenance.py import 进去、直接调用上面那些
@@ -171,7 +187,8 @@ if __name__=="__main__":
     SUBJ=sorted(aud[(aud.status=="usable")&(aud["_T"].astype(str).str.lower()=="yes")].subject.tolist())
     assert len(SUBJ)==24
 
-    rows=[]; n_full_all={}
+    rows=[]; n_full_all={}; cache={}
+    # ---- 第一趟:逐人算通道特征 + 路径A(各人自己阈值),并缓存 uaMag 供路径B第二趟用 ----
     for i,s in enumerate(SUBJ,1):
         df,fs,t,n_full=load_T(DATA/f"{s}_T.csv")
         n_full_all[s]=n_full
@@ -190,11 +207,19 @@ if __name__=="__main__":
         for name,x in channels.items():
             for k,v in f_time(x).items():  feat[f"{name}_{k}"]=v
             for k,v in f_freq(x,fs).items():feat[f"{name}_{k}"]=v
-        for pct in (50,75,90):
-            feat.update(f_tstruct(uaMag,fs,pct))
-        rows.append(feat)
+        feat.pop("jerk_median",None)     # TASK-1 决策7:删恒常数列 jerk_median(24人恒0,分布对称于0)
+        # 路径A(决策5=各人自己阈值):滑窗法,原生实现、不再 join 外部表;扫全部百分位。
+        for j,pct in enumerate(PCTS):
+            ts=time_structure(uaMag,t,fs,win_s=TS_WIN_S,step_s=TS_STEP_S,pct=pct,short_s=TS_SHORT_S)
+            for k in ("switch_per_min","act_bout_median","stl_bout_median",
+                      "act_bout_cv","stl_bout_cv","frac_act_short"):
+                feat[f"{k}_p{pct}"]=ts[k]
+            if j==0: feat["within_win_sd"]=ts["within_win_sd"]   # 只依赖窗参数、与pct无关,取一次即可
+        # mag_median 去重(决策=保留 uaMag_median、删 mag_median):此处不写 mag_median,
+        #   uaMag_median 已由上面 uaMag 通道的 f_time 产出。
+        rows.append(feat); cache[s]=(uaMag,fs)    # 路径B第二趟(合池阈值)要用 uaMag
         cut=n_full-len(uaMag)
-        print(f"[{i:2}/24] {s:5} fs={fs:.2f} n={len(uaMag):6d} (原 {n_full:6d}, 截掉 {cut:6d}) 特征数={len(feat)-1}")
+        print(f"[{i:2}/24] {s:5} fs={fs:.2f} n={len(uaMag):6d} (原 {n_full:6d}, 截掉 {cut:6d}) 路径A+通道列已算")
 
     # ---- TASK-102 截断自检:数据集若变动,这里会显性报错而不是静默算错 ----
     if N_TRUNC is not None:
@@ -208,23 +233,26 @@ if __name__=="__main__":
     else:
         print("\n[TASK-102] N_TRUNC=None -> 未截断,使用全长信号")
 
-    new=pd.DataFrame(rows).set_index("subject")
-    # 复用已验证的 8 个时间结构特征(median 阈值那套)
-    # ⚠ TASK-102 口径不一致(2026-07-22 用户已知情裁决,详见 working/task.md 的 TASK-102):
-    #   这 8 列来自 temporal_features.csv,是 notebook 在【全长信号】上算的,未随本脚本截断。
-    #   即本表 = 267 列(截断到 41.32 分钟) + 8 列(全长 58-60 分钟)。
-    #   这 8 列恰属 ISSUE-107 指出的"时长敏感"一类,故截断后差异不可忽略。
-    #   该不一致将由 TASK-1 消除——它会删掉这个 join、把 8 列在本脚本内原生重算。
-    #   在 TASK-1 完成前,features.csv 不用于任何结论性分析。
-    old=pd.read_csv(ROOT/"temporal_features.csv").set_index("subject")
-    keep=["switch_per_min","act_bout_median","stl_bout_median","act_bout_cv","stl_bout_cv",
-          "frac_act_short","within_win_sd","mag_median"]
-    feats=new.join(old[keep]).loc[SUBJ]
+    # ---- 第二趟:路径B(逐样本法),用 24 人【合池】阈值(决策5 c2「每人一票」) ----
+    # 合池线 = 先给每个孩子各自算他自己的第 pct 百分位,得 24 个数,再取这 24 个数的中位数。
+    #   与路径A(各人自己阈值)不同:路径B 的阈值对 24 人是同一条,故 actfrac 不再恒为常数。
+    # TASK-1 消除了对 temporal_features.csv 的 join:路径A的列现在也在本脚本内原生算(截断信号),
+    #   features.csv 不再是"截断267 + 全长8"的混合口径,全表统一口径。
+    pooled={pct: float(np.median([np.percentile(cache[s][0],pct) for s in SUBJ])) for pct in PCTS}
+    feat_by_s={r["subject"]:r for r in rows}
+    for s in SUBJ:
+        uaMag,fs=cache[s]
+        for pct in PCTS:
+            feat_by_s[s].update(f_tstruct(uaMag,fs,pct,thr=pooled[pct]))
+    print("\n[TASK-1] 路径B合池阈值(24人每人一票的中位数,单位G):",
+          {f"p{p}":round(v,4) for p,v in pooled.items()})
+
+    feats=pd.DataFrame(rows).set_index("subject").loc[SUBJ]
+    EXPECT=252+11*len(PCTS)          # 12通道×21 −jerk_median +路径A(6k+1) +路径B(5k) = 252+11k
+    assert feats.shape[1]==EXPECT, f"列数 {feats.shape[1]} != 预期 {EXPECT}(k={len(PCTS)})"
+    assert "mag_median" not in feats.columns, "mag_median 应已去重删除"
+    assert "jerk_median" not in feats.columns, "jerk_median 应已删除"
     feats.to_csv(ROOT/"analysis/features.csv")
-    if N_TRUNC is not None:
-        print(f"\n⚠ 口径不一致(已知,待 TASK-1 消除):{new.shape[1]} 列算自截断信号"
-              f"({N_TRUNC} 点);join 进来的 {len(keep)} 列 {keep} 算自全长信号。"
-              f"\n  在 TASK-1 完成前,features.csv 不用于任何结论性分析。")
 
     # ---- 汇报 ----
     tgt=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")

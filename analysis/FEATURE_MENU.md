@@ -49,24 +49,28 @@
 | `bp_mf` | 中频带占比 3–6Hz | 中速动作份额 |
 | `bp_hf` | 高频带占比 6–Nyq | 快速抖动份额 |
 
-## 4. 时间结构 × 多阈值(在 `uaMag` 上,阈值 p50/p75/p90)
+## 4. 时间结构（TASK-1 起：两条路径都在 `42_features_full.py` 内原生算，不再 join 外部表）
 
-对应 Daniel 树里"活动/静止分段 + 强度按时长归一化"。阈值=幅值的百分位;`>阈值`记为"活动"。
+时间结构都在 `uaMag` 上做，都是"高于某强度阈值 = 活动"再做游程统计。TASK-1 起有**两条方法不同的路径**，各扫**全部百分位档** `p{10,20,30,40,50,60,70,80,90}`（常量 `PCTS`）。**两路阈值口径不同**（决策5）：
 
-| 模板 | 含义(p 为阈值百分位) |
-|---|---|
-| `actfrac_p{50,75,90}` | 活动时间占比(高于该强度阈值的时长份额)= 强度归一化 |
-| `switchmin_p{...}` | 每分钟活动↔静止切换次数 = 动作碎片化程度 |
-| `actbout_med_p{...}` | 活动段中位时长(s) |
-| `actbout_cv_p{...}` | 活动段时长变异系数(段长忽长忽短?) |
-| `actshort_p{...}` | <1s 短爆发活动段占比 |
+- **路径A（`time_structure()`，滑窗法）**：先 10s 窗/5s 步聚合成窗均值，再对窗均值卡阈值。阈值 = **各人自己的**第 p 百分位（保 amplitude-invariant，契合"结构非总量"命题）。
+- **路径B（`f_tstruct()`，逐样本法）**：直接在原始采样点上卡阈值。阈值 = **24 人合池线**（每人一票 c2：各人各算自己的第 p 百分位，取 24 个数的中位数）。合池故 `actfrac` 不再恒为常数（修 ISSUE-101）。
 
-## 5. 复用的已验证时间结构特征(8 个,join 自 `temporal_features.csv`)
+| 路径 | 模板（p ∈ PCTS） | 含义 |
+|---|---|---|
+| A | `switch_per_min_p{..}` | 每分钟活动↔静止切换次数 |
+| A | `act_bout_median_p{..}` / `stl_bout_median_p{..}` | 活动段 / 静止段 中位时长(s) |
+| A | `act_bout_cv_p{..}` / `stl_bout_cv_p{..}` | 活动段 / 静止段 时长变异系数 |
+| A | `frac_act_short_p{..}` | ≤10s 短活动段占比 |
+| A | `within_win_sd` | 窗内变异中位数（只依赖窗参数、与 p 无关，仅 1 列） |
+| B | `actfrac_p{..}` | 活动时间占比 |
+| B | `switchmin_p{..}` | 每分钟切换次数 |
+| B | `actbout_med_p{..}` / `actbout_cv_p{..}` | 活动段中位时长 / 变异系数 |
+| B | `actshort_p{..}` | <1s 短爆发活动段占比 |
 
-来自 `10_activity_verify.ipynb` 的 `temporal_features()`(滑窗 10s/步 5s,窗内 50 百分位二值化,run-length)。已在阶段1前独立验证过,保留:
+**负对照** = `uaMag_median`（uaMag 通道的 median，代表"总运动量"，用来区分发现来自"结构"还是"总量"）。原重复列 `mag_median` 已按 TASK-1 去重删除（与 `uaMag_median` 数值相同）。
 
-`switch_per_min` `act_bout_median` `stl_bout_median` `act_bout_cv` `stl_bout_cv`
-`frac_act_short` `within_win_sd` `mag_median`(**mag_median 作负对照**:代表"总运动量",用来区分发现来自"结构"还是"总量")。
+**TASK-1 变更小结**：① 删掉对 `temporal_features.csv` 的 join，路径A的列改由本脚本原生算（截断信号，全表口径统一）；② `mag_median` 去重（留 `uaMag_median`）；③ 删恒常数列 `jerk_median`（jerk 通道现 20 列）；④ 阈值扫全范围 9 档。**推迟项**（见 backlog）：两路合并成一个可复用统一函数、ISSUE-102 的 RMS/迟滞/最短段清理。
 
 ---
 
