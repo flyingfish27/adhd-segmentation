@@ -61,6 +61,7 @@
 | `figures/*.png`（9 张）| 汇报图 | DOC | notebook10 / 脚本23/24/26/27 | 无脚本读（人看）| 最终产物〔推测〕 |
 | `temporal_features.csv`（根目录）| 8 时间结构特征（win10s/step5s/pct50，30Hz）| L2 产物 | notebook10_activity cell14 | **41/42 读**〔实证〕 | 活跃（主链路上游！）〔实证〕 |
 | `fingerprints.csv`（根目录）| 每人 placement 指纹（时长/fs/mag/rot/still）| L1 产物 | notebook10_activity cell6 | 无脚本读〔实证〕 | 孤儿（生成后无下游读取）〔实证〕 |
+| `analysis/probe_outputs/*.md`（3 个）| 探针 50/51 的原样 stdout 快照（autocorr_timescale / pooling_leakage / jerk_channel_audit），各带溯源头注 | 结果快照 | 人工由 50/51 重跑覆盖 | 无脚本读（人看/追溯）| 活跃（TASK-1 决策留痕；勿手改，重跑脚本更新）〔实证〕 |
 | `analysis/targets.csv` | 24 人 × 10 候选连续目标 | L3 产物 | 40 | 43/44/45 | 活跃〔实证〕 |
 | `analysis/target_labels.csv` | 分组标签 | L3 产物 | 43 | 44/45 | 活跃〔实证〕 |
 | `analysis/features.csv` | 24 人 × 275 特征 | L2 产物 | **42**（当前）/41（被覆盖）| 44/45 | 活跃〔实证〕 |
