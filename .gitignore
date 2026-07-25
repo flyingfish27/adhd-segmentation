@@ -10,10 +10,26 @@ __pycache__/
 # macOS
 .DS_Store
 
-# 数据文件(按你的实际数据目录/后缀调整)
+# 数据文件
+# data/ = 原始下载数据(84 个 csv,约 2.7G),整个目录不入库。
+#
+# 这里【不按 *.csv 后缀挡】(2026-07-22 用户拍板)。原因:后缀规则是首个 commit
+# fef138a 从脚手架模板带进来的默认行(注释原文"按你的实际数据目录/后缀调整"),
+# 那时仓库里还没有 analysis/、唯一的 csv 就是原始数据,已被 data/ 一条完整覆盖;
+# 后来 analysis/ 下长出来的分析产物和 analysis/labels/ 的版本化配置表反而被它
+# 一起挡掉了。改回只按目录挡。
 data/
-*.csv
 *.parquet
 *.numbers
 literature/
+
+# 手工备份副本:不入库,也不在 git status 里露面(2026-07-22 用户拍板)。
+# 写 *.BACKUP*.csv 而不是 *.BACKUP.csv —— 现有两个文件是
+#   temporal_features.BACKUP.csv
+#   analysis/features.BACKUP_pre_task102.csv   <- BACKUP 后面还跟着 _pre_task102
+# 只写 *.BACKUP.csv 挡不住第二个。
+# 注意:analysis/47_truncation_impact.py:11 会读 features.BACKUP_pre_task102.csv。
+# 忽略只是不入库、文件仍在磁盘上,本机跑 47 不受影响;但新 clone 没有这个文件,
+# 47 会因缺输入而失败。
+*.BACKUP*.csv
 .venv/ # .venv 本身别提交，几百 MB

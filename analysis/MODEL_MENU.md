@@ -24,7 +24,7 @@
 | 二分(11 个) | AUC(=Mann-Whitney,秩基,免拟合) | —— | 置换 5000 次 |
 
 - **置换零分布共享**:对固定目标,打乱 y 的 Spearman 零分布只依赖 n(无并列时),AUC 零分布只依赖两组人数 → 每目标算一次,275 特征共用。既快又标准。
-- 二分目标 = 10 个 `__qbin` + `snap_total__normT55`。
+- 二分目标 = 10 个 `__qbin` + `snap_total__wang2025T55`(旧名 `snap_total__normT55`,TASK-8 决定2 改名,取值不变),再按 `analysis/target_labels_meta.csv` 的 `degenerate` 字段剔除退化列。
 - **多重比较**:每个目标族内做 Benjamini–Hochberg FDR → `q_fdr`。判据 q<0.05。
 
 ### A_univariate.csv 字段

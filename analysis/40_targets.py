@@ -45,7 +45,23 @@ T["sdq_totdiff"]=T[["sdq_emo","sdq_cond","sdq_hyper","sdq_peer"]].sum(axis=1,min
 out=T.loc[SUBJ]
 out.index.name="subject"
 out.to_csv(ROOT+"analysis/targets.csv")
+
+# ---- 题目级标准计分表 items.csv(TASK-8 决定4:"桥")----
+# 为什么要这张表:标签引擎 43_target_labels.py 的 symptom_count 切法要按题计数
+# (某题评分够高才算"有该症状"),而 targets.csv 只有 10 个子量表总分、没有逐题分。
+# 让引擎自己去啃 data/ 里的原始问卷,就得把下面这套换算(1-indexed 减 1、SDQ 反向
+# 题翻转)在两个文件里各写一遍,将来必然漂移且不一致时不报错。所以在这里多输出一张
+# 逐题表,换算逻辑只有这一份;引擎只读 targets.csv + items.csv,不碰 data/。
+I=pd.DataFrame(index=df.index)
+for i in range(1,27):        I[f"snap_a{i}"]=df[f"a{i}"]-1        # SNAP 标准 0-3
+for i in range(1,26):                                            # SDQ 标准 0-2(缺 SDQ19)
+    if f"SDQ{i}" in df.columns: I[f"sdq_{i}"]=sdq_std(i)
+items=I.loc[SUBJ]; items.index.name="subject"
+items.to_csv(ROOT+"analysis/items.csv")
+
 print(f"24 人候选目标 -> analysis/targets.csv  ({out.shape[0]}行 × {out.shape[1]}列)")
+print(f"24 人逐题标准分 -> analysis/items.csv  ({items.shape[0]}行 × {items.shape[1]}列;"
+      f"SNAP 26 题 0-3 + SDQ {items.shape[1]-26} 题 0-2,反向题已翻转)")
 print("\n各目标:范围 / 均值 / 缺失数")
 for c in out.columns:
     v=out[c]
