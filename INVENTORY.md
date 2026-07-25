@@ -8,6 +8,8 @@
 > 读入/写出路径均从代码里实际读出，非从文件名推断。
 > **未完整读的文件**：`analysis/00_explore.ipynb`（28 个代码单元，仅扫描其 read_csv/glob 调用，未逐单元读全）；
 > notebook `11_activity_verify.ipynb` / `10_data_verify.ipynb` 已用 json 提取全部代码单元逐一读过。
+>
+> **2026-07-25 · TASK-1 时间结构族重写(commit `5a9fbdf`)后的对账**:① `42_features_full.py` **已删掉对 `temporal_features.csv` 的 join**,时间结构两条路径(A 滑窗/B 逐样本)都在脚本内原生算、各扫 9 档百分位(A 各人阈值、B 合池阈值);② `features.csv` 现为 **351 特征**(旧 275);③ 删恒常数列 `jerk_median`、去重删 `mag_median`(留 `uaMag_median` 作负对照);④ 主链路**不再依赖 notebook**——`temporal_features.csv` 现仅 `verify_temporal_provenance.py`(PASS A)与 notebook 自身画图用。**以本条与下方各表格行为准;本文件个别 TASK-1 前的流程图/散文(如"第二部分/第四部分"里的 275 列、"42 读 temporal_features"、"两条路径应合并"等)未逐处回改,阅时以此对账。** 决策日志/勘误区(文末)属 append-only 历史,原样保留。
 
 ---
 
@@ -19,7 +21,7 @@
 |---|---|---|---|---|---|
 | `analysis/00_explore.ipynb` | 最初摸数据：看单个 CSV 分隔符/列/activity 取值 | L0 探针 | `data/C10_F.csv`,`data/C10_T.csv`,`data/Demographic and mental health data.csv`,`glob data/*_T.csv` | 无 to_csv〔实证〕 | 废弃（一次性探索，无下游读取） |
 | `analysis/10_data_verify.ipynb` | 数据质量审计：时长/采样率/重复文件/损坏表头/缺失 → 生成 24 人名单 | L1 数据层 | `data/*_F.csv`,`data/*_T.csv`,`data/Demographic and mental health data.csv` | `figures/subject_audit.csv`(cell15)；`figures/coverage_overview.png` | **活跃**（subject_audit.csv 是全链路上游）〔实证〕 |
-| `analysis/11_activity_verify.ipynb` | 生成 placement 指纹 + 8 个时间结构特征 + 汇报图 | L1+L2 | `data/*_T.csv`,`subject_audit.csv`,`figures/subject_audit.csv`,`data/temporal_features.csv` | `fingerprints.csv`(cell6)；`temporal_features.csv`(cell14, cwd 根目录)；`data/temporal_features.csv`(cell16)；`figures/fig*.png` | **活跃**（temporal_features.csv 被 41/42 读）〔实证〕 |
+| `analysis/11_activity_verify.ipynb` | 生成 placement 指纹 + 8 个时间结构特征 + 汇报图 | L1+L2 | `data/*_T.csv`,`subject_audit.csv`,`figures/subject_audit.csv`,`data/temporal_features.csv` | `fingerprints.csv`(cell6)；`temporal_features.csv`(cell14, cwd 根目录)；`data/temporal_features.csv`(cell16)；`figures/fig*.png` | **仅画图/探索**（其 `temporal_features()` 已被 TASK-1 迁入 42 原生实现；产物 `temporal_features.csv` 主链路不再读，仅 verify+本 notebook 画图用）〔实证〕 |
 | `analysis/20_codebook_verify.py` | 从原始数据逐条验证 CODEBOOK（档数/BMI/SDQ映射/md5/传感器自证）| L0 探针 | `data/Demographic and mental health data.csv`,`data/H1_F.csv`,`data/H2_T.csv`,`data/{C28,Y54,Z5,Z14}_T.csv` | 仅 print | 活跃（验证脚本，随时复算）〔推测〕 |
 | `analysis/21_rank_correlations.py` | SDQ 24 题两两相关排序（不分组不反向）| L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 废弃（探索性） |
 | `analysis/22_cluster_items.py` | SDQ 24 题层次聚类（不预设分组）| L0 探针 | 同上 | 仅 print | 废弃 |
@@ -39,10 +41,12 @@
 | `analysis/36_td_bands_local_vs_gao.py` | 验证 SDQ 总困难分档，对照 Gao 2013 国家常模（原 `34_td_bands_local_vs_gao.py`，TASK-13 改名） | L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 活跃（验证脚本）〔推测〕 |
 | `analysis/40_targets.py` | 算 24 人所有候选目标 y（SNAP/SDQ 子量表+总，标准尺度）| L3 建模 | `data/Demographic and mental health data.csv`,`figures/subject_audit.csv` | `analysis/targets.csv` | **活跃**（主链路）〔实证〕 |
 | `archive/41_features_min.py` | 最小特征管线（8 时间结构 + 4 时域，只为证链路通）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`temporal_features.csv`,`analysis/targets.csv` | `analysis/features.csv` | **归档**（链路通 smoke test；输出被 42 覆盖，不参与生产；D3 决定）〔实证〕 |
-| `analysis/42_features_full.py` | 全量特征（12 通道 × 时域14/频域7 + 时间结构×3阈值 + 8 复用）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`temporal_features.csv`,`analysis/targets.csv` | `analysis/features.csv` | **活跃**（当前 features.csv=276列由它产出）〔实证〕 |
+| `analysis/42_features_full.py` | 全量特征（12 通道 × 时域14/频域7 + 时间结构:路径A滑窗/路径B逐样本 各扫9档,均脚本内原生算,TASK-1 起删 join）| L2 特征 | `data/{s}_T.csv`,`figures/subject_audit.csv`,`analysis/targets.csv` | `analysis/features.csv` | **活跃**（当前 features.csv=352列[351特征+subject]由它产出）〔实证〕 |
 | `analysis/43_target_labels.py` | 连续 y 切分组标签（分位数二/三/四分 + 常模T≥55）| L3 建模 | `analysis/targets.csv` | `analysis/target_labels.csv` | **活跃**〔实证〕 |
 | `analysis/44_univariate_screen.py` | A 轨：单变量筛查（Spearman/AUC + 置换 + 留一 + BH-FDR）| L3 建模 | `analysis/features.csv`,`analysis/targets.csv`,`analysis/target_labels.csv` | `analysis/A_univariate.csv` | **活跃**〔实证〕 |
 | `analysis/45_multivariate_cv.py` | B 轨：多变量 CV（Ridge/SVM/RF，留一，折内选特征 + 置换）| L3 建模 | `analysis/features.csv`,`analysis/targets.csv`,`analysis/target_labels.csv` | `analysis/B_multivariate.csv` | **活跃**〔实证〕 |
+| `analysis/50_temporal_design_probes.py` | TASK-1 设计探针×2：①未截断 uaMag 自相关衰减尺度（给"平滑窗长该取几秒"一个数据锚点）②合池 vs 各人阈值 下结构特征与运动总量 uaMag_median 的秩相关（量化"合池的总量泄漏代价"）| L0 探针 | `data/{s}_T.csv`,`figures/subject_audit.csv`（未截断读全长；根目录可用 `ADHD_ROOT` 覆盖）| 仅 print（不写盘、不进 features.csv）| 活跃（TASK-1 决策支持；关联 ISSUE-101/102/115）〔实证〕 |
+| `analysis/51_jerk_channel_audit.py` | jerk 通道 21 列逐列体检：四项判据（退化/单尖峰主导/求导噪声/求导频谱指纹），给"哪几列删/换/留"提供依据（TASK-1 决策7）| L0 探针 | `data/{s}_T.csv`,`figures/subject_audit.csv`（截断口径匹配 features.csv；`ADHD_ROOT` 可覆盖）| 仅 print（不写盘）| 活跃（TASK-1 决策支持；关联 ISSUE-104/110）〔实证〕 |
 | `consistency_explained.py`（根目录）| 教学版：逐行讲解 20_codebook_verify 的 SDQ 一致性段 | L0 探针 | `data/Demographic and mental health data.csv` | 仅 print | 废弃（教学副本，逻辑与 20 的 C4 段重复）|
 | `.claude/hooks/protect_data.py` | PreToolUse 钩子：拦截对 data/ 的写操作 | 基础设施 | — | — | 活跃（保护 data/ 只读）〔推测〕 |
 
@@ -57,11 +61,12 @@
 | `figures/subject_audit.csv` | 24 人可用名单（status/usable/_T）| L1 产物 | notebook10_data_verify cell15 | 40/41/42/notebook11_activity | 活跃（全链路上游）〔实证〕 |
 | `figures/subject_audit.pdf` | `subject_audit.csv` 的图片/PDF 版（给导师 pre 用）| DOC/产出 | 人工导出 | 无脚本读 | 产出（与其它图表同放 figures/）〔用户陈述〕 |
 | `figures/*.png`（9 张）| 汇报图 | DOC | notebook10 / 脚本23/24/26/27 | 无脚本读（人看）| 最终产物〔推测〕 |
-| `temporal_features.csv`（根目录）| 8 时间结构特征（win10s/step5s/pct50，30Hz）| L2 产物 | notebook11_activity cell14 | **41/42 读**〔实证〕 | 活跃（主链路上游！）〔实证〕 |
+| `temporal_features.csv`（根目录）| 8 时间结构特征（win10s/step5s/pct50，30Hz）| L2 产物 | notebook11_activity cell14 | `verify_temporal_provenance.py`(PASS A) + notebook11 自身画图〔实证〕 | TASK-1 后**不再是主链路上游**（42 已删 join、原生算）；仅剩溯源校验+画图用〔实证〕 |
 | `fingerprints.csv`（根目录）| 每人 placement 指纹（时长/fs/mag/rot/still）| L1 产物 | notebook11_activity cell6 | 无脚本读〔实证〕 | 孤儿（生成后无下游读取）〔实证〕 |
+| `analysis/probe_outputs/*.md`（3 个）| 探针 50/51 的原样 stdout 快照（autocorr_timescale / pooling_leakage / jerk_channel_audit），各带溯源头注 | 结果快照 | 人工由 50/51 重跑覆盖 | 无脚本读（人看/追溯）| 活跃（TASK-1 决策留痕；勿手改，重跑脚本更新）〔实证〕 |
 | `analysis/targets.csv` | 24 人 × 10 候选连续目标 | L3 产物 | 40 | 43/44/45 | 活跃〔实证〕 |
 | `analysis/target_labels.csv` | 分组标签 | L3 产物 | 43 | 44/45 | 活跃〔实证〕 |
-| `analysis/features.csv` | 24 人 × 275 特征 | L2 产物 | **42**（当前）/41（被覆盖）| 44/45 | 活跃〔实证〕 |
+| `analysis/features.csv` | 24 人 × 351 特征（TASK-1 起；旧 275）| L2 产物 | **42**（当前）/41（被覆盖）| 44/45 | 活跃〔实证〕 |
 | `analysis/A_univariate.csv` | A 轨结果（5775 行）| L3 产物 | 44 | 无脚本读 | 最终产物〔实证〕 |
 | `analysis/B_multivariate.csv` | B 轨结果 | L3 产物 | 45 | 无脚本读 | 最终产物〔实证〕 |
 | `analysis/chinese_norms.md` | 中国 SNAP/SDQ 常模文献搜集（为后续分组决策服务）| DOC/结果 | 人工搜集 | **无脚本读**（仅供人决策参考，未接进任何 label）| 结果〔实证〕 |

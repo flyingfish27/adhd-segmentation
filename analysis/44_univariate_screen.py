@@ -3,7 +3,7 @@
 #   连续目标:Spearman ρ(效应量) + 置换 p + 留一 R²_cv(闭式PRESS,泛化) + 留一 RMSE/MAE。
 #   二分目标:AUC(=Mann-Whitney,秩基,免拟合) + 置换 p。
 #   置换零分布对固定目标与特征无关(只依赖 n / 组大小)→ 每目标算一次,275特征共用。
-# 输出 analysis/A_univariate.csv(长表),并打印各目标 top 命中 + 负对照 mag_median。
+# 输出 analysis/A_univariate.csv(长表),并打印各目标 top 命中 + 负对照 uaMag_median。
 import numpy as np, pandas as pd, pathlib
 from scipy.stats import rankdata
 ROOT=pathlib.Path("/Users/shiyu/Projects/adhd-segmentation")
@@ -129,8 +129,8 @@ sig=R[R.q_fdr<0.05].sort_values("q_fdr")
 print(f"  连续+二分共 {len(sig)} 个 (总组合 {len(R)})")
 if len(sig): print(sig[["target","type","feature","rho","perm_p","q_fdr","loo_r2cv"]].head(20).to_string(index=False))
 
-print("\n========== 负对照 mag_median(总运动量)对各连续目标 ==========")
-nc=cont[cont.feature=="mag_median"].sort_values("abs_rho",ascending=False)
+print("\n========== 负对照 uaMag_median(总运动量)对各连续目标 ==========")
+nc=cont[cont.feature=="uaMag_median"].sort_values("abs_rho",ascending=False)
 print(nc[["target","rho","perm_p","q_fdr","loo_r2cv"]].to_string(index=False,
       formatters={"rho":"{:+.3f}".format,"perm_p":"{:.4f}".format,"q_fdr":"{:.3f}".format,"loo_r2cv":"{:+.3f}".format}))
 

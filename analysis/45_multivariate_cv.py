@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # 阶段3-B轨:多变量模型(logistic/SVM/RF)。留一CV,fold内做一切(防泄漏)。
 #   管线 = StandardScaler + SelectKBest(F值 top-k) + 模型,只在训练折 fit。
-#   留一收集 24 预测后再算指标。基线:哑(均值/多数类)+ 负对照(仅 mag_median)。
+#   留一收集 24 预测后再算指标。基线:哑(均值/多数类)+ 负对照(仅 uaMag_median)。
 #   两阶段:先全量出指标(快,折并行);再只对超过哑基线的组合跑置换(n_perm=500,并行)。
 # 输出 analysis/B_multivariate.csv。
 import numpy as np, pandas as pd, pathlib, warnings, sys, os
@@ -29,7 +29,7 @@ Yc=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")
 Yl=pd.read_csv(ROOT/"analysis/target_labels.csv").set_index("subject")
 Ylm=pd.read_csv(ROOT/"analysis/target_labels_meta.csv")
 Xv=X.to_numpy(float); n=len(X); KS=[5,10]
-mag=X[["mag_median"]].to_numpy(float)
+mag=X[["uaMag_median"]].to_numpy(float)
 
 # 先方差过滤(去折内常数特征)→ 选 top-k(F检验,尺度无关)→ 只标准化被选列 → 模型。防 std=0 除零。
 def reg_pipe(m,k): return Pipeline([("vt",VarianceThreshold(0.0)),("sel",SelectKBest(f_regression,k=k)),
@@ -71,7 +71,7 @@ for t in CONT:
             rho=float(spearmanr(y,pred).correlation) if np.std(pred)>0 else 0.0
             rows.append(dict(track="reg",target=t,model=mn,k=k,rmse=rmse,mae=mae,rho=rho,
                              skill=reg_skill(y,pred),nc_skill=ncsk,perm_p=np.nan))
-    say(f"  {t:12} 负对照(mag_median) skill={ncsk:+.3f}")
+    say(f"  {t:12} 负对照(uaMag_median) skill={ncsk:+.3f}")
 
 # ---------- 分类 ----------
 def run_clf(tlist,track):
