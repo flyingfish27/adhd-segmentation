@@ -308,12 +308,18 @@ graph TD
 
   grep 全项目 + dump `targets.csv`/`target_labels.csv` 实际列 + 读 `43`，核实"每个地方代码真实用了什么"：
   - **连续回归目标**（`targets.csv`，`40` 生成）：10 列，标准计分（-1 / SDQ 反向 3-d），**无任何常模切点**。
-  - **分组标签**（`target_labels.csv`，`43` 生成）：30 列样本内分位（qbin/qter/qquar）+ **仅 1 列**常模锚定 `snap_total__normT55`。
+  - **分组标签**（`target_labels.csv`，`43` 生成）：**39 列** —— 30 列样本内分位（qbin/qter/qquar，覆盖 10 个连续目标各 3 种切法）+ 6 列 `*__cn2013band3`（大陆 22,108 人家长版 SDQ 常模三分档，TASK-9 落地）+ 3 列症状计数（`snap_inatt__dsm_count7`、`snap_hyper__dsm_count7`、`snap_odd__dsm_count5`，Huang 2023 口径）。切点全部由 `analysis/labels/rules.yaml` 声明，`43` 代码里没有任何切点数字。
+    _本行 2026-07-25 按 TASK-109 改写；被改写的原文是 2026-07-19 的现状快照（原文可在本文件 git 历史中取回，另在 `working/backlog.md` §「历史补记」处按历史记录原样保留）。原文写的是"30 列样本内分位 + **仅 1 列**常模锚定"，两处都已不成立：（1）**"常模锚定"这个说法本身是错的**——当时那一列的 mean/sd 取自这 24 个孩子自己、不是任何人群常模，TASK-8 决定2 已就此改名并纠正表述；真正落地的常模锚定是上面 6 列 `cn2013band3`。（2）那一列及其上游列（SNAP 全部 26 题之和，含第 19–26 题的对立违抗 ODD，故是"ADHD+ODD"混合量）已被删除，改用 `snap_adhd_total`（SNAP 第 1–18 题，0–54）——裁决见 `working/issue.md` 的 ISSUE-116，执行见 `working/task.md` 的 TASK-109。_
   - **唯一硬编进 label 的常模切点是 T≥55**（`43:34-35`，论文1 口径，在 24 人内重算）。
   - **中国常模三分组（adhd/高疑似/无 adhd）未在任何代码实现**；`chinese_norms.md` **无脚本读取**，停在文档层。
   - `sdq_hyper__norm8`（≥8 异常线）因本样本 0/24 退化，`43:41-43` 明确**不生成**，仅记一条 log。
   _证据来源：`grep -niE ... analysis/*.py`；`head targets.csv/target_labels.csv`；读 `43_target_labels.py`。_
   **待用户拍板（非本工具决定）**：(a) T≥55 是否从硬编改为可配置/可关；(b) 中国常模三分组是否落地实现。
+
+  _2026-07-25 时效补注（执行 TASK-109 时顺带实测；本块其余各行按历史快照原样保留，只在此说明哪几行已被后续动作取代，不改原文）：_
+  _· 上面第 3 行"唯一硬编进 label 的常模切点是 T≥55（`43:34-35`）"——已不成立两次：TASK-8 把 `43_target_labels.py` 改成读 `analysis/labels/rules.yaml` 的规则表驱动，代码里不再有任何切点数字；该 T≥55 规则本身又由 ISSUE-116 裁定整条删除（执行：TASK-109）。行号 `43:34-35`、`43:41-43` 指的是改造前的旧脚本，与现文件对不上。_
+  _· 上面第 4 行"中国常模三分组未在任何代码实现、`chinese_norms.md` 无脚本读取"——已由 TASK-9 落地，现为 6 列 `*__cn2013band3`（切点存在 `analysis/labels/norms.csv`，出处存在 `analysis/labels/sources.csv` 的 `cn_sdq_parent_2013` 行）。_
+  _· 因此上面"待用户拍板"的 (a)(b) 两问均已有裁决，不再悬空：(a) 走 ISSUE-6 → TASK-8（改为规则表驱动）后由 ISSUE-116 裁定删除；(b) 走 ISSUE-7 → TASK-9 落地。_
 
 - **2026-07-19 · B4 更正：cell16 写 data/ "会失败" 的原因判断错误**
 

@@ -22,10 +22,10 @@ FEATS=list(X.columns); n=len(X)
 # ISSUE-101(sklearn 报 ConstantInputWarning、相关系数出 NaN)。
 DEGEN=set(Ymeta.loc[Ymeta["degenerate"]==True,"label_name"])
 
-# 只取“干净二分”标签(qbin + 论文1 口径的 T>=55);多分类留给 B 轨
-# snap_total__wang2025T55 旧名 snap_total__normT55,TASK-8 决定2 改名:那个 T 分的
-# mean/sd 取自这 24 个孩子自己、不是人群常模,叫 "norm" 名不副实。
-BIN=[c for c in Ybin.columns if c.endswith("__qbin")]+["snap_total__wang2025T55"]
+# 只取“干净二分”标签(qbin);多分类留给 B 轨。
+# ISSUE-116/TASK-109:原先这里还硬编了一个论文1 口径的 T>=55 标签
+# (snap_total__wang2025T55),已连同其上游列 snap_total 一并删除,故不再拼接。
+BIN=[c for c in Ybin.columns if c.endswith("__qbin")]
 BIN=[c for c in BIN if c not in DEGEN]
 
 def spearman(xr,yr):                       # 已是秩;Pearson on ranks

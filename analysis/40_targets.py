@@ -33,7 +33,10 @@ T=pd.DataFrame(index=df.index)
 T["snap_inatt"]=snap_sub(range(1,10))        # 注意力缺陷 9题 0-27
 T["snap_hyper"]=snap_sub(range(10,19))       # 多动 9题 0-27
 T["snap_odd"]  =snap_sub(range(19,27))       # 对立违抗 8题 0-24
-T["snap_total"]=snap_sub(range(1,27))        # 0-78
+# ISSUE-116/TASK-109:纯 ADHD 口径 = 注意力(a1-9)+多动(a10-18),【不含】ODD(a19-26)。
+# ODD 在 DSM 里是与 ADHD 并列的独立疾病,SNAP-IV 收录那 8 题是为筛查共病;
+# 旧列 snap_total=snap_sub(range(1,27)) 是"ADHD+ODD"混合量,已删。
+T["snap_adhd_total"]=snap_sub(range(1,19))   # 18题 0-54
 # ---- SDQ(标准 0-2/项)----
 T["sdq_hyper"]=sdq_sub([2,10,15,21,25])      # 多动 5题 0-10
 T["sdq_emo"]  =sdq_sub([3,8,13,16,24])       # 情绪 0-10

@@ -21,10 +21,10 @@
 | 目标类型 | 效应量 | 泛化评估 | 显著性 |
 |---|---|---|---|
 | 连续(10 个) | Spearman ρ(特征 vs 目标) | 留一 `R²_cv`(闭式 PRESS:留一残差=e_i/(1−h_i))+ 留一 RMSE/MAE | 置换 5000 次 |
-| 二分(11 个) | AUC(=Mann-Whitney,秩基,免拟合) | —— | 置换 5000 次 |
+| 二分(10 个) | AUC(=Mann-Whitney,秩基,免拟合) | —— | 置换 5000 次 |
 
 - **置换零分布共享**:对固定目标,打乱 y 的 Spearman 零分布只依赖 n(无并列时),AUC 零分布只依赖两组人数 → 每目标算一次,275 特征共用。既快又标准。
-- 二分目标 = 10 个 `__qbin` + `snap_total__wang2025T55`(旧名 `snap_total__normT55`,TASK-8 决定2 改名,取值不变),再按 `analysis/target_labels_meta.csv` 的 `degenerate` 字段剔除退化列。
+- 二分目标 = 10 个 `__qbin`,再按 `analysis/target_labels_meta.csv` 的 `degenerate` 字段剔除退化列。此前这里还有第 11 个二分目标 `snap_total__wang2025T55`(论文1 口径 T≥55),已由 ISSUE-116 裁定连同其上游列 `snap_total` 一并删除(执行:TASK-109),故上表"二分"从 11 个改为 10 个。
 - **多重比较**:每个目标族内做 Benjamini–Hochberg FDR → `q_fdr`。判据 q<0.05。
 
 ### A_univariate.csv 字段
