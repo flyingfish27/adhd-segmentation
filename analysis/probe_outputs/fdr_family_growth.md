@@ -5,6 +5,7 @@
 - 产出时脚本版本 commit: `c32b2a5`
 - 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/53_stat_budget_probes.py`
 - 说明: 本文件是该脚本某次运行的**原样 stdout 快照**，勿手改；要更新就重跑脚本覆盖本文件。
+- ⚠️ **口径时效声明（2026-07-25 追加，用户裁定加此头注而非改动快照正文）**: 本快照产出于 **ISSUE-116 裁决之前**，故正文里的目标名 `snap_total` 指的是**旧口径**——SNAP-IV **全部 26 题**之和，其中第 19–26 题测的是对立违抗（ODD），属与 ADHD 并列的另一个独立疾病。ISSUE-116 已裁定删除该列、改用 `snap_adhd_total`（SNAP 第 1–18 题，纯 ADHD 口径），执行见 `working/task.md` 的 **TASK-109**。**本快照正文不做修改**（原样 stdout 不手改），届时由 **TASK-106** 重跑 A 轨后、再重跑本探针覆盖本文件。在那之前，读本文件时须知：`snap_total` 那一行对应的是含 ODD 的混合分，不代表 ADHD。
 
 ```text
 
