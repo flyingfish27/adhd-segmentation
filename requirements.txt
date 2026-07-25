@@ -1,0 +1,23 @@
+# requirements.txt — 本项目的 Python 依赖清单
+#
+# 用法：在项目根目录执行
+#     python3 -m venv .venv                    # 建一个隔离的虚拟环境（本仓库已有 .venv）
+#     .venv/bin/pip install -r requirements.txt
+# 之后所有脚本都用 .venv/bin/python 跑，例如
+#     .venv/bin/python analysis/42_features_full.py
+#
+# 版本已锁死（==），因为本项目的核心诉求是可复现：包升级会改变默认行为
+# （排序、缺失值处理、统计函数默认参数等），换版本可能算出不同的数字。
+# 版本取自 2026-07-25 实测的 .venv 环境；Python 版本 3.9.6。
+#
+# 只列本项目 .py 文件里直接 import 的包；它们各自的间接依赖由 pip 自动解析。
+# 标准库（os / pathlib / json / itertools / re / math / glob / hashlib /
+# datetime / sys / time / warnings / copy / collections）随 Python 自带，无需安装。
+
+numpy==2.0.2          # 数值数组运算，全部计算的地基
+pandas==2.3.3         # 表格（DataFrame）读写：features.csv / targets.csv / target_labels.csv 等
+scipy==1.13.1         # 统计（Spearman 相关、偏度峰度）与信号处理（welch 频谱）
+scikit-learn==1.6.1   # 机器学习：45_multivariate_cv.py 的交叉验证与特征选择（代码里 import 名为 sklearn）
+matplotlib==3.9.4     # 画图
+joblib==1.5.3         # 并行/缓存（scikit-learn 的伴生工具，本项目亦直接 import）
+PyYAML==6.0.3         # 读标签规则表 analysis/labels/rules.yaml（代码里 import 名为 yaml）
