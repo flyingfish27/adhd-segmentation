@@ -1,9 +1,9 @@
 # 探针结果快照:TASK-115 毛刺清理的三个参数 + R10 泄漏口径核对
 
-- 产出脚本: `analysis/55_cleaning_param_probe.py`（5 只探针,全部在本文件内）
+- 产出脚本: `analysis/55a_cleaning_param_probe.py`（5 只探针,全部在本文件内）
 - 产出日期: 2026-07-26
 - 产出时脚本版本 commit: `b3fc8b8`
-- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55_cleaning_param_probe.py`
+- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55a_cleaning_param_probe.py`
 - 说明: 本文件是该脚本某次运行的**原样 stdout 快照**,勿手改;要更新就重跑脚本覆盖本文件。
 - 用途: ① 给 TASK-115（ISSUE-102 采纳的三样 actigraphy 清理手法）的三个参数——RMS 平滑窗长、
   迟滞的进入/退出两阈值、最短段合并长度——提供数据依据,供用户拍板（这三样参数 ISSUE-115

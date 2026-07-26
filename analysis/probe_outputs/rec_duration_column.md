@@ -1,9 +1,9 @@
 # 探针结果快照:TASK-116 新增列 rec_dur_min（录制时长）的体检
 
-- 产出脚本: `analysis/58_rec_duration_column_audit.py`
+- 产出脚本: `analysis/56_rec_duration_column_audit.py`
 - 产出日期: 2026-07-26
 - 产出时脚本版本 commit: `6bc3e92`
-- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/58_rec_duration_column_audit.py`
+- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/56_rec_duration_column_audit.py`
 - 说明: 本文件是该脚本某次运行的**原样 stdout 快照**,勿手改;要更新就重跑脚本覆盖本文件。
 - ⚠️ 本脚本**使用症状分**。它不做分析方案的选择——该列是否纳入已由 ISSUE-114 裁定;
   本脚本只是把一个已经决定要用的列的性质与已知局限量化。

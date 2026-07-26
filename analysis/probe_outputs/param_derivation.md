@@ -1,9 +1,9 @@
 # 探针结果快照:TASK-115 三个清理参数能否从数据本身推导出来
 
-- 产出脚本: `analysis/56_param_derivation_probe.py`（3 只探针,全部在本文件内）
+- 产出脚本: `analysis/55b_param_derivation_probe.py`（3 只探针,全部在本文件内）
 - 产出日期: 2026-07-26
 - 产出时脚本版本 commit: `356b499`
-- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/56_param_derivation_probe.py`
+- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55b_param_derivation_probe.py`
 - 说明: 本文件是该脚本某次运行的**原样 stdout 快照**,勿手改;要更新就重跑脚本覆盖本文件。
 - 判据: **分半信度**——把每个被试的记录切成前后两半各算一遍特征,再看跨 24 人这两套值的秩相关。
   相关高＝该特征量到的是这个孩子稳定的属性;相关低＝量到的是噪声。配合**跨被试离散度**

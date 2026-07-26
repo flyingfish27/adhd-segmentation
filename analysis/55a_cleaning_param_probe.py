@@ -13,7 +13,7 @@
 #   所指"拍脑袋"的同类,而 ISSUE-115 的裁决未覆盖这三样。本探针的用途 = 把三个参数的
 #   候选值各自的客观后果测出来,供用户拍板。本脚本【只读、不写任何产物】。
 #
-# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55_cleaning_param_probe.py
+# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55a_cleaning_param_probe.py
 import os, sys, time, importlib.util, pathlib
 import numpy as np
 from scipy.ndimage import uniform_filter1d

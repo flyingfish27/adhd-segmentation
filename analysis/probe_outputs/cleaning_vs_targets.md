@@ -1,14 +1,14 @@
 # 探针结果快照:毛刺清理前后,路径B 的 45 列与症状分的关系差多少
 
-- 产出脚本: `analysis/57_cleaning_vs_targets.py`
+- 产出脚本: `analysis/55c_cleaning_vs_targets.py`
 - 产出日期: 2026-07-26
 - 产出时脚本版本 commit: `a1b0c30`
-- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/57_cleaning_vs_targets.py`
+- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55c_cleaning_vs_targets.py`
 - 说明: 本文件是该脚本某次运行的**原样 stdout 快照**,勿手改;要更新就重跑脚本覆盖本文件。
 
 ## ⚠️ 必须随本快照一起声明的一条
 
-**本探针使用了症状分。** 与 `cleaning_param_scan.md`（探针55）、`param_derivation.md`（探针56）
+**本探针使用了症状分。** 与 `cleaning_param_scan.md`（探针55a）、`param_derivation.md`（探针55b）
 不同——那两份是刻意做成 target-blind 的，本份不是。用户 2026-07-26 在得知这一点后仍选择
 "先测再定"，并要求把下面这句写进落盘记录：
 

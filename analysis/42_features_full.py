@@ -67,7 +67,7 @@ def load_T(path,n_max=N_TRUNC):
     n_full=len(df)                                              # 截断前的原始点数
     # TASK-116:截断【之前】的真实时钟时长(秒)= 时间戳跨度,直接测量、无估计误差。
     #   放进 df.attrs 而不是加返回值,是为了不破坏现有 7 处 `df,fs,t,n_full = load_T(...)` 的解包
-    #   (verify_temporal_provenance.py 与 50/52/55/56/57/58 号探针)。
+    #   (verify_temporal_provenance.py 与 50/52/55a/55b/55c/56 号探针)。
     _tf=df["accelerometerTimestamp_sinceReboot(s)"].astype(float).to_numpy()
     span_full_s=float(_tf[-1]-_tf[0])
     if n_max is not None:
@@ -399,7 +399,7 @@ if __name__=="__main__":
         #   等于让模型看见这个量,而不是让它藏在别的特征里冒充运动信号。
         # 裁决的另一半:当【控制变量】那半=不当(ISSUE-103 裁决时定,局限已记 backlog §9 的 R11)。
         # ⚠️ 口径选择不是无关紧要的 —— 三种度量"同一个物理量"的方式给出不同的排序,
-        #   实测(analysis/58_rec_duration_column_audit.py,快照 probe_outputs/rec_duration_column.md):
+        #   实测(analysis/56_rec_duration_column_audit.py,快照 probe_outputs/rec_duration_column.md):
         #     ① 采样点数 n_full               × sdq_totdiff  ρ=−0.485 (p=0.016)
         #     ② 时间戳跨度 t[-1]−t[0](本列)   × sdq_totdiff  ρ=−0.295 (p=0.162)
         #     ③ n_full/fs/60                  × sdq_totdiff  ρ=−0.250 (p=0.239)

@@ -23,7 +23,7 @@
 #    本脚本只是把一个【已经决定要用】的列的性质与已知局限量化,供交付局限清单(backlog §9 R11)引用。
 #
 # 只读,不写产物。
-# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/58_rec_duration_column_audit.py
+# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/56_rec_duration_column_audit.py
 import importlib.util, pathlib
 import numpy as np, pandas as pd
 from scipy.stats import spearmanr

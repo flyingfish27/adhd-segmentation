@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # TASK-115 决策探针:毛刺清理【前后】,路径B 那 45 列与症状分的关系差多少。
 #
-# ⚠️ 这只探针与 55/56 号不同:它【使用症状分】。用途是回答用户的问题——"清理不清理,
+# ⚠️ 这只探针与 55a/55b 号不同:它【使用症状分】。用途是回答用户的问题——"清理不清理,
 #    结论会不会不一样"。由此产生一条必须随结果一起声明的事实:
 #    **做不做清理这个决定,是在看过它与症状分的关系之后做的**(用户 2026-07-26 明确要求把
 #    这一点写进落盘记录)。看结果再定分析方案属结果依赖的决策,不声明就是隐瞒;声明了,
@@ -13,7 +13,7 @@
 #   纯噪声下,45 列 × 10 目标 = 450 次检验里期望有 0.05×450 ≈ 22.5 个 |ρ|≥0.404。
 #
 # 本脚本只读,不写任何产物。
-# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/57_cleaning_vs_targets.py
+# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55c_cleaning_vs_targets.py
 import importlib.util, pathlib, time
 import numpy as np, pandas as pd
 from scipy.ndimage import uniform_filter1d
@@ -29,7 +29,7 @@ def banner(title, *lines):
     for l in lines: print(f"#   {l}")
     print("#" * 84)
 
-# ---------- 清理手法(与 55/56 号探针同一套实现) ----------
+# ---------- 清理手法(与 55a/55b 号探针同一套实现) ----------
 def envelope(mag, fs, win_s):
     if win_s <= 0: return mag
     return np.sqrt(uniform_filter1d(mag ** 2, size=max(1, int(round(win_s * fs))), mode="nearest"))

@@ -22,7 +22,7 @@
 #                   都是空操作。本探针把"抹平后短于 W 的段占比"直接测出来验证这一点。
 #
 # 本脚本【只读、不写任何产物】。
-# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/56_param_derivation_probe.py
+# 复现命令: ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55b_param_derivation_probe.py
 import importlib.util, pathlib, time
 import numpy as np, pandas as pd
 from scipy.ndimage import uniform_filter1d
@@ -38,7 +38,7 @@ def banner(title, *lines):
     for l in lines: print(f"#   {l}")
     print("#" * 84)
 
-# ---------- 与 55 号探针同一套清理实现(保持口径一致) ----------
+# ---------- 与 55a 号探针同一套清理实现(保持口径一致) ----------
 def envelope(mag, fs, win_s):
     if win_s <= 0: return mag
     n = max(1, int(round(win_s * fs)))
