@@ -82,7 +82,13 @@ print(f"全体被试数 = {len(SUBJ)}")
 # =============================================================================
 GRID = [(0.5, 0.25), (1, 0.5), (2, 1), (5, 2.5), (10, 5)]   # ISSUE-115 裁定的 5 组
 PCTS = f42.PCTS
-CUR_WIN, CUR_STEP, CUR_SHORT = f42.TS_WIN_S, f42.TS_STEP_S, f42.TS_SHORT_S
+# 2026-07-26(TASK-108 落地后)改:42_features_full.py 里的 TS_WIN_S/TS_STEP_S 两个单值常量
+#   已被 TS_WINS(5 组窗配置的元组)取代,这里改从 TS_WINS 的最后一组取"改动前的现状值 (10,5)"。
+#   ⚠️ 本脚本探针1 的既有快照 analysis/probe_outputs/scan_window_cost.md 是【TASK-108 之前】
+#      的产物,其"现状 = 单组窗配置"的表述描述的是那时的状态;重跑本脚本不会改变结论
+#      (它测的是各窗配置的单次调用耗时),只是"现状"一词此后指扫描本身。
+CUR_WIN, CUR_STEP = f42.TS_WINS[-1]
+CUR_SHORT = f42.TS_SHORT_S
 
 banner("探针1  滑窗扫描的算力与列数成本(供 TASK-108 / ISSUE-115)",
        f"现状:窗长/步长写死为 ({CUR_WIN}, {CUR_STEP}) 秒,短段上限 {CUR_SHORT} 秒"
