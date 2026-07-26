@@ -30,14 +30,20 @@
 
 运行:  .venv/bin/python analysis/43_target_labels.py
 """
-import copy, json, pathlib, sys
+import copy, json, os, pathlib, sys
 import numpy as np, pandas as pd, yaml
 
 # ROOT = 数据根目录(targets.csv / items.csv / 输出都在这儿,均不入版本控制)。
 # LABELS_DIR = 规则/常模/出处三张表,它们是【随脚本走的版本化配置】而不是数据产物,
 # 所以按本脚本自身所在位置找,不按 ROOT 找——这样在任何 checkout 里跑,用的都是
 # 那份 checkout 自己的规则表。(同样用 __file__ 定位的先例:30_paper1_table2_verify.py)
-ROOT = pathlib.Path("/Users/shiyu/Projects/adhd-segmentation")
+# ROOT 定位(2026-07-26 改,原为写死的主检出绝对路径):上面那段注释说"targets.csv 等
+#   均不入版本控制"已过期——targets.csv / items.csv / target_labels.csv /
+#   target_labels_meta.csv 四张表已于 TASK-8 的 commit ebc537e 入库,每个 checkout
+#   都有自己的一份。故 ROOT 改为按本脚本位置推算,输出写回自己的 checkout;
+#   需要读主检出的数据时用环境变量 ADHD_ROOT 覆盖。
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = pathlib.Path(os.environ.get("ADHD_ROOT", HERE.parent)).resolve()
 LABELS_DIR = pathlib.Path(__file__).resolve().parent / "labels"
 
 # ---------------------------------------------------------------- 读输入

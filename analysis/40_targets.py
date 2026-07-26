@@ -3,8 +3,20 @@
 # 标准计分:数据 1-indexed(CODEBOOK §1),标准分 = 数据-1;
 #   SNAP 无反向题;SDQ 反向题(7,11,14,21,25)标准反向分 = 3 - 数据。
 # 只读 data/,输出 analysis/targets.csv。
+import os, pathlib
 import numpy as np, pandas as pd
-ROOT="/Users/shiyu/Projects/adhd-segmentation/"
+# ROOT 定位(2026-07-26 改,原为写死的主检出绝对路径):默认按本脚本自身位置
+#   往上一级推算仓库根,故在任何 checkout/worktree 里跑都写回它自己的目录,
+#   不会把产物泄漏进别的 checkout(该泄漏此前已实际发生过:TASK-102、TASK-9)。
+#   例外:data/(2.7GB,按设计不入版本控制)与 figures/subject_audit.csv(未入库)
+#   只存在于主检出;在 worktree 里跑请用环境变量指过去——
+#     ADHD_ROOT=/Users/shiyu/Projects/adhd-segmentation .venv/bin/python analysis/40_targets.py
+#   同款写法的先例:analysis/50_temporal_design_probes.py:64、52_scan_compute_cost.py:47。
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = str(pathlib.Path(os.environ.get("ADHD_ROOT", HERE.parent)).resolve()) + "/"
+assert os.path.isdir(ROOT + "data"), (
+    f"找不到 {ROOT}data —— 本脚本要读原始数据;若在 worktree 里跑,"
+    f"请设 ADHD_ROOT 指向有 data/ 的主检出。")
 clin=pd.read_csv(ROOT+"data/Demographic and mental health data.csv",encoding="utf-8-sig",dtype=str)
 clin.columns=[c.strip() for c in clin.columns]
 aud=pd.read_csv(ROOT+"figures/subject_audit.csv")

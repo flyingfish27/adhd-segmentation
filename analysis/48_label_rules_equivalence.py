@@ -55,10 +55,14 @@ rules.yaml 又新增了 9 条规则、9 列标签:
   .venv/bin/python analysis/48_label_rules_equivalence.py
 返回码 0 = 等价;1 = 有差异(差异明细会打出来)。
 """
-import pathlib, sys
+import os, pathlib, sys
 import pandas as pd
 
-ROOT = pathlib.Path("/Users/shiyu/Projects/adhd-segmentation")
+# ROOT 定位(2026-07-26 改,原为写死的主检出绝对路径):按本脚本位置推算仓库根,
+#   使本测试在任何 checkout/worktree 里都比对【它自己那份】产物;
+#   环境变量 ADHD_ROOT 可覆盖。
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = pathlib.Path(os.environ.get("ADHD_ROOT", HERE.parent)).resolve()
 
 # TASK-8 决定2 的改名:旧列名 -> 新列名。除此之外不允许有任何列名差异。
 # TASK-110 附注:这张表目前不会命中——它唯一的条目 snap_total__normT55 已随
