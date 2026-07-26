@@ -253,6 +253,15 @@ def b_family_size():
 
 B_M, _nc, _nb, _nm = b_family_size()
 B_RECORDED = 198                          # ISSUE-121 / TASK-113 条目里写死的数(2026-07-18 口径)
+
+# A 轨的目标数同样别硬编:44_univariate_screen.py 跑的是「全部连续目标 + 非退化的 __qbin」。
+#   本文件原先写死 21,那也是旧口径——TASK-109 删掉 snap_total__wang2025T55 后二分由 11 降到 10,
+#   A 轨目标数随之由 21 降到 20。与上面 B 轨 198->192 是同一个根因。
+A_NT = _nc + _nb
+A_NT_RECORDED = 21
+print(f"  [A轨目标数] 现算 = {_nc} 连续 + {_nb} 二分 = {A_NT}"
+      + ("" if A_NT == A_NT_RECORDED else
+         f"  ← 与本文件原先写死的 {A_NT_RECORDED} 不一致(同为 TASK-109 删标签列所致)"))
 print(f"  [B轨家族大小] 现算 = ({_nc} 连续 + {_nb} 二分 + {_nm} 多分类) × {N_MODELS} 模型"
       f" × {N_K} 个 k = {B_M}"
       + ("" if B_M == B_RECORDED else
@@ -263,11 +272,11 @@ CASES = [
     ("A轨 · 每个目标各自一族(ISSUE-121 裁定的 5b 口径,当前特征数)", FLOOR_A, n_feat_now),
     ("A轨 · 同上,TASK-108 完成后(特征 -> 571)",                    FLOOR_A, 571),
     ("A轨 · 4 个主目标合成一族(5a,未采纳)",                        FLOOR_A, 4 * n_feat_now),
-    ("A轨 · 全部 21 个目标族合并",                                  FLOOR_A, 21 * n_feat_now),
+    ("A轨 · 全部 %d 个目标族合并" % A_NT,                           FLOOR_A, A_NT * n_feat_now),
     ("B轨 · 全部组合一族(现算 m=%d,现状 NPERM=%d)" % (B_M, NPERM_B), FLOOR_B, B_M),
     ("B轨 · 同上,但按条目记的 m=%d" % B_RECORDED,                   FLOOR_B, B_RECORDED),
     ("〔改动前对照〕B轨 m=%d,NPERM=500(TASK-113 改动之前)" % B_M,   1/501,   B_M),
-    ("A+B 全合并(方案b,未采纳)",                                    FLOOR_A, 21 * n_feat_now + B_M),
+    ("A+B 全合并(方案b,未采纳)",                                    FLOOR_A, A_NT * n_feat_now + B_M),
     ("〔对照〕A轨 每目标一族,按【旧】A 表的 %d 特征" % n_feat_A,    FLOOR_A, n_feat_A),
 ]
 rows = []
