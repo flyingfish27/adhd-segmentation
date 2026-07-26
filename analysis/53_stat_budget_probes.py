@@ -4,7 +4,7 @@
 # =============================================================================
 # 这是什么(给未来任何一个不了解本项目的人):
 #   这个文件【不是】生产管线的一部分,不产生任何特征、不写任何文件。
-#   它是两只【探针(probe)】——把几个数字摊开供人拍板,跑完只在终端打印。
+#   它是三只【探针(probe)】——把几个数字摊开供人拍板,跑完只在终端打印。
 #   "探针"是本项目里一类脚本的固定叫法(见 analysis/32_、33_、50_、51_、52_),
 #   含义=探索性、只读、只打印、结论供人决策,不参与生产链路。
 #
@@ -34,6 +34,22 @@
 #       它的 95% 置信区间有多宽(Fisher z 变换);④反过来算要达到 80% 效能需要多少人。
 #     用途:它划定的是【上限】——任何特征工程、任何模型、任何筛选方法都突破不了它。
 #
+#   探针 3 —— 置换分辨率给 FDR 设的硬门槛   → 供 ISSUE-121 / TASK-113
+#     背景:本项目的 p 值不是从理论分布查表来的,而是【置换检验】算的——把症状分随机打乱
+#       很多次,看"打乱后的成绩比真实成绩还好"的比例有多少,这个比例就是 p。
+#       打乱的次数(NPERM)决定了 p 能取到的【最小值】:打乱 5000 次,p 最小只能到 1/5000。
+#     问题:BH-FDR 的 q 值算法是 q = p × 家族里的检验总数 ÷ 该检验的排名。若最强的那个
+#       检验已经把 p 打到下限,它的 q 就等于 "p下限 × 检验总数"。家族一大,这个乘积可能
+#       直接超过 0.05——那么【无论数据里有多强的信号,排名第一的检验都不可能通过校正】。
+#       此时唯一的出路是有多个检验【并列】达到下限,把分母上的"排名"抬上去。
+#     本探针回答:在各种家族口径下,需要多少个检验同时达到 p 下限,才可能有一条通过 q<0.05?
+#     为什么重要:这个门槛与"数据里有没有信号"无关,是纯粹由置换次数和家族大小决定的
+#       【结构性上限】。若门槛高到不现实,那个口径就等于事先宣布不会有任何确证结论。
+#     两轨的 p 下限公式【不同】,本探针分别处理:
+#       A 轨 44_univariate_screen.py:64  pval = max(pval, 1.0/NPERM)      -> 下限 1/NPERM
+#       B 轨 45_multivariate_cv.py:101   return (sum(hits)+1)/(NPERM+1)   -> 下限 1/(NPERM+1)
+#     NPERM 的取值直接从两个生产脚本里解析,不在此处硬编,以免与生产代码漂移。
+#
 # 复现:
 #   ADHD_ROOT=<有 analysis/A_univariate.csv 的仓库根> .venv/bin/python analysis/53_stat_budget_probes.py
 #
@@ -41,7 +57,7 @@
 #   未纳入 git 版本控制(见 .gitignore),故本探针在干净检出上跑不了,须先跑一次 A 轨。
 #   本文件头部会打印它读到的那份 A_univariate.csv 的形状与时间戳,以便判断结果的时效。
 # =============================================================================
-import os, sys, pathlib, datetime
+import os, sys, re, pathlib, datetime
 import numpy as np, pandas as pd
 from scipy import stats
 
@@ -173,6 +189,71 @@ for rtrue in (0.3, 0.4, 0.5, 0.6):
     z = np.arctanh(rtrue)
     nn = ((1.96 + 0.84) / z) ** 2 + 3
     print(f"      若真实 rho={rtrue:.1f}  ->  需要 n ≈ {int(np.ceil(nn))}")
+
+# =============================================================================
+# 探针 3  置换分辨率给 FDR 设的硬门槛
+# =============================================================================
+def parse_nperm(path):
+    """从生产脚本里解析 NPERM 的取值,避免与生产代码漂移。"""
+    txt = pathlib.Path(path).read_text()
+    m = re.search(r"^NPERM\s*=\s*(\d+)", txt, re.M) or re.search(r"NPERM\s*=\s*(\d+)", txt)
+    if not m:
+        sys.exit(f"在 {path} 里找不到 NPERM 的赋值")
+    return int(m.group(1))
+
+NPERM_A = parse_nperm(HERE / "44_univariate_screen.py")
+NPERM_B = parse_nperm(HERE / "45_multivariate_cv.py")
+FLOOR_A = 1.0 / NPERM_A              # 44:64  pval = max(pval, 1.0/NPERM)
+FLOOR_B = 1.0 / (NPERM_B + 1)        # 45:101 (sum(hits)+1)/(NPERM+1)
+
+banner("探针3  置换分辨率给 BH-FDR 设的硬门槛(供 ISSUE-121 / TASK-113)",
+       f"A 轨 NPERM={NPERM_A}(解析自 44_univariate_screen.py) -> p 下限 = 1/NPERM = {FLOOR_A:.6f}",
+       f"B 轨 NPERM={NPERM_B}(解析自 45_multivariate_cv.py) -> p 下限 = 1/(NPERM+1) = {FLOOR_B:.6f}",
+       "q(排名第1) = p下限 × 家族检验总数;需 N 个并列达下限才可能有一条 q<0.05")
+
+def need_tied(floor, m):
+    """要让至少一个检验通过 q<0.05,需多少个检验并列达到 p 下限。
+    BH: q(rank=i) = p × m / i。取 p=floor,解 floor×m/i < 0.05 得 i > floor×m/0.05。"""
+    return int(np.ceil(floor * m / 0.05))
+
+# 特征数有两个来源,必须分清:
+#   n_feat_A  = 旧 A 表 A_univariate.csv 里每个目标的检验数——那份表算于 TASK-1 重写之前,
+#               已过期(见探针1 打印的文件时间戳),仅用于说明"当时的门槛"。
+#   n_feat_now= 当前 analysis/features.csv 的实际特征列数——TASK-106 重跑后 A 表将与它一致,
+#               ISSUE-121 条目里引用的数字用的是这一个。
+n_feat_A = n_feat_cur
+F_PATH = ROOT / "analysis/features.csv"
+n_feat_now = (pd.read_csv(F_PATH, nrows=1).shape[1] - 1) if F_PATH.exists() else n_feat_A
+print()
+print(f"  [特征数口径] 旧 A 表每目标检验数 = {n_feat_A}(已过期);"
+      f"当前 features.csv 特征列数 = {n_feat_now}(TASK-106 重跑后 A 表将与此一致)")
+
+CASES = [
+    ("A轨 · 每个目标各自一族(ISSUE-121 裁定的 5b 口径,当前特征数)", FLOOR_A, n_feat_now),
+    ("A轨 · 同上,TASK-108 完成后(特征 -> 571)",                    FLOOR_A, 571),
+    ("A轨 · 4 个主目标合成一族(5a,未采纳)",                        FLOOR_A, 4 * n_feat_now),
+    ("A轨 · 全部 21 个目标族合并",                                  FLOOR_A, 21 * n_feat_now),
+    ("B轨 · 全部 198 组合一族(现状 NPERM=%d)" % NPERM_B,            FLOOR_B, 198),
+    ("B轨 · 同上,NPERM 提到 5000(TASK-113)",                       1/5001,  198),
+    ("A+B 全合并(方案b,未采纳)",                                    FLOOR_A, 21 * n_feat_now + 198),
+    ("〔对照〕A轨 每目标一族,按【旧】A 表的 %d 特征" % n_feat_A,    FLOOR_A, n_feat_A),
+]
+rows = []
+for lab, fl, m in CASES:
+    rows.append({"家族口径": lab, "p下限": round(fl, 6), "检验数m": m,
+                 "q(排名第1)": round(fl * m, 4), "需几个并列达下限": need_tied(fl, m)})
+print()
+print(pd.DataFrame(rows).to_string(index=False))
+print()
+print("  读法:「q(排名第1)」若已 >0.05,则最强的那个检验【单靠自己永远过不了校正】,")
+print("        必须靠多个检验并列达到 p 下限、把排名抬上去才可能有一条存活。")
+print("        该门槛与数据里有没有信号无关,纯由置换次数与家族大小决定。")
+print()
+print(f"  ISSUE-121 据此裁定:确证家族取「4 个主目标各自一族」(每族 m={n_feat_now},"
+      f"需 {need_tied(FLOOR_A, n_feat_now)} 个),")
+print(f"  并把 B 轨 NPERM 由 {NPERM_B} 提到 5000——现状下 B 轨排名第 1 的 q="
+      f"{FLOOR_B*198:.3f}(需 {need_tied(FLOOR_B,198)} 个并列),")
+print(f"  提到 5000 后 q={198/5001:.3f}(需 {need_tied(1/5001,198)} 个),即单个即可通过。")
 
 print("\n" + "=" * 80)
 print("探针结束。本脚本未写任何文件。")
