@@ -12,12 +12,24 @@
 #   时间结构有两条方法不同的路径,TASK-1 起【都在本脚本内原生算】(不再 join 外部表
 #   temporal_features.csv),并各扫全部百分位档(见 PCTS):
 #     路径A time_structure() 滑窗法,阈值=【各人自己】的百分位(保 amplitude-invariant);
+#       TASK-108 起窗长/步长也扫 5 组(见 TS_WINS),故路径A是【窗配置 × 阈值】双层扫描。
 #     路径B f_tstruct()      逐样本法,阈值=【24人合池】线(每人一票,故 actfrac 不再恒常数)。
 #   两路的合并成"一个可复用统一函数"这件事按用户裁决推迟(见 backlog);此处两函数并存。
-import numpy as np, pandas as pd, pathlib
+import os, numpy as np, pandas as pd, pathlib
 from scipy.stats import skew, kurtosis
-ROOT=pathlib.Path("/Users/shiyu/Projects/adhd-segmentation")
-DATA=ROOT/"data"
+# ROOT 定位(2026-07-26 改,原为写死的主检出绝对路径 /Users/shiyu/Projects/adhd-segmentation):
+#   写死的后果是——在任何 git worktree 里跑本脚本,产物 analysis/features.csv 都会被写进
+#   【主检出】,静默覆盖别的桌子正在用的那张表(不报错)。故拆成两个根:
+#     ROOT = 本脚本所在的 checkout(产物写这里,永远是自己的桌子);
+#     SRC  = 原始数据与上游产物所在的 checkout(data/ 与 figures/subject_audit.csv 都
+#            未入 git,不随 worktree 复制,所以在 worktree 里跑必须用 ADHD_ROOT 指向主检出)。
+#   在主检出里跑时两者相同,行为与改动前完全一致。
+HERE=pathlib.Path(__file__).resolve().parent
+ROOT=HERE.parent
+SRC =pathlib.Path(os.environ.get("ADHD_ROOT", ROOT)).resolve()
+DATA=SRC/"data"
+assert DATA.is_dir(), (f"找不到 {DATA} —— 本脚本要读原始数据;若在 worktree 里跑,"
+                       f"请设 ADHD_ROOT 指向有 data/ 的主检出。")
 RAW_ACC =[f"accelerometerAcceleration{a}(G)" for a in "XYZ"]
 USER_ACC=[f"motionUserAcceleration{a}(G)"   for a in "XYZ"]
 GYRO    =[f"motionRotationRate{a}(rad/s)"    for a in "XYZ"]
@@ -175,15 +187,33 @@ def time_structure(mag,t,fs,*,win_s,step_s,pct,short_s):
 # 阈值百分位【全范围粗扫】(决策8,2026-07-25 用户拍板):路径A、路径B 都扫这9档。
 #   进 features.csv 是固定表结构,故用固定网格;"粗扫→细化"若将来要做,是换网格重生成表。
 PCTS=(10,20,30,40,50,60,70,80,90)
-# 路径A滑窗参数(决策8只扫百分位,窗/步/短段判定沿用现状;其数值依据待 ISSUE-115)。
-TS_WIN_S, TS_STEP_S, TS_SHORT_S = 10, 5, 10
+# 路径A滑窗参数。TASK-108(来源 ISSUE-115,2026-07-26)把窗长/步长由单值 (10,5) 扩成
+#   【5 组敏感性扫描】,短段判定 short_s 固定 10 秒不扫。
+#   扫这 5 组的依据(ISSUE-115 裁决,两端有据、中间过渡):
+#     · 0.5 秒 = 贴着信号自身"记忆长度"的下沿——24 人 uaMag 自相关衰减到 1/e 的时间
+#       实测中位 1.363 秒、25/75 分位 0.530/2.171 秒、全体 0.236-7.876 秒
+#       (快照 analysis/probe_outputs/autocorr_timescale.md,脚本 50_temporal_design_probes.py 探针1);
+#     · 10 秒 = 改动前沿用的现状值(源自早期 notebook,无数据依据);
+#     · 1 / 2 / 5 秒 = 两端之间的过渡档。步长一律取窗长的一半。
+#   目的(用户 2026-07-25 原话):把结论从"在某一组参数下没发现信号"升级为
+#     "在 0.5-10 秒的整个平滑尺度上都没有信号"。
+#   统计合法性:本网格已【先于任何扫描结果】写进 working/issue.md 的 ISSUE-115 条目,
+#     故属预先指定的稳健性检验,不是看过结果再补搜索。
+#   连带限制(须随结果一起报告):段时长按构造 = 步长的整数倍(见下面 durs 那行),而
+#     short_s 固定 10 秒,故 frac_act_short 这一列在 step=5 秒下只能取极少数离散值、
+#     在 step=0.25 秒下可取约 40 档——同一列在 5 组设定间分辨率相差约 20 倍,横向比较须知情。
+TS_WINS=((0.5,0.25),(1,0.5),(2,1),(5,2.5),(10,5))    # (win_s, step_s),单位秒
+TS_SHORT_S=10
+def wtag(win_s):
+    """窗配置的列名后缀:0.5 -> 'w0.5',10 -> 'w10'。不编步长——步长恒为窗长一半。"""
+    return f"w{win_s:g}"
 
 # ================= 主循环 =================
 # 收进 __main__ 保护:让本文件既能当脚本跑(行为与之前完全一致),
 #   也能被 analysis/verify_temporal_provenance.py import 进去、直接调用上面那些
 #   函数做等价回归测试——测的是【生产代码本身】,不是它的一份副本。
 if __name__=="__main__":
-    aud=pd.read_csv(ROOT/"figures/subject_audit.csv")
+    aud=pd.read_csv(SRC/"figures/subject_audit.csv")   # 未入 git,只在主检出有,故走 SRC
     SUBJ=sorted(aud[(aud.status=="usable")&(aud["_T"].astype(str).str.lower()=="yes")].subject.tolist())
     assert len(SUBJ)==24
 
@@ -208,13 +238,18 @@ if __name__=="__main__":
             for k,v in f_time(x).items():  feat[f"{name}_{k}"]=v
             for k,v in f_freq(x,fs).items():feat[f"{name}_{k}"]=v
         feat.pop("jerk_median",None)     # TASK-1 决策7:删恒常数列 jerk_median(24人恒0,分布对称于0)
-        # 路径A(决策5=各人自己阈值):滑窗法,原生实现、不再 join 外部表;扫全部百分位。
-        for j,pct in enumerate(PCTS):
-            ts=time_structure(uaMag,t,fs,win_s=TS_WIN_S,step_s=TS_STEP_S,pct=pct,short_s=TS_SHORT_S)
-            for k in ("switch_per_min","act_bout_median","stl_bout_median",
-                      "act_bout_cv","stl_bout_cv","frac_act_short"):
-                feat[f"{k}_p{pct}"]=ts[k]
-            if j==0: feat["within_win_sd"]=ts["within_win_sd"]   # 只依赖窗参数、与pct无关,取一次即可
+        # 路径A(决策5=各人自己阈值):滑窗法,原生实现、不再 join 外部表;
+        #   TASK-108 起是【双层扫描】= 5 组窗配置 × 9 档阈值百分位。
+        #   列名必须同时编码两维(如 switch_per_min_w0.5_p50),否则 5 组窗配置的同名列会互相覆盖。
+        for win_s,step_s in TS_WINS:
+            wt=wtag(win_s)
+            for j,pct in enumerate(PCTS):
+                ts=time_structure(uaMag,t,fs,win_s=win_s,step_s=step_s,pct=pct,short_s=TS_SHORT_S)
+                for k in ("switch_per_min","act_bout_median","stl_bout_median",
+                          "act_bout_cv","stl_bout_cv","frac_act_short"):
+                    feat[f"{k}_{wt}_p{pct}"]=ts[k]
+                # within_win_sd 只依赖窗参数、与 pct 无关,故每组窗配置取一次(共 5 列)
+                if j==0: feat[f"within_win_sd_{wt}"]=ts["within_win_sd"]
         # mag_median 去重(决策=保留 uaMag_median、删 mag_median):此处不写 mag_median,
         #   uaMag_median 已由上面 uaMag 通道的 f_time 产出。
         rows.append(feat); cache[s]=(uaMag,fs)    # 路径B第二趟(合池阈值)要用 uaMag
@@ -248,8 +283,13 @@ if __name__=="__main__":
           {f"p{p}":round(v,4) for p,v in pooled.items()})
 
     feats=pd.DataFrame(rows).set_index("subject").loc[SUBJ]
-    EXPECT=252+11*len(PCTS)          # 12通道×21 −jerk_median +路径A(6k+1) +路径B(5k) = 252+11k
-    assert feats.shape[1]==EXPECT, f"列数 {feats.shape[1]} != 预期 {EXPECT}(k={len(PCTS)})"
+    # 列数断言(TASK-108 起随窗配置组数 W 变化):
+    #   ① 通道特征 12通道×(时域14+频域7) − jerk_median = 251
+    #   ② 路径A  (6 个随阈值变的指标 × k 档 + within_win_sd 1 列) × W 组窗配置
+    #   ③ 路径B  5 族 × k 档(逐样本法,不受窗参数影响)
+    K,W=len(PCTS),len(TS_WINS)
+    EXPECT=251 + (6*K+1)*W + 5*K
+    assert feats.shape[1]==EXPECT, f"列数 {feats.shape[1]} != 预期 {EXPECT}(k={K}, W={W})"
     assert "mag_median" not in feats.columns, "mag_median 应已去重删除"
     assert "jerk_median" not in feats.columns, "jerk_median 应已删除"
     feats.to_csv(ROOT/"analysis/features.csv")
