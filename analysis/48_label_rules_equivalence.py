@@ -135,21 +135,36 @@ if list(old.index) != list(new.index):
     fail.append(f"行不一致:旧 {list(old.index)} vs 新 {list(new.index)}")
 print(f"\n[1] 24 名受试者顺序一致:{'通过' if not fail else '不通过'}")
 
-# ---- 2. 列名对齐(允许 RENAMED 里的改名)----
+# ---- 2. 列名对齐:判据 =「旧 ⊆ 新」,不是「完全相等」----
+# 为什么不是完全相等(2026-07-26 改,用户裁决):本项检查的职责是"旧引擎的每一列都还在、
+#   且相对顺序没乱",而不是"新引擎不许多做事"。规则表驱动的引擎【被设计成可以加规则】——
+#   TASK-9 就合法地加了 9 条(6 个中国常模三分组 + 3 个 Huang 2023 症状计数)。旧判据要求
+#   完全相等,于是每次合法新增都误报"不等价",本脚本因此长期返回 1、退化成一盏永久红灯
+#   (警报疲劳 alarm fatigue:永远是红的测试比没有测试更糟,真出回归时没人会看)。
+#   新增列的回归保护由下面第 [6] 项(golden 基线)负责,不在本项。
 old_mapped = [RENAMED.get(c, c) for c in old.columns]
-if old_mapped != list(new.columns):
-    only_old = [c for c in old_mapped if c not in new.columns]
-    only_new = [c for c in new.columns if c not in old_mapped]
-    fail.append(f"列名不一致:旧有新无 {only_old};新有旧无 {only_new};"
-                f"或顺序不同 旧{old_mapped} 新{list(new.columns)}")
-    print(f"[2] 列名与顺序一致(改名后):不通过")
+missing  = [c for c in old_mapped if c not in list(new.columns)]
+extra    = [c for c in list(new.columns) if c not in old_mapped]
+kept_order = [c for c in list(new.columns) if c in old_mapped]
+order_ok   = (kept_order == old_mapped)
+if missing or not order_ok:
+    if missing:
+        fail.append(f"旧引擎的列在新引擎里缺失:{missing}")
+    if not order_ok:
+        fail.append(f"旧引擎那些列的相对顺序变了:期望 {old_mapped},实得 {kept_order}")
+    print(f"[2] 旧列全在且相对顺序不变(改名后):不通过")
 else:
-    print(f"[2] 列名与顺序一致(改名后):通过 —— {len(new.columns)} 列全部对上")
+    print(f"[2] 旧列全在且相对顺序不变(改名后):通过 —— 旧 {len(old_mapped)} 列全部对上")
     applied = [(o, n) for o, n in RENAMED.items() if o in old.columns]
     for o, n in applied:
         print(f"      改名 {o}  ->  {n}   (TASK-8 决定2)")
     if not applied:
         print("      本次无改名生效(RENAMED 表里的列已全部退出比对,见 [5])")
+    if extra:
+        print(f"      新引擎另有 {len(extra)} 个新增列(合法,不计入本项失败;"
+              f"其回归保护见 [6]):")
+        for c in extra:
+            print(f"        + {c}")
 
 # ---- 3. 逐格比取值 ----
 print(f"\n[3] 逐列逐格比对(24 行 × {len(old.columns)} 列 = {24 * len(old.columns)} 格):")
@@ -203,6 +218,58 @@ for name, why in RETIRED:
     print(f"    {'OK ' if ok else '差异'} {name:26} 退出原因:{why}")
     print(f"         新引擎侧同名/改名后列({name} / {mapped})在 target_labels.csv 或 "
           f"target_labels_meta.csv 中出现:{hits if hits else '否(应为否)'}")
+
+# ---- 6. golden 基线回归:新引擎【全部】输出 vs 上次祝福的基线 ----
+# 职责分工(2026-07-26 建立,用户裁决 c1):
+#   [1]-[5] 管【历史等价】——冻结的旧算法 legacy_labels() vs 新引擎,证明规则表驱动没有
+#           改变旧那 30 列的任何一格。它的参照是【算法】不是数据,故不随输入变化而腐烂。
+#   [6]  管【持续回归】——把当前全部输出(含 TASK-9 之后新增的列)与一份显式冻结的
+#        基线文件逐格比,抓"没人打算改、却被改掉了"的情况。这是 [1]-[5] 覆盖不到的部分。
+# 基线文件:analysis/labels/baseline_target_labels.csv(入版本控制)。
+#
+# ★★ 重新祝福(re-bless)流程 —— 本项失败时怎么办 ★★
+#   本项报红【不等于出错】,它的含义是"输出变了,请你审阅"。
+#   ① 先看下面打印的差异明细,判断这次改变是【有意的】还是【意外的】;
+#   ② 有意的(例如你新加了一条规则、或改了某个切点)→ 重新祝福基线:
+#          cp analysis/target_labels.csv analysis/labels/baseline_target_labels.csv
+#      并把基线文件与引起改变的那次改动【放进同一个 commit】,message 里写明基线为什么变;
+#   ③ 意外的 → 这就是本项抓到的回归,去修代码,不要动基线。
+#   绝对不要"因为它红了就更新基线"——那等于把安全网拆掉。
+BASELINE = ROOT / "analysis/labels/baseline_target_labels.csv"
+print(f"\n[6] golden 基线回归(全部 {len(new.columns)} 列 vs 上次祝福的基线):")
+if not BASELINE.exists():
+    print(f"    基线文件不存在:{BASELINE}")
+    print(f"    首次建立请执行:cp {ROOT/'analysis/target_labels.csv'} {BASELINE}")
+    fail.append(f"golden 基线文件缺失:{BASELINE}")
+else:
+    base = pd.read_csv(BASELINE).set_index("subject").sort_index()
+    cur  = new.sort_index()
+    b_miss = [c for c in base.columns if c not in cur.columns]
+    b_new  = [c for c in cur.columns if c not in base.columns]
+    if list(base.index) != list(cur.index):
+        fail.append(f"[6] 受试者名单与基线不同:基线 {list(base.index)} vs 当前 {list(cur.index)}")
+        print(f"    受试者名单与基线不同 —— 见结论")
+    elif b_miss or b_new:
+        if b_miss: fail.append(f"[6] 基线有、当前无的列:{b_miss}")
+        if b_new:  fail.append(f"[6] 当前有、基线无的列:{b_new}")
+        print(f"    列集合与基线不同:基线有当前无 {b_miss};当前有基线无 {b_new}")
+        print(f"    → 若本次新增/删除列是【有意的】,按上方「重新祝福」流程更新基线。")
+    else:
+        shared = list(base.columns)
+        ndiff, cols_diff = 0, []
+        for c in shared:
+            d = int((base[c].astype(str) != cur[c].astype(str)).sum())
+            if d:
+                ndiff += d
+                cols_diff.append((c, d))
+        if ndiff:
+            fail.append(f"[6] 与基线有 {ndiff} 格取值不同,涉及 {len(cols_diff)} 列")
+            print(f"    与基线不同:{ndiff} 格,涉及 {len(cols_diff)} 列")
+            for c, d in cols_diff:
+                print(f"      {c:34} {d:>4} 格")
+            print(f"    → 若本次取值改变是【有意的】,按上方「重新祝福」流程更新基线。")
+        else:
+            print(f"    通过 —— 24 行 × {len(shared)} 列 = {24*len(shared)} 格与基线逐格一致")
 
 # ---- 结论 ----
 print("\n" + "=" * 78)
