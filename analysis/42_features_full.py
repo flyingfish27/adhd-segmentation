@@ -65,9 +65,15 @@ def load_T(path,n_max=N_TRUNC):
     else:
         df.columns=cols
     n_full=len(df)                                              # 截断前的原始点数
+    # TASK-116:截断【之前】的真实时钟时长(秒)= 时间戳跨度,直接测量、无估计误差。
+    #   放进 df.attrs 而不是加返回值,是为了不破坏现有 7 处 `df,fs,t,n_full = load_T(...)` 的解包
+    #   (verify_temporal_provenance.py 与 50/52/55/56/57/58 号探针)。
+    _tf=df["accelerometerTimestamp_sinceReboot(s)"].astype(float).to_numpy()
+    span_full_s=float(_tf[-1]-_tf[0])
     if n_max is not None:
         assert n_full>=n_max, f"{path.name}: 仅 {n_full} 点,短于截断长度 {n_max}"
         df=df.iloc[:n_max]                                      # 取前半段
+    df.attrs["span_full_s"]=span_full_s
     t=df["accelerometerTimestamp_sinceReboot(s)"].astype(float).to_numpy(); t=t-t[0]
     fs=1.0/np.median(np.diff(t))
     raw=np.linalg.norm(df[RAW_ACC].astype(float).to_numpy(),axis=1)   # 重力自检
@@ -238,6 +244,28 @@ if __name__=="__main__":
             for k,v in f_time(x).items():  feat[f"{name}_{k}"]=v
             for k,v in f_freq(x,fs).items():feat[f"{name}_{k}"]=v
         feat.pop("jerk_median",None)     # TASK-1 决策7:删恒常数列 jerk_median(24人恒0,分布对称于0)
+        # ---------- TASK-116(来源 ISSUE-114,2026-07-26 用户裁决=当特征):录制时长 ----------
+        # 记的是【截断之前】那个人的真实录制长度。为什么必须是截断前:TASK-102 已把参与
+        #   计算的窗口统一到 N_TRUNC=73643 点,若记截断后的长度则 24 人全同、无区分度。
+        # 为什么这个量要当特征:实测(探针 analysis/54_duration_confound_probe.py,快照
+        #   probe_outputs/duration_confound.md)录制时长与症状分 sdq_totdiff 的秩相关
+        #   ρ=−0.474(症状越重录得越短),且与 101 个特征的 |ρ|>0.3。显式列出来,
+        #   等于让模型看见这个量,而不是让它藏在别的特征里冒充运动信号。
+        # 裁决的另一半:当【控制变量】那半=不当(ISSUE-103 裁决时定,局限已记 backlog §9 的 R11)。
+        # ⚠️ 口径选择不是无关紧要的 —— 三种度量"同一个物理量"的方式给出不同的排序,
+        #   实测(analysis/58_rec_duration_column_audit.py,快照 probe_outputs/rec_duration_column.md):
+        #     ① 采样点数 n_full               × sdq_totdiff  ρ=−0.485 (p=0.016)
+        #     ② 时间戳跨度 t[-1]−t[0](本列)   × sdq_totdiff  ρ=−0.295 (p=0.162)
+        #     ③ n_full/fs/60                  × sdq_totdiff  ρ=−0.250 (p=0.239)
+        #   三者【彼此】的秩相关仅 0.49–0.67。成因:24 人里 21 人都录满,其真实时长跨度
+        #   仅 1.36 分钟,其中 20 人落在 0.36 秒之内;而各人采样率差异(29.708–29.717 Hz,
+        #   相对差 0.03%)与这 0.36 秒同量级,故除不除以 fs 会把这 20 人的排序整个打乱。
+        #   即这一列在 20 个录满者之间的排名由亚秒级停表时刻差决定,秩相关会把它当真实信息用。
+        #   ISSUE-114 / backlog §9 R11 / ISSUE-103 引用的 ρ=−0.474 出自口径①(探针 54 用
+        #   `wc -l` 数点数),该探针头部写着"点数与时长等价"——对秩统计而言这句不成立。
+        # 本列取口径② = 时间戳跨度,理由:它是"录制时长"这个名字所指的量的【直接测量】,
+        #   无采样率估计误差。此选择须与上述三个数一并报告(口径变了,立论数字随之变)。
+        feat["rec_dur_min"]=df.attrs["span_full_s"]/60.0
         # 路径A(决策5=各人自己阈值):滑窗法,原生实现、不再 join 外部表;
         #   TASK-108 起是【双层扫描】= 5 组窗配置 × 9 档阈值百分位。
         #   列名必须同时编码两维(如 switch_per_min_w0.5_p50),否则 5 组窗配置的同名列会互相覆盖。
@@ -287,8 +315,9 @@ if __name__=="__main__":
     #   ① 通道特征 12通道×(时域14+频域7) − jerk_median = 251
     #   ② 路径A  (6 个随阈值变的指标 × k 档 + within_win_sd 1 列) × W 组窗配置
     #   ③ 路径B  5 族 × k 档(逐样本法,不受窗参数影响)
+    #   ④ TASK-116 的 rec_dur_min(录制时长)1 列
     K,W=len(PCTS),len(TS_WINS)
-    EXPECT=251 + (6*K+1)*W + 5*K
+    EXPECT=251 + (6*K+1)*W + 5*K + 1
     assert feats.shape[1]==EXPECT, f"列数 {feats.shape[1]} != 预期 {EXPECT}(k={K}, W={W})"
     assert "mag_median" not in feats.columns, "mag_median 应已去重删除"
     assert "jerk_median" not in feats.columns, "jerk_median 应已删除"
