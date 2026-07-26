@@ -228,14 +228,55 @@ print()
 print(f"  [特征数口径] 旧 A 表每目标检验数 = {n_feat_A}(已过期);"
       f"当前 features.csv 特征列数 = {n_feat_now}(TASK-106 重跑后 A 表将与此一致)")
 
+# B 轨的家族大小 = 「目标 × 模型 × k」组合数。ISSUE-121 / TASK-113 条目里记的是 198,
+#   但那个数是 2026-07-18 那次跑出来的,【已过期】:TASK-109(commit a13dc7d)删掉了
+#   snap_total 及其标签列 snap_total__wang2025T55,二分目标由 11 个降到 10 个,
+#   family 随之由 198 降到 192(11-10=1 个目标 × 3 模型 × 2 个 k = 6)。
+#   故这里【按 45_multivariate_cv.py 的同一套选取规则从标签表现算】,不硬编,
+#   并把条目里记的 198 一并列出来做对照,以免读者拿旧数去核对。
+N_MODELS, N_K = 3, 2                      # REG/CLF 各 3 个模型;KS=[5,10]
+def b_family_size():
+    """复算 B 轨组合数。规则与 45_multivariate_cv.py 的 CONT / BIN / MULTI 三段一致。"""
+    Yc_ = pd.read_csv(ROOT / "analysis/targets.csv").set_index("subject")
+    Yl_ = pd.read_csv(ROOT / "analysis/target_labels.csv").set_index("subject")
+    Ylm_ = pd.read_csv(ROOT / "analysis/target_labels_meta.csv")
+    degen = set(Ylm_.loc[Ylm_["degenerate"] == True, "label_name"])
+    n_bin = len([c for c in Yl_.columns if c.endswith("__qbin") and c not in degen])
+    n_multi = len([f"{b}__{s}"
+                   for b in ["snap_inatt", "snap_hyper", "snap_odd", "snap_adhd_total",
+                             "sdq_hyper", "sdq_totdiff"]
+                   for s in ["qter", "qquar"]
+                   if f"{b}__{s}" in Yl_.columns
+                   and Yl_[f"{b}__{s}"].nunique() == (3 if s == "qter" else 4)
+                   and f"{b}__{s}" not in degen])
+    return (Yc_.shape[1] + n_bin + n_multi) * N_MODELS * N_K, Yc_.shape[1], n_bin, n_multi
+
+B_M, _nc, _nb, _nm = b_family_size()
+B_RECORDED = 198                          # ISSUE-121 / TASK-113 条目里写死的数(2026-07-18 口径)
+
+# A 轨的目标数同样别硬编:44_univariate_screen.py 跑的是「全部连续目标 + 非退化的 __qbin」。
+#   本文件原先写死 21,那也是旧口径——TASK-109 删掉 snap_total__wang2025T55 后二分由 11 降到 10,
+#   A 轨目标数随之由 21 降到 20。与上面 B 轨 198->192 是同一个根因。
+A_NT = _nc + _nb
+A_NT_RECORDED = 21
+print(f"  [A轨目标数] 现算 = {_nc} 连续 + {_nb} 二分 = {A_NT}"
+      + ("" if A_NT == A_NT_RECORDED else
+         f"  ← 与本文件原先写死的 {A_NT_RECORDED} 不一致(同为 TASK-109 删标签列所致)"))
+print(f"  [B轨家族大小] 现算 = ({_nc} 连续 + {_nb} 二分 + {_nm} 多分类) × {N_MODELS} 模型"
+      f" × {N_K} 个 k = {B_M}"
+      + ("" if B_M == B_RECORDED else
+         f"  ← 与条目里记的 {B_RECORDED} 不一致(TASK-109 删 snap_total__wang2025T55 所致),"
+         f"须回头核对 ISSUE-121 / TASK-113 条目"))
+
 CASES = [
     ("A轨 · 每个目标各自一族(ISSUE-121 裁定的 5b 口径,当前特征数)", FLOOR_A, n_feat_now),
     ("A轨 · 同上,TASK-108 完成后(特征 -> 571)",                    FLOOR_A, 571),
     ("A轨 · 4 个主目标合成一族(5a,未采纳)",                        FLOOR_A, 4 * n_feat_now),
-    ("A轨 · 全部 21 个目标族合并",                                  FLOOR_A, 21 * n_feat_now),
-    ("B轨 · 全部 198 组合一族(现状 NPERM=%d)" % NPERM_B,            FLOOR_B, 198),
-    ("B轨 · 同上,NPERM 提到 5000(TASK-113)",                       1/5001,  198),
-    ("A+B 全合并(方案b,未采纳)",                                    FLOOR_A, 21 * n_feat_now + 198),
+    ("A轨 · 全部 %d 个目标族合并" % A_NT,                           FLOOR_A, A_NT * n_feat_now),
+    ("B轨 · 全部组合一族(现算 m=%d,现状 NPERM=%d)" % (B_M, NPERM_B), FLOOR_B, B_M),
+    ("B轨 · 同上,但按条目记的 m=%d" % B_RECORDED,                   FLOOR_B, B_RECORDED),
+    ("〔改动前对照〕B轨 m=%d,NPERM=500(TASK-113 改动之前)" % B_M,   1/501,   B_M),
+    ("A+B 全合并(方案b,未采纳)",                                    FLOOR_A, A_NT * n_feat_now + B_M),
     ("〔对照〕A轨 每目标一族,按【旧】A 表的 %d 特征" % n_feat_A,    FLOOR_A, n_feat_A),
 ]
 rows = []
@@ -251,9 +292,18 @@ print("        该门槛与数据里有没有信号无关,纯由置换次数与�
 print()
 print(f"  ISSUE-121 据此裁定:确证家族取「4 个主目标各自一族」(每族 m={n_feat_now},"
       f"需 {need_tied(FLOOR_A, n_feat_now)} 个),")
-print(f"  并把 B 轨 NPERM 由 {NPERM_B} 提到 5000——现状下 B 轨排名第 1 的 q="
-      f"{FLOOR_B*198:.3f}(需 {need_tied(FLOOR_B,198)} 个并列),")
-print(f"  提到 5000 后 q={198/5001:.3f}(需 {need_tied(1/5001,198)} 个),即单个即可通过。")
+_before = 1/501
+if NPERM_B >= 5000:
+    print(f"  并把 B 轨 NPERM 由 500 提到 {NPERM_B}(TASK-113,【已改,本次解析到的即是改后值】):")
+    print(f"    改动前 NPERM=500  -> B 轨排名第 1 的 q={_before*B_M:.3f}"
+          f"(需 {need_tied(_before,B_M)} 个并列达 p 下限才可能有 1 条过 q<0.05)")
+    print(f"    改动后 NPERM={NPERM_B} -> q={FLOOR_B*B_M:.3f}"
+          f"(需 {need_tied(FLOOR_B,B_M)} 个),即单个即可通过。")
+else:
+    print(f"  并把 B 轨 NPERM 由 {NPERM_B} 提到 5000(TASK-113,【尚未改】):")
+    print(f"    现状 NPERM={NPERM_B} -> B 轨排名第 1 的 q={FLOOR_B*B_M:.3f}"
+          f"(需 {need_tied(FLOOR_B,B_M)} 个并列)")
+    print(f"    提到 5000 后    -> q={B_M/5001:.3f}(需 {need_tied(1/5001,B_M)} 个),即单个即可通过。")
 
 print("\n" + "=" * 80)
 print("探针结束。本脚本未写任何文件。")
