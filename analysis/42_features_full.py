@@ -8,7 +8,7 @@
 #   gyX/gyY/gyZ/gyMag   角速度(motionRotationRate，rad/s)
 #   pitch/roll/yaw      姿态角(motionPitch/Roll/Yaw，rad)
 #   jerk                |a| 的时间导数(爆发性)
-# 配方:时域(14)/频域(7)/时间结构。
+# 配方:时域(14)/频域(7)/时间结构/非线性等 6 类(TASK-10)/录制时长(TASK-116)。
 #   时间结构有两条方法不同的路径,TASK-1 起【都在本脚本内原生算】(不再 join 外部表
 #   temporal_features.csv),并各扫全部百分位档(见 PCTS):
 #     路径A time_structure() 滑窗法,阈值=【各人自己】的百分位(保 amplitude-invariant);
@@ -114,6 +114,137 @@ def f_freq(x,fs):
     return {"domfreq":float(dom),"centroid":cen,"spread":spr,"entropy":ent,
             "bp_lf":band(0.5,3),"bp_mf":band(3,6),"bp_hf":band(6,nyq)}
 
+# ---------- TASK-10:补算缺失的特征大类(6 类,ISSUE-8 / 2026-07-26 用户裁决) ----------
+# 裁决做的 6 类:① DFA 标度指数 ② Hurst 指数 ③ 排列熵 ④ LZ 复杂度
+#               ⑤ 自相关/周期性(主周期、衰减率) ⑥ 事件/峰(峰数、峰间隔、峰幅分布)
+# 本阶段暂缓的 5 类(理由见 working/task.md 的 TASK-10 条目):RQA(算不动)、样本熵(慢约300倍
+#   且与排列熵信息重叠)、跨通道/小波/姿态动态(与现有 251 个统计量重叠度较高)。
+#
+# ⚠️ 这 6 类【各自带着自己的参数】,和 ISSUE-115/ISSUE-102 争论的是同一类问题:
+#   有出处的:LZ 的"中位数二值化"、排列熵的 τ=1、DFA 的一阶去趋势 —— 均为各方法的标准做法。
+#   无出处的(本文件是它们的唯一登记点,须随结果一起声明):
+#     · DFA / Hurst 的尺度范围下界 16 点、上界 N/10;
+#     · 排列熵的嵌入维 m=3;
+#     · 自相关的最大滞后 60 秒(超过它一律记为未衰减);
+#     · 峰检测的高度门槛"中位数 + 2×MAD"与最小峰间距 0.5 秒。
+#   本轮【不扫描】这些参数。理由:TASK-115 已实测同类参数在 n=24 下无法由数据确定
+#   (快照 probe_outputs/param_derivation.md),扫描只会把无法确定的参数变成更多的列。
+def dfa_alpha(x, scales):
+    """去趋势波动分析的标度指数 α:对累积离差序列分窗一阶去趋势,看波动随窗长的幂律斜率。"""
+    # 一阶去趋势用【居中时间轴的闭式解】而非 lstsq:后者在 n 达数千时设计矩阵条件数很差,
+    #   实测会抛 divide-by-zero / overflow 告警。闭式解无矩阵求逆,数值稳定且更快。
+    y=np.cumsum(x-x.mean()); out=[]; used=[]
+    for n in scales:
+        m=len(y)//n
+        if m<2: continue
+        seg=y[:m*n].reshape(m,n)
+        tc=np.arange(n)-(n-1)/2.0                 # 居中 -> 斜率与截距解耦
+        slope=(seg*tc).sum(1)/(tc*tc).sum()
+        resid=seg-(seg.mean(1,keepdims=True)+slope[:,None]*tc)
+        f=float(np.sqrt((resid**2).mean()))
+        if np.isfinite(f) and f>0: out.append(f); used.append(n)
+    if len(used)<3: return np.nan
+    return float(np.polyfit(np.log(used),np.log(out),1)[0])
+
+def hurst_rs(x, scales):
+    """Hurst 指数(重标极差 R/S 法):看极差与标准差之比随窗长的幂律斜率。"""
+    out=[]
+    for n in scales:
+        m=len(x)//n
+        if m<1: out.append(np.nan); continue
+        seg=x[:m*n].reshape(m,n)
+        Z=np.cumsum(seg-seg.mean(1,keepdims=True),axis=1)
+        R=Z.max(1)-Z.min(1); S=seg.std(1,ddof=1)
+        v=R[S>0]/S[S>0]
+        out.append(float(v.mean()) if v.size else np.nan)
+    RS=np.array(out); ok=np.isfinite(RS)&(RS>0)
+    if ok.sum()<3: return np.nan
+    return float(np.polyfit(np.log(np.asarray(scales)[ok]),np.log(RS[ok]),1)[0])
+
+def perm_entropy(x, m=3, tau=1):
+    """排列熵:把每 m 个相邻点的【大小次序】当成一个符号,统计这些符号的分布有多均匀。
+       归一化到 [0,1](除以 log(m!))。1 = 完全不可预测,0 = 完全规则。"""
+    span=(m-1)*tau+1
+    if len(x)<span+1: return np.nan
+    emb=np.lib.stride_tricks.sliding_window_view(x,span)[:,::tau]
+    order=np.argsort(emb,axis=1,kind="stable")
+    code=np.zeros(len(order),np.int64)
+    for i in range(m): code=code*m+order[:,i]
+    _,cnt=np.unique(code,return_counts=True)
+    p=cnt/cnt.sum()
+    import math
+    return float(-(p*np.log(p)).sum()/np.log(math.factorial(m)))
+
+def lz_complexity(x):
+    """LZ 复杂度(按中位数二值化后计不重复短语数),归一化为 C·log2(n)/n。
+       变体 = LZ78 字典解析(逐点扩张当前短语,遇到字典里没有的就收一个新短语并清空)。
+       为什么不用经典 LZ76(Kaspar-Schuster):它的朴素实现是 O(n²),实测在 n=73643 上
+         单通道超过 10 分钟、12 通道 24 人不可行;LZ78 是 O(n),实测 0.5 秒/通道。
+       ⚠️ 与 analysis/52_scan_compute_cost.py 探针2 里那个 LZ 实现【不是同一变体】。
+         那只探针只用于测【耗时】、其数值未进任何产物,故本处换变体不影响任何既有快照。"""
+    b=(np.asarray(x)>np.median(x)).astype(np.uint8).tobytes(); n=len(b)
+    if n<2: return np.nan
+    seen=set(); w=b""; C=0
+    for i in range(n):
+        wc=w+b[i:i+1]
+        if wc in seen: w=wc
+        else: seen.add(wc); C+=1; w=b""
+    if w: C+=1
+    return float(C*np.log2(n)/n)
+
+def acf_features(x, fs, max_lag_s=60.0):
+    """自相关/周期性:衰减率(自相关跌到 1/e 的滞后秒数)与主周期(首个过零点之后的最强峰)。"""
+    x=np.asarray(x,float); x=x-x.mean(); n=len(x)
+    if n<10 or x.std()==0: return {"acf_tau_1e_s":np.nan,"acf_dom_period_s":np.nan,"acf_dom_peak":np.nan}
+    nf=1<<int(np.ceil(np.log2(2*n)))
+    F=np.fft.rfft(x,nf); ac=np.fft.irfft(F*np.conj(F),nf)[:n].real
+    ac=ac/ac[0]
+    ml=min(n-1,int(max_lag_s*fs)); ac=ac[:ml]
+    below=np.flatnonzero(ac<1.0/np.e)
+    tau=float(below[0]/fs) if below.size else np.nan     # 未在 max_lag_s 内衰减 -> nan(删失,不记成上限)
+    # 主周期 = 【首个局部极小之后】的最强自相关峰。
+    #   不用"首个过零点之后"那种写法:去重力动作强度这类【恒正】信号的自相关长期不过零,
+    #   实测 24 人里有 16 人在 60 秒内根本不过零,那样写会让主周期对多数人为 NaN——
+    #   那是实现缺陷,不是"这些孩子没有周期"这个数据事实。
+    d=np.diff(ac); rise=np.flatnonzero(d>0)
+    if rise.size and rise[0]+1<len(ac):
+        k0=int(rise[0])+1
+        k=int(np.argmax(ac[k0:]))+k0
+        dom=float(k/fs); pk=float(ac[k])
+    else: dom,pk=np.nan,np.nan
+    # acf_dom_peak 是主周期那一点的自相关高度,用来判读主周期有没有意义:
+    #   高度接近 0 说明"最强峰"只是噪声起伏,该周期不可解释。报告须带上这一列。
+    return {"acf_tau_1e_s":tau,"acf_dom_period_s":dom,"acf_dom_peak":pk}
+
+def peak_features(x, fs, k_mad=2.0, min_gap_s=0.5):
+    """事件/峰:峰的密度、峰间隔的中位与变异、峰幅的中位与变异。
+       高度门槛 = 中位数 + k_mad×(1.4826×MAD);最小峰间距 min_gap_s 秒。"""
+    from scipy.signal import find_peaks
+    x=np.asarray(x,float); med=float(np.median(x))
+    mad=float(np.median(np.abs(x-med)))*1.4826
+    if not np.isfinite(mad) or mad<=0:
+        return {"peak_rate_min":np.nan,"peak_ipi_med_s":np.nan,"peak_ipi_cv":np.nan,
+                "peak_amp_med":np.nan,"peak_amp_cv":np.nan}
+    pk,pr=find_peaks(x,height=med+k_mad*mad,distance=max(1,int(min_gap_s*fs)))
+    dur_min=len(x)/fs/60.0
+    if pk.size<3:
+        return {"peak_rate_min":float(pk.size/dur_min),"peak_ipi_med_s":np.nan,"peak_ipi_cv":np.nan,
+                "peak_amp_med":float(np.median(pr["peak_heights"])) if pk.size else np.nan,
+                "peak_amp_cv":np.nan}
+    ipi=np.diff(pk)/fs; amp=pr["peak_heights"]
+    def cv(a): return float(a.std()/a.mean()) if a.mean()>0 else np.nan
+    return {"peak_rate_min":float(pk.size/dur_min),"peak_ipi_med_s":float(np.median(ipi)),
+            "peak_ipi_cv":cv(ipi),"peak_amp_med":float(np.median(amp)),"peak_amp_cv":cv(amp)}
+
+def f_nonlinear(x, fs):
+    """TASK-10 的 6 类合起来:每个通道 12 列。"""
+    x=np.asarray(x,float); x=x[np.isfinite(x)]; n=len(x)
+    scales=np.unique(np.logspace(np.log10(16),np.log10(max(32,n//10)),20).astype(int))
+    o={"dfa_alpha":dfa_alpha(x,scales),"hurst_rs":hurst_rs(x,scales),
+       "permen_m3":perm_entropy(x),"lz_c":lz_complexity(x)}
+    o.update(acf_features(x,fs)); o.update(peak_features(x,fs))
+    return o
+
 # ---------- 时间结构 × 多阈值(在 |a| 上) ----------
 def run_lengths(mask):
     if mask.size==0: return np.array([]),np.array([])
@@ -210,6 +341,18 @@ PCTS=(10,20,30,40,50,60,70,80,90)
 #     在 step=0.25 秒下可取约 40 档——同一列在 5 组设定间分辨率相差约 20 倍,横向比较须知情。
 TS_WINS=((0.5,0.25),(1,0.5),(2,1),(5,2.5),(10,5))    # (win_s, step_s),单位秒
 TS_SHORT_S=10
+
+# ---------- TASK-10:6 类新特征算在哪些通道上〔2026-07-26 用户裁决〕 ----------
+# 裁决 = uaMag(去重力动作强度)+ gyMag(角速度大小)+ jerk(uaMag 的时间导数,爆发性)。
+#   每通道 12 列 × 3 通道 = 36 列。选这三个的客观依据(实测,见下)与未取全部 12 通道的代价:
+#   · 这三个通道在 24 人上【无 NaN、无常数列】;
+#   · 若取全部 12 通道(+144 列),实测会引入 9 个含 NaN 的列——姿态角上基本没有超过峰检测
+#     门槛的峰:roll 的 4 个峰特征对 9/24 人为 NaN、yaw 的 4 个对 21/24 人为 NaN、
+#     pitch_peak_amp_cv 对 1/24 人为 NaN;
+#   · 多重比较代价:已实测新增 200 列会让目标 sdq_cond 的最小 q 由 0.412 升到 0.517
+#     (快照 probe_outputs/fdr_family_growth.md)。本裁决只加 36 列。
+#   · 算力不是约束:f_nonlinear 单通道单人实测 18 毫秒。
+NL_CHANNELS=("uaMag","gyMag","jerk")
 def wtag(win_s):
     """窗配置的列名后缀:0.5 -> 'w0.5',10 -> 'w10'。不编步长——步长恒为窗长一半。"""
     return f"w{win_s:g}"
@@ -243,6 +386,9 @@ if __name__=="__main__":
         for name,x in channels.items():
             for k,v in f_time(x).items():  feat[f"{name}_{k}"]=v
             for k,v in f_freq(x,fs).items():feat[f"{name}_{k}"]=v
+        # TASK-10:6 类新特征(非线性/复杂度、自相关周期性、事件/峰),只在 NL_CHANNELS 上算
+        for name in NL_CHANNELS:
+            for k,v in f_nonlinear(channels[name],fs).items(): feat[f"{name}_{k}"]=v
         feat.pop("jerk_median",None)     # TASK-1 决策7:删恒常数列 jerk_median(24人恒0,分布对称于0)
         # ---------- TASK-116(来源 ISSUE-114,2026-07-26 用户裁决=当特征):录制时长 ----------
         # 记的是【截断之前】那个人的真实录制长度。为什么必须是截断前:TASK-102 已把参与
@@ -316,8 +462,9 @@ if __name__=="__main__":
     #   ② 路径A  (6 个随阈值变的指标 × k 档 + within_win_sd 1 列) × W 组窗配置
     #   ③ 路径B  5 族 × k 档(逐样本法,不受窗参数影响)
     #   ④ TASK-116 的 rec_dur_min(录制时长)1 列
+    #   ⑤ TASK-10 的 6 类新特征:12 列 × len(NL_CHANNELS) 个通道
     K,W=len(PCTS),len(TS_WINS)
-    EXPECT=251 + (6*K+1)*W + 5*K + 1
+    EXPECT=251 + (6*K+1)*W + 5*K + 1 + 12*len(NL_CHANNELS)
     assert feats.shape[1]==EXPECT, f"列数 {feats.shape[1]} != 预期 {EXPECT}(k={K}, W={W})"
     assert "mag_median" not in feats.columns, "mag_median 应已去重删除"
     assert "jerk_median" not in feats.columns, "jerk_median 应已删除"
