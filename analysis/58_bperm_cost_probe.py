@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# 56_bperm_cost_probe.py  —  B 轨置换阶段在 NPERM=5000 下要跑多久
+# 58_bperm_cost_probe.py  —  B 轨置换阶段在 NPERM=5000 下要跑多久
 # =============================================================================
 # 这是什么(给未来任何一个不了解本项目的人):
 #   这个文件【不是】生产管线的一部分,不产生任何特征、不写任何文件。
 #   它是一只【探针(probe)】——把几个数字摊开供人拍板,跑完只在终端打印。
-#   "探针"是本项目里一类脚本的固定叫法(见 analysis/32_、50_、51_、52_、53_、54_、55_)。
+#   "探针"是本项目里一类脚本的固定叫法(见 analysis/32_、50_、51_、52_、53_、54_、57_)。
 #
 # 它回答什么:
 #   TASK-113 把 B 轨(analysis/45_multivariate_cv.py)的置换次数 NPERM 由 500 提到 5000。
@@ -32,7 +32,7 @@
 #   · 只估【置换阶段】。主指标阶段(三个 variant 臂)与 A 轨的耗时不在此列。
 #
 # 复现:
-#   ADHD_ROOT=<有 analysis/features.csv 的仓库根> .venv/bin/python analysis/56_bperm_cost_probe.py
+#   ADHD_ROOT=<有 analysis/features.csv 的仓库根> .venv/bin/python analysis/58_bperm_cost_probe.py
 # =============================================================================
 import os, sys, time, pathlib, warnings
 import numpy as np, pandas as pd

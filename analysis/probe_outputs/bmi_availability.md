@@ -1,14 +1,25 @@
 # 探针结果快照:体质指数(BMI)在 24 个建模样本里的可得性与相关
 
-- 产出脚本: `analysis/55_bmi_availability_probe.py`
+- 产出脚本: `analysis/57_bmi_availability_probe.py`（2026-07-26 由 `55_bmi_availability_probe.py` 改名，见「编号说明」）
 - 产出日期: 2026-07-26
 - 产出时脚本版本 commit: `e66916e`
-- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55_bmi_availability_probe.py`
+- 复现命令: `ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/57_bmi_availability_probe.py`
 - 说明: 本文件是该脚本某次运行的**原样 stdout 快照**，勿手改；要更新就重跑脚本覆盖本文件。
 - 用途: 支撑 `working/task.md` 的 **TASK-105**（把 BMI 作为探索性协变量纳入分析）的两个拍板点——
   实现方式（用户 2026-07-26 裁决＝方案 b：把 BMI 作为额外输入列塞进 B 轨多变量模型）
   与缺失值处理（用户裁决＝只在涉及 BMI 的计算上降到 n=23）。
   此前 BMI 的可得性无脚本、无快照，本文件补齐该缺口。
+
+## 编号说明（2026-07-26 改名）
+
+产出脚本原名 `analysis/55_bmi_availability_probe.py`，现为 `analysis/57_bmi_availability_probe.py`。
+**改名原因**：本桌（前置批 B）与另一桌（前置批 A）各自新建脚本时都取了 55、56 两个号，
+合并后 `analysis/` 会出现两个 55、两个 56；因为文件名不同，**git 不会报冲突**，属静默撞号。
+用户 2026-07-26 裁定按「A 桌在前、B 桌顺延」划分号段：55（含 55a/55b/55c，均属 TASK-115）
+与 56（TASK-116）归 A 桌，本桌两只顺延到 57、58。
+**本次只改了上方头部的文件名字段，下方 stdout 正文一个字未动**——已实测正文不含
+文件名（探针不打印自己的文件名），故改名不影响正文，无须为改名重跑。
+上方「产出时脚本版本 commit」仍指改名前那次产出，是正确的溯源。
 
 ## 三个须知的口径事实
 

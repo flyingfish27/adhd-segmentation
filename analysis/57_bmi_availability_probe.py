@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# 55_bmi_availability_probe.py  —  体质指数(BMI)在 24 个建模样本里到底有多少、长什么样
+# 57_bmi_availability_probe.py  —  体质指数(BMI)在 24 个建模样本里到底有多少、长什么样
 # =============================================================================
 # 这是什么(给未来任何一个不了解本项目的人):
 #   这个文件【不是】生产管线的一部分,不产生任何特征、不写任何文件。
@@ -30,7 +30,7 @@
 #   · 缺失只报事实(谁缺、缺几个),【不】在本探针里做任何填补——怎么处理是待拍板的决策点。
 #
 # 复现:
-#   ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/55_bmi_availability_probe.py
+#   ADHD_ROOT=<有 data/ 的仓库根> .venv/bin/python analysis/57_bmi_availability_probe.py
 # =============================================================================
 import os, sys, pathlib
 import numpy as np, pandas as pd

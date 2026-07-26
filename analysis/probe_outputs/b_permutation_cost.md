@@ -1,13 +1,24 @@
 # 探针结果快照:B 轨置换阶段在 NPERM=5000 下要跑多久
 
-- 产出脚本: `analysis/56_bperm_cost_probe.py`
+- 产出脚本: `analysis/58_bperm_cost_probe.py`（2026-07-26 由 `56_bperm_cost_probe.py` 改名，见「编号说明」）
 - 产出日期: 2026-07-26
 - 产出时脚本版本 commit: `28b6c10`
-- 复现命令: `ADHD_ROOT=<有 analysis/features.csv 的仓库根> .venv/bin/python analysis/56_bperm_cost_probe.py`
+- 复现命令: `ADHD_ROOT=<有 analysis/features.csv 的仓库根> .venv/bin/python analysis/58_bperm_cost_probe.py`
 - 说明: 本文件是该脚本某次运行的**原样 stdout 快照**，勿手改；要更新就重跑脚本覆盖本文件。
 - 用途: 支撑 `working/task.md` 的 **TASK-113**（置换次数 500→5000）的成本项，与 **TASK-106**
   （"只跑一次"的排期）。TASK-113 条目原本只有「耗时 ×10」这个**相对**论证，
   **绝对值此前从未实测、条目里也没有**，本文件补齐该缺口。
+
+## 编号说明（2026-07-26 改名）
+
+产出脚本原名 `analysis/56_bperm_cost_probe.py`，现为 `analysis/58_bperm_cost_probe.py`。
+**改名原因**：本桌（前置批 B）与另一桌（前置批 A）各自新建脚本时都取了 55、56 两个号，
+合并后 `analysis/` 会出现两个 55、两个 56；因为文件名不同，**git 不会报冲突**，属静默撞号。
+用户 2026-07-26 裁定按「A 桌在前、B 桌顺延」划分号段：55（含 55a/55b/55c，均属 TASK-115）
+与 56（TASK-116）归 A 桌，本桌两只顺延到 57、58。
+**本次只改了上方头部的文件名字段，下方 stdout 正文一个字未动**——已实测正文不含
+文件名（探针不打印自己的文件名），故改名不影响正文，无须为改名重跑。
+上方「产出时脚本版本 commit」仍指改名前那次产出，是正确的溯源。
 
 ## 一句话结论
 
