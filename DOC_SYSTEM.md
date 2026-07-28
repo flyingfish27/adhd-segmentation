@@ -218,7 +218,7 @@ adhd-segmentation/
 
 移动**代码/产物**会**静默打断硬编码路径**（脚本里路径写死、且不一致：有的绝对、`20_*` 用 `__file__` 相对）。故整理**分两批**：
 
-- **安全批**（无代码依赖，可随时手动搬）：`literature/`、`ref/`、`CODEBOOK`、`PAPER_DATA_USAGE`、`*_MENU`、`chinese_norms` → `docs/`；`consistency_explained.py`、`fingerprints.csv` → `archive/`。
+- **安全批**（无代码依赖，可随时手动搬）：`literature/`、`ref/`、`CODEBOOK`、`PAPER_DATA_USAGE`、`*_MENU`、`chinese_norms` → `docs/`；`consistency_explained.py`〔**✅ 已归档**〔2026-07-28，TASK-5 动作 D〕：现位于 `archive/consistency_explained.py`〕、`fingerprints.csv` → `archive/`。
 - **耦合批**（会断路径，须随 **pipeline 重构 + 路径参数化** 一起搬）：主链路代码 → `src/`；所有产物 csv → `outputs/`；`figures/subject_audit.csv` 挪位；`INVENTORY/DOC_SYSTEM/working` 若搬须同步改交叉链接。
 
 详细"能搬/不能搬"清单见 `working/backlog.md` §2「仓库结构整理」与 `working/checkpoint-2026-07-20.md`。
