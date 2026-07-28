@@ -31,5 +31,18 @@ literature/
 # 注意:analysis/47_truncation_impact.py:11 会读 features.BACKUP_pre_task102.csv。
 # 忽略只是不入库、文件仍在磁盘上,本机跑 47 不受影响;但新 clone 没有这个文件,
 # 47 会因缺输入而失败。
+#
+# ⚠️ 2026-07-28 订正(TASK-5 执行;上面两段原注释保留不删,记录当时状态):
+#   (1) 47_truncation_impact.py 已退役,现位于 archive/47_truncation_impact.py。
+#       它因上游表结构变化(特征列 275->351->608)必然抛 AssertionError,不再可运行,
+#       故上面"本机跑 47 不受影响 / 新 clone 47 会失败"这两句都已无实际意义。
+#   (2) analysis/features.BACKUP_pre_task102.csv 已归档改名为
+#       archive/features__275feat_pre_task102.csv(按 CLAUDE.md「按来源命名」)。
+#       新名字里没有 BACKUP 字样,故下面这条 *.BACKUP*.csv 规则【已不再挡它】,
+#       它现在以未跟踪身份出现在 git status。
+#   (3) 该规则现在实际只挡一个文件:根目录 temporal_features.BACKUP.csv。
+#   (4) archive/ 下另两份归档产物(features__351feat_pre_batchA.csv、
+#       B_multivariate__275feat_pre_task1.csv)同样未被任何规则挡。
+#       是否给 archive/ 加忽略规则,待用户裁决,本次未加。
 *.BACKUP*.csv
 .venv/ # .venv 本身别提交，几百 MB

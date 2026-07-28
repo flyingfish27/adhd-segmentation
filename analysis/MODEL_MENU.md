@@ -31,6 +31,10 @@
 
 > ⚠ **本节字段表已按【改后的脚本】更新,但仓库里那两份 csv 还是旧的。**
 > `A_univariate.csv`(2026-07-17)与 `B_multivariate.csv`(2026-07-18)产于旧特征表,
+> **〔2026-07-28 · TASK-5 执行〕`B_multivariate.csv` 那一份已归档为
+>  `archive/B_multivariate__275feat_pre_task1.csv`,`analysis/B_multivariate.csv` 当前为空;
+>  `analysis/A_univariate.csv` 仍留在原处未归档(因查出 `53_stat_budget_probes.py:83` 读它)。
+>  两者都要等 TASK-106 重跑后才会有对应新特征表(608 列)的版本。**
 > **没有**下面标注为新增的那几列。新列要等 TASK-106 重跑后才会出现。
 > 同理,本文件正文里仍在写的「275 特征」「二分 11 个」「负对照 mag_median」「置换 500 次」
 > 都是**那两次旧运行**的口径,与当前代码已不一致(现为 351 特征、二分 10 个、

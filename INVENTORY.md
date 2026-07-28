@@ -61,7 +61,7 @@
 | `data/*_T.csv`（约 33 个，~30Hz）| 原始腕表长记录（分号分隔，4 个表头损坏）| DATA | 原始下载 | 41/42/notebook10 | 活跃（特征输入）〔实证〕 |
 | `data/*_F.csv`（约 50 个，~100Hz）| 原始腕表短记录（逗号分隔）| DATA | 原始下载 | 32/33 探针；notebook10 时长审计 | 部分活跃（主链路不用，见第五部分）〔实证〕 |
 | `data/md5sums.txt` | 数据集自带哈希（佐证 2 对重复 _T）| DATA | 原始下载 | 无脚本读（人工/md5比对）〔实证〕 | 参考 |
-| `figures/subject_audit.csv` | 24 人可用名单（status/usable/_T）| L1 产物 | notebook10_data_verify cell15 | 40/41/42/notebook11_activity | 活跃（全链路上游）〔实证〕 |
+| `figures/subject_audit.csv` | 24 人可用名单（status/usable/_T）| L1 产物 | notebook10_data_verify cell15 | 40/41/42/notebook11_activity〔**已订正**〔TASK-5 执行, 2026-07-28〕：读者实测为 **13 个 `analysis/` 脚本**（`40`/`42`/`46`/`50`/`51`/`52`/`54`/`55a`/`55b`/`55c`/`56`/`57`/`verify_temporal_provenance`）＋ `archive/41_features_min.py` ＋ 2 个 notebook〕 | 活跃（全链路上游）**〔2026-07-28 起已入版本控制**，commit `b135aae`，TASK-5 执行〕〔实证〕 |
 | `figures/subject_audit.pdf` | `subject_audit.csv` 的图片/PDF 版（给导师 pre 用）| DOC/产出 | 人工导出 | 无脚本读 | 产出（与其它图表同放 figures/）〔用户陈述〕 |
 | `figures/*.png`（9 张）| 汇报图 | DOC | notebook10 / 脚本23/24/26/27 | 无脚本读（人看）| 最终产物〔推测〕 |
 | `temporal_features.csv`（根目录）| 8 时间结构特征（win10s/step5s/pct50，30Hz）| L2 产物 | notebook11_activity cell14 | `verify_temporal_provenance.py`(PASS A) + notebook11 自身画图〔实证〕 | TASK-1 后**不再是主链路上游**（42 已删 join、原生算）；仅剩溯源校验+画图用〔实证〕 |
@@ -69,9 +69,9 @@
 | `analysis/probe_outputs/*.md`（7 个）| 探针 50/51/52/53 的原样 stdout 快照，各带溯源头注（产出脚本·日期·脚本版本 commit·复现命令）。50/51 产：autocorr_timescale（自相关衰减尺度）/ pooling_leakage（合池总量泄漏）/ jerk_channel_audit（jerk 21 列体检）；52 产：scan_window_cost（滑窗扫描算力与列数）/ feature_class_feasibility（待补特征大类可行性）；53 产：fdr_family_growth（特征数增长的 FDR 代价）/ power_n24（n=24 效能与置信区间）| 结果快照 | 人工由 50/51/52/53 重跑覆盖 | 无脚本读（人看/追溯）| 活跃（TASK-1/TASK-108/TASK-10 决策留痕；勿手改，重跑脚本更新）〔实证〕 |
 | `analysis/targets.csv` | 24 人 × 10 候选连续目标 | L3 产物 | 40 | 43/44/45 | 活跃〔实证〕 |
 | `analysis/target_labels.csv` | 分组标签 | L3 产物 | 43 | 44/45 | 活跃〔实证〕 |
-| `analysis/features.csv` | 24 人 × 351 特征（TASK-1 起；旧 275）| L2 产物 | **42**（当前）/41（被覆盖）| 44/45 | 活跃〔实证〕 |
+| `analysis/features.csv` | 24 人 × 351 特征（TASK-1 起；旧 275）〔**已订正**〔TASK-5 执行, 2026-07-28〕：**现为 608 特征**（24 行 × 609 列），由前置批 A 的 TASK-108/TASK-10/TASK-116 三条任务加列而来；旧的 351 特征版已归档为 `archive/features__351feat_pre_batchA.csv`〕 | L2 产物 | **42**（当前）/41（被覆盖）| 44/45〔**已订正**〔TASK-5 执行, 2026-07-28〕：读者实测 **7 处**——同行式 5 处（`44:27`/`45:80`/`52:124`/`54:94`/`58:66`）＋变量式 2 处（`53:226`/`57:68`，均有 `.exists()` 保护）〕 | 活跃**〔2026-07-28 起已入版本控制**，commit `b135aae`〕〔实证〕 |
 | `analysis/A_univariate.csv` | A 轨结果（5775 行）| L3 产物 | 44 | 无脚本读 | 最终产物〔实证〕 |
-| `analysis/B_multivariate.csv` | B 轨结果 | L3 产物 | 45 | 无脚本读 | 最终产物〔实证〕 |
+| `analysis/B_multivariate.csv` | B 轨结果 | L3 产物 | 45 | 无脚本读 | 最终产物**〔2026-07-28 · 那一份 07-18 的旧结果已归档为 `archive/B_multivariate__275feat_pre_task1.csv`**（算自 275 列旧特征表，已作废）；`analysis/B_multivariate.csv` 这个路径**当前为空**，要等 TASK-106 重跑后由 `45` 重新生成〕〔实证〕 |
 | `analysis/chinese_norms.md` | 中国 SNAP/SDQ 常模文献搜集（为后续分组决策服务）| DOC/结果 | 人工搜集 | **无脚本读**（仅供人决策参考，未接进任何 label）| 结果〔实证〕 |
 | `CODEBOOK.md`,`PAPER_DATA_USAGE.md`,`analysis/{FEATURE,MODEL,TARGET}_MENU.md`,`ref/SDQ_FINDINGS.md`,`literature/*.md` | 文档 | DOC | 人工 | 人看 | DOC〔实证〕 |
 
@@ -101,7 +101,7 @@ graph TD
   RAW --> P42["42_features_full.py"]
   AUDIT --> P42
   TF -->|join 8列| P42
-  P42 --> FEAT["analysis/features.csv (275特征)"]
+  P42 --> FEAT["analysis/features.csv (608特征)"]
 
   TGT --> P43["43_target_labels.py"]
   P43 --> LAB["analysis/target_labels.csv"]
@@ -183,7 +183,7 @@ graph TD
 - 两者**写同一个文件** `analysis/features.csv`，是竞争写者。
 - `41_features_min.py`：8 时间结构（join）+ 4 时域（mean/std/rms/zcr）= 12 列，注释自称"最小管线，只为证明链路通"。
 - `42_features_full.py`：12 通道 × (时域14+频域7) + `uaMag` 上 3 阈值 × 5 时间结构 + join 8 列 = **275 列**。
-- **当前 features.csv 有 276 列（275 特征+subject）→ 由 42 产出**〔实证〕。41 的产物已被覆盖 → 41 事实上废弃（保留作"链路通"的历史见证）。
+- **当前 features.csv 有 276 列（275 特征+subject）→ 由 42 产出**〔实证〕〔**已订正**〔TASK-5 执行, 2026-07-28〕：**现为 609 列（608 特征 + `subject`）**，仍由 `42` 产出；275→351 由 TASK-1 重写时间结构族带来，351→608 由前置批 A 的 TASK-108（滑窗扫 5 组窗配置 +220 列）、TASK-116（`rec_dur_min` +1）、TASK-10（6 类新特征 ×3 通道 +36）带来〕。41 的产物已被覆盖 → 41 事实上废弃（保留作"链路通"的历史见证）。
 
 ### 编号碰撞与断层〔实证〕
 - **编号碰撞已全部消除**（TASK-13，2026-07-22）〔实证〕：此前 `analysis/` 有四组数字前缀重复——两个 `10_`、两个 `30_`、两个 `31_`、两个 `34_`。处理方式与改名对照：
