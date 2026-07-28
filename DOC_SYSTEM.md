@@ -243,7 +243,7 @@ adhd-segmentation/
 
 移动**代码/产物**会**静默打断硬编码路径**（脚本里路径写死、且不一致：有的绝对、`20_*` 用 `__file__` 相对）。故整理**分两批**：
 
-- **安全批**（无代码依赖，可随时手动搬）：`literature/`、`ref/`、`CODEBOOK`、`PAPER_DATA_USAGE`、`*_MENU`、`chinese_norms` → `docs/`；`consistency_explained.py`〔**✅ 已归档**〔2026-07-28，TASK-5 动作 D〕：现位于 `archive/consistency_explained.py`〕、`fingerprints.csv` → `archive/`。
+- **安全批**（无代码依赖，可随时手动搬）：`literature/`、`ref/`、`CODEBOOK`、`PAPER_DATA_USAGE`、`*_MENU`、`chinese_norms` → `docs/`；`consistency_explained.py`〔**✅ 已归档**〔2026-07-28，TASK-5 动作 D〕：现位于 `archive/consistency_explained.py`〕、`fingerprints.csv` → `archive/`〔**2026-07-28 订正**：本行把这批判为「无代码依赖，可随时手动搬」。**运行时无依赖这一点成立**（实测全仓库没有任何脚本 `open`/`read_text` 任何 `.md`），**但交叉引用有依赖**——实测 `CODEBOOK.md` 22 处、`chinese_norms.md` 33 处、`TARGET_MENU.md` 14 处、`MODEL_MENU.md` 10 处、`FEATURE_MENU.md` 5 处、`PAPER_DATA_USAGE.md` 3 处、`fingerprints.csv` 14 处，**合计约 87 处会指向旧路径**，且 `fingerprints.csv` 还要改 `analysis/11_activity_verify.ipynb:324` 的裸文件名生成端。**故这批已于 2026-07-28 全部移记 TASK-6（耦合批）**，`consistency_explained.py` 与 `literature/`、`ref/` 除外（前者已归档，后两者早已在 `docs/` 下）。另：本行说 `fingerprints.csv` → `archive/`，而本文件 §10 目标树把它列在 `outputs/tables/` 下，**两处矛盾，执行时须择一并同步改另一处**〕。
 - **耦合批**（会断路径，须随 **pipeline 重构 + 路径参数化** 一起搬）：主链路代码 → `src/`；所有产物 csv → `outputs/`；`figures/subject_audit.csv` 挪位；`INVENTORY/DOC_SYSTEM/working` 若搬须同步改交叉链接。
 
 详细"能搬/不能搬"清单见 `working/backlog.md` §2「仓库结构整理」与 `working/checkpoint-2026-07-20.md`。
