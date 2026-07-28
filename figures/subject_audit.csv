@@ -1,0 +1,59 @@
+subject,_F,_T,SDQ,SNAP,high_risk,low_risk,status
+B26,yes,-,yes,yes,,,usable
+C10,yes,yes,-,-,SDQ missing; SNAP missing,,EXCLUDED
+C28,yes,yes,yes,yes,duplicate _T,,EXCLUDED
+C41,yes,-,-,-,SDQ missing; SNAP missing,,EXCLUDED
+C42,yes,-,yes,yes,,,usable
+C43,yes,yes,yes,yes,,,usable
+F55,-,yes,yes,yes,,_T short 41.3min,usable
+G40,yes,-,yes,yes,,,usable
+H1,yes,-,yes,yes,,,usable
+H2,yes,yes,yes,yes,,_F gap 2.2s,usable
+H44,yes,yes,-,-,SDQ missing; SNAP missing,,EXCLUDED
+H45,yes,yes,yes,yes,,,usable
+H46,yes,yes,yes,yes,,_T short 42.8min,usable
+H47,yes,yes,yes,yes,,,usable
+H48,yes,yes,yes,yes,,,usable
+H49,yes,-,yes,yes,,,usable
+H50,yes,yes,yes,-,SNAP missing,,EXCLUDED
+J33,yes,-,-,-,SDQ missing; SNAP missing,,EXCLUDED
+J34,yes,yes,yes,yes,,,usable
+L15,yes,-,yes,yes,,,usable
+L16,yes,yes,yes,yes,,,usable
+L17,yes,-,yes,yes,,,usable
+L18,yes,-,yes,yes,,,usable
+L29,yes,yes,yes,yes,,,usable
+L3,yes,yes,yes,yes,,,usable
+L30,yes,-,yes,-,SNAP missing,,EXCLUDED
+L51,-,yes,yes,yes,,corrupt header,usable
+M19,yes,-,-,-,SDQ missing; SNAP missing,,EXCLUDED
+P35,yes,-,yes,yes,,,usable
+P9,yes,-,yes,yes,,_F gap 17.5s,usable
+Q27,-,-,yes,yes,,,usable
+S25,yes,-,yes,yes,,,usable
+S32,yes,yes,-,yes,SDQ missing; SDQ illegal value,,EXCLUDED
+S6,yes,-,yes,-,SNAP missing,,EXCLUDED
+T20,yes,yes,-,yes,SDQ missing,corrupt header; _F gap 3.5s,EXCLUDED
+T24,yes,-,-,yes,SDQ missing,,EXCLUDED
+T37,yes,-,yes,yes,,,usable
+T38,yes,-,yes,yes,,,usable
+W21,yes,-,-,-,SDQ missing; SNAP missing,,EXCLUDED
+W22,yes,yes,yes,yes,,,usable
+W23,yes,yes,yes,yes,,,usable
+W4,yes,-,yes,yes,,,usable
+W53,-,yes,yes,yes,,,usable
+X31,yes,yes,yes,yes,,corrupt header,usable
+Y36,yes,yes,yes,yes,,,usable
+Y52,-,yes,yes,yes,,,usable
+Y54,-,yes,yes,yes,duplicate _T,,EXCLUDED
+Y55,-,yes,yes,yes,,,usable
+Y56,-,yes,yes,yes,,,usable
+Y57,-,yes,yes,yes,,,usable
+Z11,yes,-,yes,yes,,,usable
+Z12,yes,-,yes,yes,,,usable
+Z13,yes,-,yes,yes,,,usable
+Z14,yes,yes,yes,yes,duplicate _T,,EXCLUDED
+Z39,yes,yes,yes,yes,,,usable
+Z5,yes,yes,yes,yes,duplicate _T,,EXCLUDED
+Z7,yes,yes,yes,yes,,corrupt header; _T short 43.8min,usable
+Z8,yes,yes,yes,yes,,,usable
