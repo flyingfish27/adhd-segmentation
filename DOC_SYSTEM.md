@@ -202,17 +202,42 @@ adhd-segmentation/
 │   ├── menus/               #     FEATURE/MODEL/TARGET_MENU  chinese_norms
 │   ├── decisions/           #     ADR(待建)
 │   ├── literature/  refs/   #     文献 + ref
+│   └── slides/              #     导师给的课程 slides(外部输入,只读) —— 【不入版本控制】
 ├── working/                 # ⑤ 过程：追踪层(issue·task·backlog·checkpoint)
 ├── archive/                 # ⑥ 存档：废弃脚本(41) + 孤儿 + 每轮快照
-├── presentation/            #    汇报件(pptx / 一页概览)
+├── presentation/            # ⑦ 对外汇报材料:给导师/答辩用的成品
+│                            #    (pptx / 一页概览 / 同步纪要 / 导出的 xlsx)
 ├── INVENTORY.md  DOC_SYSTEM.md  README.md   # 顶层导航
 └── requirements.txt
 ```
 
 ### 现状 vs 目标
 
-- **已到位**：`data/`、`working/`、`presentation/`。
-- **未建**：`src/`、`exploration/`、`outputs/`、`docs/`、`archive/`。
+- **已到位**：`data/`、`working/`、`presentation/`〔**已订正**〔2026-07-28〕：`docs/`（含 `docs/literature`、`docs/ref`、`docs/slides`）与 `archive/` **也早已到位**，原文写它们「未建」已过期〕。
+- **未建**：`src/`、`exploration/`、`outputs/`〔**已订正**〔2026-07-28〕：`docs/` 与 `archive/` 已从本行移除，见上一行〕。
+
+### 七类之外：工具自动生成物与外部输入（2026-07-28 登记，此前无任何条目）
+
+本节登记的是**既不属于上面七类、又确实存在于仓库里**的东西。登记的目的是让它们**不再是「没人知道这是什么」的状态**——此前它们不在任何清单里，整理时容易被漏掉或误删。
+
+| 对象 | 是什么 | 现状 | 处置 |
+|---|---|---|---|
+| `.DS_Store`（根目录、`docs/` 等多处） | macOS Finder 自动生成的目录显示状态文件 | **已被 `.gitignore` 第 11 行挡住**（2026-07-28 实测确认） | 不入库、不删除、不登记进七类；工具会反复重建，删了也会回来 |
+| `.ipynb_checkpoints/` | Jupyter 自动生成的 notebook 自动保存副本 | **已被 `.gitignore` 第 8 行挡住**（2026-07-28 实测确认） | 同上 |
+| `docs/slides/W3_C.pdf`（15.8 MB）、`W4_C.pdf`（5.9 MB） | **导师给的课程 slides**，外部输入的只读资料 | 原在 `docs/` 下且**已被跟踪**（2026-07-22 commit `1bcc4a7` 进的 git）；2026-07-28 用户裁决**退回**——已 `git rm --cached` 取消跟踪、移进 `docs/slides/`、并加 `.gitignore` 规则 | 不入库。**须知情**：取消跟踪不抹历史，这两个 blob 在 `.git` 里仍占约 15.6 MB（约为 67 MB 的四分之一），要真正减小须改写历史（不可逆，未做） |
+
+**`presentation/` 的完整内容（2026-07-28 逐个实测）**：
+
+| 文件 | 大小 | git 状态 |
+|---|---|---|
+| `week2.pptx` | 3.1 MB | 已跟踪 |
+| `A_univariate.xlsx` | 381 KB | 已跟踪 |
+| `B_multivariate.xlsx` | 23 KB | 已跟踪 |
+| `pipeline_overview.md` | 3 KB | 已跟踪 |
+| `sync_2026-07-23.md` | 3 KB | 原为未跟踪，**2026-07-28 按用户裁决入库** |
+| `Demographic and mental health data.numbers` | 291 KB | **被 `.gitignore` 第 23 行的 `*.numbers` 规则挡住**，故不出现在 `git status` 里。它是 `data/Demographic and mental health data.csv`（6,894 B）的 **Apple Numbers 视图副本**，无分析价值，保持不入库 |
+
+**这是全仓库唯一一个 `.numbers` 文件。**
 
 ### 为什么不能一次搬到位（关键约束）
 
