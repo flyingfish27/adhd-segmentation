@@ -54,3 +54,8 @@ literature/
 # 已于 2026-07-28 用 git rm --cached 取消跟踪并移进 docs/slides/。
 # 注意:取消跟踪【不会】把已进入历史的 blob 抹掉,要真正减小 .git 须改写历史(不可逆)。
 docs/slides/
+
+# 45_multivariate_cv.py 置换阶段的断点续跑中间档(2026-07-28 新增)。
+# 它们是运行中途的状态、不是产物;正常跑完脚本会自己删掉。
+analysis/.B_perm_progress.json
+analysis/.B_multivariate.partial.csv

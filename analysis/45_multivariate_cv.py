@@ -46,7 +46,7 @@
 #   缺失处理裁决＝只在涉及 BMI 的计算上降到 n=23(24 人里 Y55 一人缺 BMI,身高体重一并缺;
 #   其余分析仍用 24 人)。实测可得性见 analysis/probe_outputs/bmi_availability.md。
 #   本脚本据此跑三个 variant(见输出表的 variant 列),详见下方 BMI 一节的注释。
-import numpy as np, pandas as pd, pathlib, warnings, sys, os
+import numpy as np, pandas as pd, pathlib, warnings, sys, os, json, hashlib   # json/hashlib: 置换阶段的断点续跑(2026-07-28 新增)
 warnings.filterwarnings("ignore")
 os.environ["PYTHONWARNINGS"]="ignore"          # 让 joblib 子进程也静默
 np.seterr(all="ignore")
@@ -228,31 +228,86 @@ for arm,data,m in ARMS:
 R=pd.DataFrame(rows)
 
 # ---------- 置换:只对超过哑基线的组合 ----------
+# 【断点续跑,2026-07-28 新增】置换阶段实测约 14.7 小时且原先无任何中间保存,
+#   中断即前功尽弃。现改为:①种子按组合确定性派生 ②每 PERM_BATCH 次置换存一次进度
+#   ③重启时自动跳过已完成的部分。存档文件见 PROGRESS/PARTIAL,均不入版本控制。
+#   【为什么种子要改成确定性派生】:原先是 rng.integers(0,1e9,NPERM) 从全局 rng 顺序取,
+#   种子取决于"这是第几次调用"。一旦中断续跑,rng 的位置对不上,后面所有组合的种子全变,
+#   结果虽仍是合法置换检验但【不可复现】。改为按 (target,model,k,track) 派生之后,
+#   断在哪儿、续几次,每个组合拿到的 5000 个种子完全相同。
+#   代价:本改动使结果与"改动前一口气跑完"不逐格相同(种子生成方式变了),但两者都合法,
+#   且新方式的可复现性更强。
+#   【已做的验证】隔离测试(用 ast 从本文件抽出 _seeds/_perm/_load_progress/_save_progress
+#   四个函数在测试命名空间执行,测的是本文件的真代码)四项全过:①_seeds 与调用顺序无关
+#   ②NPERM=200/5000 下"一口气跑完"与"跑一半中断再续"p 值逐位相同 ③连断三次仍相同
+#   ④进度文件损坏时降级为从头跑、不抛异常。快照见 analysis/probe_outputs/perm_checkpoint.md。
+#   【边界:本改动只保护置换阶段】主指标 CV 阶段(置换之前那段,实测约 13 分钟量级)没有存档,
+#   在那一段中断要重跑那十几分钟。之所以不做:它短,且它是确定性的、重跑必然得到同样的表。
+PERM_BATCH=500                                  # 每批次数;越小越抗中断,存盘开销越大
+PROGRESS=ROOT/"analysis/.B_perm_progress.json"  # 组合级进度:tag -> [已完成次数, 命中数]
+PARTIAL =ROOT/"analysis/.B_multivariate.partial.csv"  # 已算完的整表快照
+
+def _load_progress():
+    if PROGRESS.is_file():
+        try: return json.loads(PROGRESS.read_text())
+        except Exception: pass
+    return {}
+def _save_progress(d):
+    PROGRESS.write_text(json.dumps(d,ensure_ascii=False))
+def _seeds(tag):
+    """按组合标识确定性派生 NPERM 个种子——不依赖全局 rng 的消耗顺序。"""
+    h=hashlib.sha256(f"{tag}|{NPERM}".encode()).digest()
+    return np.random.default_rng(np.frombuffer(h,dtype=np.uint32)).integers(0,1_000_000_000,NPERM)
+
+def _perm(tag,one):
+    """分批跑置换并存进度;返回 (hits+1)/(NPERM+1)。可安全中断、重启续跑。"""
+    seeds=_seeds(tag); prog=_load_progress()
+    done,hits=prog.get(tag,[0,0])
+    if done>0: say(f"    [续跑] {tag}: 已完成 {done}/{NPERM} 次,命中 {hits},从第 {done+1} 次接上")
+    while done<NPERM:
+        b=seeds[done:done+PERM_BATCH]
+        hits+=int(sum(Parallel(n_jobs=-1)(delayed(one)(int(s)) for s in b)))
+        done+=len(b)
+        prog=_load_progress(); prog[tag]=[done,hits]; _save_progress(prog)
+    return (hits+1)/(NPERM+1)
+
 def perm_reg(target,model,k,obs):
     y=Yc[target].to_numpy(float); pipe=reg_pipe(REG[model](),k)
     def one(seed):
         yp=np.random.default_rng(seed).permutation(y); pr=cvp(pipe,Xv,yp)
         return reg_skill(yp,pr)>=obs
-    hits=Parallel(n_jobs=-1)(delayed(one)(int(s)) for s in rng.integers(0,1e9,NPERM))
-    return (sum(hits)+1)/(NPERM+1)
+    return _perm(f"reg|{target}|{model}|{k}",one)
 def perm_clf(target,model,k,obs):
     y=Yl[target].to_numpy(int); pipe=clf_pipe(CLF[model](),k)
     def one(seed):
         yp=np.random.default_rng(seed).permutation(y); pr=cvp(pipe,Xv,yp)
         return balanced_accuracy_score(yp,pr)>=obs
-    hits=Parallel(n_jobs=-1)(delayed(one)(int(s)) for s in rng.integers(0,1e9,NPERM))
-    return (sum(hits)+1)/(NPERM+1)
+    return _perm(f"clf|{target}|{model}|{k}",one)
 
 # 置换【只跑 main 臂】:两个 n=23 的 BMI 探索臂不进 FDR 家族、也不跑置换(见上方 TASK-105 注释)。
 regw=R[(R.variant=="main")&(R.track=="reg")&(R.skill>0)]
 clfw=R[(R.variant=="main")&(R.track.isin(["bin","multi"]))&(R.bacc>0.5)]
 say(f"\n=== 置换阶段(仅 main 臂,NPERM={NPERM}):回归 {len(regw)} 个(skill>0)"
     f"+ 分类 {len(clfw)} 个(bacc>0.5) 待检 ===")
+# 重启时把上次已算完的 perm_p 读回来(主指标部分是确定性的,重算不变,故只需接管 perm_p 列)
+if PARTIAL.is_file():
+    _prev=pd.read_csv(PARTIAL)
+    if len(_prev)==len(R):
+        R["perm_p"]=_prev["perm_p"].to_numpy()
+        say(f"  [续跑] 从 {PARTIAL.name} 读回 {int(R.perm_p.notna().sum())} 个已完成的 perm_p")
+    else:
+        say(f"  !! {PARTIAL.name} 行数({len(_prev)})与本次({len(R)})不符,忽略该存档、从头跑置换")
 for i,r in regw.iterrows():
+    if pd.notna(R.loc[i,"perm_p"]):
+        say(f"  [跳过] perm reg {r.target}/{r.model}/k{int(r.k)} 已有 p={R.loc[i,'perm_p']:.3f}"); continue
     R.loc[i,"perm_p"]=perm_reg(r.target,r.model,int(r.k),r.skill)
+    R.to_csv(PARTIAL,index=False)
     say(f"  perm reg {r.target}/{r.model}/k{int(r.k)} skill={r.skill:+.3f} -> p={R.loc[i,'perm_p']:.3f}")
 for i,r in clfw.iterrows():
+    if pd.notna(R.loc[i,"perm_p"]):
+        say(f"  [跳过] perm clf {r.target}/{r.model}/k{int(r.k)} 已有 p={R.loc[i,'perm_p']:.3f}"); continue
     R.loc[i,"perm_p"]=perm_clf(r.target,r.model,int(r.k),r.bacc)
+    R.to_csv(PARTIAL,index=False)
     say(f"  perm clf {r.target}/{r.model}/k{int(r.k)} bacc={r.bacc:.3f} -> p={R.loc[i,'perm_p']:.3f}")
 
 # ---------- TASK-113:BH-FDR(B 轨自身全部 198 个组合为一族) ----------
@@ -286,6 +341,11 @@ say("  提醒:p=1 是【保守近似】——那 %d 个是『没赢过哑基线�
 say("        这样只会漏掉真发现、不会制造假发现;两个 n=23 的 BMI 探索臂不在本家族内(q 留空)。")
 
 R.to_csv(ROOT/"analysis/B_multivariate.csv",index=False)
+# 跑到这里说明全流程完成,清掉断点续跑的中间档(留着只会误导下一次运行)
+for _f in (PARTIAL,PROGRESS):
+    try:
+        if _f.is_file(): _f.unlink(); say(f"  已清除中间档 {_f.name}")
+    except Exception as _e: say(f"  !! 清除 {_f.name} 失败:{_e}(不影响结果,手动删即可)")
 pd.set_option("display.width",220)
 say("\n>>> analysis/B_multivariate.csv  共 %d 行"%len(R))
 say("  各臂行数:"+"  ".join(f"{v}={int((R.variant==v).sum())}" for v in R.variant.unique()))
