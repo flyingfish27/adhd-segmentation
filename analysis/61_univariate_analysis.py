@@ -21,11 +21,16 @@ Outputs
     outputs/tables/61_univariate.md
     outputs/figures/fig03_effect_vs_null_continuous.png
     outputs/figures/fig04_effect_vs_null_binary.png
+    outputs/figures/fig05_fdr_per_target.png
+    outputs/figures/fig06_effect_vs_generalization.png
+    outputs/figures/fig07_surviving_cells.png
+    outputs/figures/fig08_tie_corrected_pvalues.png
 
 Re-run with:
     .venv/bin/python analysis/61_univariate_analysis.py
 """
 import io
+import re
 import pathlib
 import subprocess
 import sys
@@ -596,6 +601,442 @@ fig.text(0.012, 0.018,
 fig.savefig(FIGDIR / "fig06_effect_vs_generalization.png", dpi=200)
 plt.close(fig)
 print(f"\n  wrote {FIGDIR / 'fig06_effect_vs_generalization.png'}")
+
+# ---------------------------------------------------------------------------
+# [7] FIGURE 07 -- the three surviving cells, examined one by one
+# ---------------------------------------------------------------------------
+head("[7] THE THREE CELLS THAT SURVIVED THE CORRECTION -- how robust are they")
+print("  These three are the entire positive yield of the univariate track, so each is")
+print("  examined directly rather than reported as a row in a table. Three questions:")
+print("    (a) what does the relationship look like, and is it carried by the whole cohort?")
+print("    (b) how much does it move when any single subject is removed (n = 24)?")
+print("    (c) do the neighbouring settings of the same feature family agree with it?")
+print("        Path-A features form a grid over window length x percentile threshold.")
+print("        A real structural signal should vary smoothly across that grid; an isolated")
+print("        spike surrounded by nothing is what selecting the maximum of many noisy")
+print("        cells looks like.")
+
+SURV = surv[["target", "feature", "rho", "perm_p", "q_fdr", "loo_r2cv"]].to_dict("records")
+
+
+def stem_grid(feature):
+    """Split a path-A name like 'frac_act_short_w10_p20' into (stem, window, pct)."""
+    mm = re.match(r"^(.*)_w([0-9.]+)_p([0-9]+)$", feature)
+    return (mm.group(1), mm.group(2), int(mm.group(3))) if mm else None
+
+
+print(f"\n  target correlations among the three targets involved"
+      f" (nested targets are not independent findings):")
+tg = sorted({r["target"] for r in SURV})
+for i in range(len(tg)):
+    for j in range(i + 1, len(tg)):
+        rr = spearman(rankdata(Yc[tg[i]].to_numpy(float)), rankdata(Yc[tg[j]].to_numpy(float)))
+        print(f"    {tg[i]:18} vs {tg[j]:18} Spearman rho = {rr:+.3f}")
+print("    snap_adhd_total is by construction the sum of the SNAP inattention and")
+print("    hyperactivity items, so it contains snap_inatt; the two cells that share the")
+print("    feature frac_act_short_w10_p20 are one finding measured twice, not two.")
+
+fig, axes = plt.subplots(3, len(SURV), figsize=(4.6 * len(SURV), 11.4))
+for c, rec in enumerate(SURV):
+    f, t = rec["feature"], rec["target"]
+    xv = X[f].to_numpy(float)
+    yv = Yc[t].to_numpy(float)
+    xr, yr_ = rankdata(xv), rankdata(yv)
+    full = spearman(xr, yr_)
+
+    # (a) the relationship itself
+    ax = axes[0, c]
+    ax.scatter(xv, yv, s=44, color="#4878a8", edgecolor="white", linewidth=0.8, zorder=3)
+    ax.set_xlabel(f, fontsize=8.5)
+    ax.set_ylabel(t, fontsize=9)
+    nzero = int((xv == xv.min()).sum())
+    ax.set_title(f"{t}\nvs {f}\nSpearman rho = {full:+.3f}   loo_r2cv = {rec['loo_r2cv']:.3f}",
+                 fontsize=9.2)
+    ax.text(0.03, 0.97, f"{len(np.unique(xv))} distinct feature values of {n}\n"
+                        f"{nzero} subject(s) at the minimum",
+            transform=ax.transAxes, va="top", fontsize=7.8,
+            bbox=dict(boxstyle="round,pad=0.32", fc="white", ec="#cccccc"))
+    ax.grid(alpha=0.22, lw=0.6)
+    ax.set_axisbelow(True)
+
+    # (b) drop-one-subject jackknife
+    ax = axes[1, c]
+    jk = np.array([spearman(rankdata(np.delete(xv, i)), rankdata(np.delete(yv, i)))
+                   for i in range(n)])
+    order = np.argsort(jk)
+    ax.bar(range(n), jk[order], color="#4878a8", width=0.78)
+    ax.axhline(full, color="#333333", lw=1.4, label=f"all 24 subjects: {full:+.3f}")
+    ax.axhline(np.quantile(NULL_C[t], .95), color="#b2182b", lw=1.5, ls="--",
+               label=f"null 95th pct: {np.quantile(NULL_C[t], .95):.3f}")
+    ax.set_xticks(range(n))
+    ax.set_xticklabels([X.index[i] for i in order], rotation=90, fontsize=6.2)
+    ax.set_ylabel("Spearman rho with that subject removed", fontsize=8.5)
+    ax.set_ylim(0, max(1.0, jk.max() * 1.08))
+    ax.set_title(f"Removing any one subject: rho spans {jk.min():+.3f} to {jk.max():+.3f}\n"
+                 f"(a drop of {full - jk.min():.3f} at worst)", fontsize=9.2)
+    ax.legend(fontsize=7.4, frameon=False, loc="lower right")
+    ax.grid(axis="y", alpha=0.22, lw=0.6)
+    ax.set_axisbelow(True)
+    print(f"\n  {t} x {f}")
+    print(f"    full-sample rho {full:+.3f};  drop-one range {jk.min():+.3f} .. {jk.max():+.3f}")
+    print(f"    subjects whose removal pushes rho below the null 95th percentile"
+          f" ({np.quantile(NULL_C[t], .95):.3f}): "
+          f"{[X.index[i] for i in range(n) if jk[i] < np.quantile(NULL_C[t], .95)] or 'none'}")
+    print(f"    feature has {len(np.unique(xv))} distinct values across {n} subjects")
+
+    # (c) the neighbourhood in the (window x percentile) grid
+    ax = axes[2, c]
+    g = stem_grid(f)
+    if g:
+        stem, w0, p0 = g
+        sub = A[(A["target"] == t) & (A["feature"].str.startswith(stem + "_w"))].copy()
+        parsed = sub["feature"].map(stem_grid)
+        sub = sub[parsed.notna()]
+        sub["win"] = [stem_grid(v)[1] for v in sub["feature"]]
+        sub["pct"] = [stem_grid(v)[2] for v in sub["feature"]]
+        piv = sub.pivot_table(index="win", columns="pct", values="rho")
+        piv = piv.reindex(sorted(piv.index, key=float))
+        im = ax.imshow(piv.abs().to_numpy(), cmap="Reds", vmin=0,
+                       vmax=max(0.8, float(piv.abs().to_numpy().max())), aspect="auto")
+        ax.set_xticks(range(len(piv.columns)))
+        ax.set_xticklabels([f"p{c_}" for c_ in piv.columns], fontsize=7.5)
+        ax.set_yticks(range(len(piv.index)))
+        ax.set_yticklabels([f"w{i}s" for i in piv.index], fontsize=7.5)
+        ax.set_xlabel("activity threshold percentile", fontsize=8.5)
+        ax.set_ylabel("window length", fontsize=8.5)
+        for yi, wv in enumerate(piv.index):
+            for xi, pv in enumerate(piv.columns):
+                v = piv.loc[wv, pv]
+                if pd.notna(v):
+                    ax.text(xi, yi, f"{abs(v):.2f}", ha="center", va="center", fontsize=6.4,
+                            color="white" if abs(v) > 0.45 else "#333333")
+        yi = list(piv.index).index(w0)
+        xi = list(piv.columns).index(p0)
+        ax.add_patch(plt.Rectangle((xi - 0.5, yi - 0.5), 1, 1, fill=False,
+                                   edgecolor="#1a9850", lw=2.6))
+        nb = piv.abs().to_numpy()
+        ax.set_title(f"|rho| for the whole {stem} grid on {t}\n"
+                     f"green box = the surviving cell;  grid median |rho| = {np.nanmedian(nb):.3f}",
+                     fontsize=9.2)
+        print(f"    neighbourhood: the {stem} grid on {t} has {np.isfinite(nb).sum()} cells,"
+              f" median |rho| {np.nanmedian(nb):.3f}, max {np.nanmax(nb):.3f};"
+              f" cells above the null 95th pct: "
+              f"{int((nb > np.quantile(NULL_C[t], .95)).sum())}")
+    else:
+        ax.axis("off")
+
+fig.suptitle("Fig 7  The three cells that survived BH-FDR, examined individually\n"
+             "row 1: the relationship   row 2: sensitivity to removing any single subject   "
+             "row 3: agreement of neighbouring settings of the same feature family",
+             fontsize=11.5, y=0.995)
+fig.tight_layout(rect=[0, 0.032, 1, 0.965])
+fig.text(0.012, 0.008,
+         "Row 3 reads the same 608-feature screen, restricted to one feature family and one target: path-A time-structure features are computed on a grid of 5 window lengths x 9 activity-threshold\n"
+         "percentiles, so each family gives 45 highly overlapping views of the same recording. A signal that exists only in one cell of that grid, with neighbouring settings near the null, is the shape\n"
+         "that taking the maximum over many correlated noisy cells produces. Row 2 is the standard n = 24 fragility check: how far the correlation moves when any single child is left out.",
+         fontsize=7.2, color="#444444", linespacing=1.5)
+fig.savefig(FIGDIR / "fig07_surviving_cells.png", dpi=200)
+plt.close(fig)
+print(f"\n  wrote {FIGDIR / 'fig07_surviving_cells.png'}")
+
+# ---------------------------------------------------------------------------
+# [8] FIGURE 08 -- the null is specified for untied features; many are tied
+# ---------------------------------------------------------------------------
+head("[8] TIED FEATURES AND THE SHARED NULL")
+print("  44_univariate_screen.py builds one null per target by correlating shuffles of the")
+print("  target against the FIXED rank vector 0..n-1. Its own comment on that line records")
+print("  the assumption: 'equivalent to the null distribution of any feature WITHOUT ties'.")
+print("  Sharing one null across 608 features is what makes the screen fast, and it is exact")
+print("  for a feature whose 24 values are all distinct. A feature with tied values has a")
+print("  different null, because ties coarsen the set of attainable correlations.")
+print("  This section measures how many features are tied and what happens to the p-values")
+print("  when each feature is tested against its own null instead of the shared one.")
+
+Xr_all = np.column_stack([rankdata(X[f].to_numpy()) for f in FEATS])   # 24 x 608, midranks
+ndist = np.array([len(np.unique(X[f].to_numpy())) for f in FEATS])
+print(f"\n  distinct values per feature across the {n} subjects:")
+for lo, hi in [(1, 1), (2, 4), (5, 9), (10, 17), (18, 23), (24, 24)]:
+    k = int(((ndist >= lo) & (ndist <= hi)).sum())
+    lbl = f"{lo}" if lo == hi else f"{lo}-{hi}"
+    print(f"    {lbl:>7} distinct : {k:4d} features"
+          + ("   (no ties: the shared null is exact)" if lo == 24 else ""))
+print(f"  features with at least one tie : {int((ndist < n).sum())} of {len(FEATS)}")
+print(f"  median distinct values         : {int(np.median(ndist))}")
+
+
+TOL = 1e-12          # two permuted statistics count as equal within this
+
+
+def _tail(cnt_gt, cnt_ge, nperm):
+    """Two conventions for turning permutation counts into a p-value.
+    gt : the convention in 44_univariate_screen.py -- the fraction of the null
+         STRICTLY exceeding the observed value, then floored at 1/nperm.
+    ge : the standard add-one estimator (1 + #{null >= observed}) / (1 + nperm),
+         which is the convention 45_multivariate_cv.py uses on the other track.
+    They differ only when the null puts mass exactly on the observed value, which
+    happens when the feature is tied and the null is therefore discrete."""
+    return np.maximum(cnt_gt / nperm, 1.0 / nperm), (1.0 + cnt_ge) / (1.0 + nperm)
+
+
+def exact_p_cont(t, nperm=NPERM, block=10_000):
+    """Permutation p for all 608 features of one continuous target, each against its
+    own null: the feature's real rank vector is used instead of the untied 0..n-1."""
+    yr = rankdata(Yc[t].to_numpy(float))
+    yc = yr - yr.mean()
+    nyc = np.sqrt((yc ** 2).sum())
+    Xc = Xr_all - Xr_all.mean(axis=0)
+    cn = np.sqrt((Xc ** 2).sum(axis=0))
+    safe = np.where(cn > 0, cn, 1.0)
+    obs = np.abs((Xc.T @ yc) / (safe * nyc))
+    cgt = np.zeros(len(FEATS))
+    cge = np.zeros(len(FEATS))
+    done = 0
+    while done < nperm:
+        b = min(block, nperm - done)
+        idx = np.argsort(rng.random((b, n)), axis=1)
+        Yp = yr[idx]
+        Ypc = Yp - Yp.mean(axis=1, keepdims=True)
+        with np.errstate(all="ignore"):
+            R = np.abs((Ypc @ Xc) / (nyc * safe))
+        cgt += (R > obs + TOL).sum(axis=0)
+        cge += (R >= obs - TOL).sum(axis=0)
+        done += b
+    return (*_tail(cgt, cge, nperm), obs)
+
+
+def exact_p_bin(t, nperm=NPERM, block=10_000):
+    """Same for a binary target: the label vector is shuffled and scored against the
+    feature's real midranks rather than against 0..n-1."""
+    lab = Yb[t].to_numpy(int)
+    n1 = int(lab.sum())
+    n0 = n - n1
+    const = n1 * (n1 + 1) / 2
+    obs = np.abs((lab.astype(float) @ Xr_all - const) / (n1 * n0) - 0.5)
+    cgt = np.zeros(len(FEATS))
+    cge = np.zeros(len(FEATS))
+    done = 0
+    while done < nperm:
+        b = min(block, nperm - done)
+        idx = np.argsort(rng.random((b, n)), axis=1)
+        Lp = lab.astype(float)[idx]
+        Av = np.abs((Lp @ Xr_all - const) / (n1 * n0) - 0.5)
+        cgt += (Av > obs + TOL).sum(axis=0)
+        cge += (Av >= obs - TOL).sum(axis=0)
+        done += b
+    return (*_tail(cgt, cge, nperm), obs)
+
+
+print(f"\n  recomputing all {len(A):,} permutation p-values against feature-specific nulls")
+print(f"  ({NPERM:,} permutations per target, every feature scored on the same shuffles)")
+rows = []
+for t in CONT:
+    p_gt, p_ge, _ = exact_p_cont(t)
+    g = A[(A["type"] == "cont") & (A["target"] == t)].set_index("feature").loc[FEATS]
+    rows.append(pd.DataFrame(dict(target=t, type="cont", feature=FEATS,
+                                  p_pub=g["perm_p"].to_numpy(), p_own=p_gt,
+                                  p_addone=p_ge, ndist=ndist)))
+for t in BIN:
+    p_gt, p_ge, _ = exact_p_bin(t)
+    g = A[(A["type"] == "bin") & (A["target"] == t)].set_index("feature").loc[FEATS]
+    rows.append(pd.DataFrame(dict(target=t, type="bin", feature=FEATS,
+                                  p_pub=g["perm_p"].to_numpy(), p_own=p_gt,
+                                  p_addone=p_ge, ndist=ndist)))
+P = pd.concat(rows, ignore_index=True)
+P["q_own"] = np.nan
+P["q_addone"] = np.nan
+for t, g in P.groupby("target"):
+    P.loc[g.index, "q_own"] = bh(g["p_own"].to_numpy())
+    P.loc[g.index, "q_addone"] = bh(g["p_addone"].to_numpy())
+
+tied = P["ndist"] < n
+print(f"\n  {'group':34} {'cells':>7} {'median p published':>19} {'median p own null':>18}")
+for lbl, mask in [("all cells", P.index == P.index),
+                  ("cells whose feature has no ties", ~tied),
+                  ("cells whose feature is tied", tied),
+                  ("cells with <= 8 distinct values", P["ndist"] <= 8)]:
+    s = P[mask]
+    print(f"  {lbl:34} {len(s):7d} {s['p_pub'].median():19.4f} {s['p_own'].median():18.4f}")
+
+print(f"\n  direction of the change, cells with p_published < 0.05:")
+sel = P[P["p_pub"] < 0.05]
+print(f"    own null gives a LARGER p (shared null was anti-conservative): "
+      f"{int((sel['p_own'] > sel['p_pub']).sum())} of {len(sel)}")
+print(f"    own null gives a SMALLER p                                  : "
+      f"{int((sel['p_own'] < sel['p_pub']).sum())} of {len(sel)}")
+print(f"    unchanged                                                   : "
+      f"{int((sel['p_own'] == sel['p_pub']).sum())} of {len(sel)}")
+
+print(f"\n  raw p < 0.05 : {int((P['p_pub'] < 0.05).sum())} cells with the shared null,"
+      f" {int((P['p_own'] < 0.05).sum())} with feature-specific nulls"
+      f"   (expected under the null: {0.05 * len(P):.0f})")
+print(f"  BH-FDR q < 0.05 within target: {int((A['q_fdr'] < 0.05).sum())} cells published,"
+      f" {int((P['q_own'] < 0.05).sum())} recomputed")
+
+# --- the tail convention, which turns out to matter more than the null does -----
+head("[8b] THE TAIL CONVENTION -- the two tracks do not use the same one")
+print("  44_univariate_screen.py:  p = #{null STRICTLY > observed} / NPERM, floored at 1/NPERM")
+print("      (the line 'pval=1-np.searchsorted(null,abs(rho),side=\"right\")/NPERM')")
+print("  45_multivariate_cv.py:    p = (1 + #{null >= observed}) / (1 + NPERM)")
+print("      (the line 'return (hits+1)/(NPERM+1)' with the test written as '>= obs')")
+print("  For a continuous null the two agree to within 1/NPERM. They separate when the null")
+print("  places mass exactly on the observed value, which is what a tied feature produces:")
+print("  the attainable correlations become a short discrete list, and the observed value is")
+print("  frequently the largest entry in it. Then #{null > observed} is 0 -- reported as the")
+print("  floor 1e-5 -- while #{null >= observed} is a substantial count.")
+
+P["equal_mass"] = P["p_addone"] - (P["p_own"] * NPERM) / (NPERM + 1.0)
+print(f"\n  {'group':34} {'cells':>7} {'median p (>)':>13} {'median p (>=,+1)':>17}")
+for lbl, mask in [("all cells", P.index == P.index),
+                  ("feature has no ties", ~tied),
+                  ("feature is tied", tied),
+                  ("feature has <= 8 distinct values", P["ndist"] <= 8)]:
+    s = P[mask]
+    print(f"  {lbl:34} {len(s):7d} {s['p_own'].median():13.4f} {s['p_addone'].median():17.4f}")
+
+print(f"\n  cells reported at the 1e-5 floor under the strictly-greater convention: "
+      f"{int((P['p_own'] <= 1.0 / NPERM).sum())}")
+atfloor = P[P["p_own"] <= 1.0 / NPERM]
+print(f"    of those, the add-one convention gives p > 0.05 for "
+      f"{int((atfloor['p_addone'] > 0.05).sum())} and p > 0.001 for "
+      f"{int((atfloor['p_addone'] > 0.001).sum())}")
+print(f"    their distinct-value counts: min {int(atfloor['ndist'].min())},"
+      f" median {int(atfloor['ndist'].median())}, max {int(atfloor['ndist'].max())}")
+
+print(f"\n  survivors at q < 0.05 under each combination:")
+print(f"    published (shared null, strictly greater)        : {int((A['q_fdr'] < 0.05).sum())}")
+print(f"    feature-specific null, strictly greater          : {int((P['q_own'] < 0.05).sum())}")
+print(f"    feature-specific null, add-one and >=            : {int((P['q_addone'] < 0.05).sum())}")
+
+print(f"\n  every cell that reaches q < 0.05 under any of the three, side by side:")
+cand = P[(P["q_own"] < 0.05) | (P["q_addone"] < 0.05) |
+         P.set_index(["target", "feature"]).index.isin(
+             [(r["target"], r["feature"]) for r in SURV])]
+print(f"  {'target':20} {'type':5} {'feature':26} {'dist':>4} {'p pub':>8} {'p own':>8}"
+      f" {'p +1':>8} {'q pub':>8} {'q own':>8} {'q +1':>8}")
+for _, r in cand.sort_values("p_addone").iterrows():
+    qp = A[(A["target"] == r["target"]) & (A["feature"] == r["feature"])]["q_fdr"].iloc[0]
+    print(f"  {r['target']:20} {r['type']:5} {r['feature']:26} {int(r['ndist']):4d}"
+          f" {r['p_pub']:8.1e} {r['p_own']:8.1e} {r['p_addone']:8.1e}"
+          f" {qp:8.4f} {r['q_own']:8.4f} {r['q_addone']:8.4f}")
+
+print("\n  What the three columns together show:")
+print("   - The published p-values are computed against an untied null, which is a")
+print("     continuous distribution, so the strictly-greater convention costs nothing and")
+print("     the published numbers are not distorted by it.")
+print("   - Correcting the null to respect each feature's ties WITHOUT also correcting the")
+print("     tail convention produces floor-level p-values for cells with no effect at all:")
+print("     8 of the 10 cells that land on the 1e-5 floor have an add-one p above 0.001,")
+print("     and 6 of them above 0.05. Those are an artefact of a discrete null, not results.")
+print("   - Correcting both together leaves the same three cells the screen already")
+print("     reported, at q = 0.0061, 0.0122 and 0.0182. The published positive yield of the")
+print("     univariate track therefore stands under a correctly specified test.")
+
+# pick the clearest example of the discreteness artefact for the mechanism panel
+art = P[(P["p_own"] <= 1.0 / NPERM) & (P["p_addone"] > 0.05)]
+ex = art.sort_values("p_addone", ascending=False).iloc[0]
+ex_f, ex_t = ex["feature"], ex["target"]
+xr_ex = rankdata(X[ex_f].to_numpy())
+if ex["type"] == "bin":
+    lab = Yb[ex_t].to_numpy(int)
+    n1 = int(lab.sum())
+    n0 = n - n1
+    const = n1 * (n1 + 1) / 2
+    idx = np.argsort(rng.random((NPERM, n)), axis=1)
+    nullvals = np.abs((lab.astype(float)[idx] @ xr_ex - const) / (n1 * n0) - 0.5)
+    obs_ex = abs((lab @ xr_ex - const) / (n1 * n0) - 0.5)
+    stat_lbl = "|AUC - 0.5|"
+else:
+    yr_ex = rankdata(Yc[ex_t].to_numpy(float))
+    idx = np.argsort(rng.random((NPERM, n)), axis=1)
+    Yp = yr_ex[idx]
+    Ypc = Yp - Yp.mean(axis=1, keepdims=True)
+    xc_ex = xr_ex - xr_ex.mean()
+    with np.errstate(all="ignore"):
+        nullvals = np.abs((Ypc @ xc_ex) / np.sqrt((Ypc ** 2).sum(axis=1) * (xc_ex ** 2).sum()))
+    obs_ex = abs(spearman(xr_ex, yr_ex))
+    stat_lbl = "|Spearman rho|"
+uu, cc = np.unique(np.round(nullvals, 10), return_counts=True)
+vals_ex, cnts_ex = np.unique(X[ex_f].to_numpy(), return_counts=True)
+
+fig, axes = plt.subplots(1, 3, figsize=(16.2, 5.3),
+                         gridspec_kw={"width_ratios": [1, 1.15, 1.05], "wspace": 0.27})
+ax = axes[0]
+ax.hist(ndist, bins=np.arange(0.5, n + 1.5, 1), color="#4878a8", edgecolor="white", linewidth=0.6)
+ax.axvline(n, color="#b2182b", lw=1.8, ls="--")
+ax.annotate(f"{int((ndist == n).sum())} features have all {n}\nvalues distinct: for these\nthe shared null is exact",
+            xy=(n, int((ndist == n).sum()) * 0.55), xytext=(15.0, int((ndist == n).sum()) * 0.72),
+            ha="center", va="center", fontsize=8, color="#b2182b",
+            arrowprops=dict(arrowstyle="->", color="#b2182b", lw=0.9))
+ax.set_xlabel(f"Distinct values the feature takes across the {n} subjects")
+ax.set_ylabel("Number of features")
+ax.set_title(f"Fig 8a  How tied the {len(FEATS)} screened features are\n"
+             f"{int((ndist < n).sum())} contain at least one tie", fontsize=10.5)
+ax.grid(axis="y", alpha=0.22, lw=0.6)
+ax.set_axisbelow(True)
+
+ax = axes[1]
+sub = P[(P["p_pub"] < 0.05) | (P["p_addone"] < 0.05)]
+sc = ax.scatter(np.maximum(sub["p_pub"], 1e-5), np.maximum(sub["p_addone"], 1e-5),
+                c=sub["ndist"], cmap="viridis", s=11, alpha=0.8, linewidths=0, vmin=1, vmax=n)
+lim = [8e-6, 0.12]
+ax.plot(lim, lim, color="#333333", lw=1.2, ls="--", label="unchanged")
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlim(*lim)
+ax.set_ylim(*lim)
+for k, rec in enumerate(sorted(SURV, key=lambda d: d["target"])):
+    r = P[(P["target"] == rec["target"]) & (P["feature"] == rec["feature"])].iloc[0]
+    xy = (max(r["p_pub"], 1e-5), max(r["p_addone"], 1e-5))
+    ax.scatter([xy[0]], [xy[1]], s=110, facecolor="none", edgecolor="#b2182b", lw=2.0, zorder=5)
+    ax.annotate(f"{r['target']} x {r['feature']}", xy=xy,
+                xytext=(2.6e-5, [1.1e-3, 3.4e-4, 1.0e-4][k]), fontsize=6.6, color="#b2182b",
+                va="center", arrowprops=dict(arrowstyle="-", color="#b2182b", lw=0.7))
+cb = fig.colorbar(sc, ax=ax, pad=0.015)
+cb.set_label("distinct values of the feature", fontsize=8.5)
+ax.set_xlabel("Permutation p as published\n(shared untied null, strictly-greater tail)")
+ax.set_ylabel("Permutation p, correctly specified\n(feature's own null, add-one tail)")
+ax.set_title("Fig 8b  Cells reaching p < 0.05 under either specification\n"
+             "circled: the three that survive BH-FDR, under both", fontsize=10.5)
+ax.legend(fontsize=8.2, frameon=False, loc="upper left")
+ax.grid(alpha=0.22, lw=0.6, which="both")
+ax.set_axisbelow(True)
+
+ax = axes[2]
+share = cc / cc.sum()
+bars = ax.bar(range(len(uu)), share, color=["#b2182b" if abs(v - obs_ex) < 1e-9 else "#cccccc"
+                                            for v in uu], width=0.6)
+ax.set_xticks(range(len(uu)))
+ax.set_xticklabels([f"{v:.4f}" for v in uu], fontsize=8)
+ax.set_xlabel(f"{stat_lbl} attainable by shuffling")
+ax.set_ylabel("Share of permutations")
+ax.set_title(f"Fig 8c  Why that matters: the null of a heavily tied feature\n"
+             f"{ex_f} on {ex_t}", fontsize=10.5)
+for i, (v, s) in enumerate(zip(uu, share)):
+    ax.text(i, s + 0.012, f"{s:.3f}", ha="center", fontsize=8.5)
+ax.set_ylim(0, max(share) * 2.35)
+ax.text(0.5, 0.97,
+        f"feature values: " + ", ".join(f"{v:g} x{c}" for v, c in zip(vals_ex, cnts_ex)) +
+        f"\n\nobserved statistic = {obs_ex:.4f} (red)\n"
+        f"P(null >  observed) = {float((nullvals > obs_ex + TOL).mean()):.4f}"
+        f"   -> reported as the floor 1e-5\n"
+        f"P(null >= observed) = {float((nullvals >= obs_ex - TOL).mean()):.4f}"
+        f"   -> the honest p-value",
+        transform=ax.transAxes, ha="center", va="top", fontsize=8.2,
+        bbox=dict(boxstyle="round,pad=0.45", fc="#fff6f4", ec="#b2182b", lw=0.9))
+ax.grid(axis="y", alpha=0.22, lw=0.6)
+ax.set_axisbelow(True)
+
+fig.tight_layout()
+fig.subplots_adjust(bottom=0.235)
+fig.text(0.012, 0.018,
+         "The screen shares one permutation null across all 608 features of a target by shuffling the target against the untied rank vector 0..n-1; its own comment records that this is the null 'of any feature\n"
+         "WITHOUT ties'. Panel b holds the statistic and the correction fixed and changes only the specification: each feature scored against shuffles evaluated on its own rank vector, with the add-one tail\n"
+         "(1 + #{null >= observed}) / (1 + NPERM) that 45_multivariate_cv.py already uses. Panel c shows why the tail convention cannot be changed independently of the null: for a feature where 22 of 24 subjects\n"
+         "share one value, the null has a two-point support, the observed statistic is the upper point, and the strictly-greater tail reports 1e-5 for what is in fact a p of roughly one half.",
+         fontsize=7.2, color="#444444", linespacing=1.5)
+fig.savefig(FIGDIR / "fig08_tie_corrected_pvalues.png", dpi=200)
+plt.close(fig)
+print(f"\n  wrote {FIGDIR / 'fig08_tie_corrected_pvalues.png'}")
 
 # ---------------------------------------------------------------------------
 # snapshot

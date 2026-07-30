@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/61_univariate_analysis.py`
-- Repository HEAD when this snapshot was generated: `d161d10e8a02386b0a74cced26ef63c326317751`
+- Repository HEAD when this snapshot was generated: `558177fc103baccb6b74ef91a2ecc8fb2dfcf858`
 - Reproduce with: `.venv/bin/python analysis/61_univariate_analysis.py`
 - Permutation nulls rebuilt here use 100,000 draws per target, seed 20260730. The screen
   itself used seed 20260717, so permutation p-values agree only to Monte-Carlo error.
@@ -230,4 +230,140 @@
   median loo_r2cv across the continuous half  : -0.0555
 
   wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig06_effect_vs_generalization.png
+
+==============================================================================
+[7] THE THREE CELLS THAT SURVIVED THE CORRECTION -- how robust are they
+==============================================================================
+  These three are the entire positive yield of the univariate track, so each is
+  examined directly rather than reported as a row in a table. Three questions:
+    (a) what does the relationship look like, and is it carried by the whole cohort?
+    (b) how much does it move when any single subject is removed (n = 24)?
+    (c) do the neighbouring settings of the same feature family agree with it?
+        Path-A features form a grid over window length x percentile threshold.
+        A real structural signal should vary smoothly across that grid; an isolated
+        spike surrounded by nothing is what selecting the maximum of many noisy
+        cells looks like.
+
+  target correlations among the three targets involved (nested targets are not independent findings):
+    sdq_emo            vs snap_adhd_total    Spearman rho = -0.132
+    sdq_emo            vs snap_inatt         Spearman rho = +0.000
+    snap_adhd_total    vs snap_inatt         Spearman rho = +0.962
+    snap_adhd_total is by construction the sum of the SNAP inattention and
+    hyperactivity items, so it contains snap_inatt; the two cells that share the
+    feature frac_act_short_w10_p20 are one finding measured twice, not two.
+
+  snap_inatt x frac_act_short_w10_p20
+    full-sample rho +0.767;  drop-one range +0.739 .. +0.817
+    subjects whose removal pushes rho below the null 95th percentile (0.405): none
+    feature has 22 distinct values across 24 subjects
+    neighbourhood: the frac_act_short grid on snap_inatt has 45 cells, median |rho| 0.062, max 0.767; cells above the null 95th pct: 2
+
+  snap_adhd_total x frac_act_short_w10_p20
+    full-sample rho +0.772;  drop-one range +0.747 .. +0.827
+    subjects whose removal pushes rho below the null 95th percentile (0.407): none
+    feature has 22 distinct values across 24 subjects
+    neighbourhood: the frac_act_short grid on snap_adhd_total has 45 cells, median |rho| 0.113, max 0.772; cells above the null 95th pct: 2
+
+  sdq_emo x act_bout_median_w0.5_p80
+    full-sample rho +0.772;  drop-one range +0.737 .. +0.807
+    subjects whose removal pushes rho below the null 95th percentile (0.406): none
+    feature has 4 distinct values across 24 subjects
+    neighbourhood: the act_bout_median grid on sdq_emo has 45 cells, median |rho| 0.225, max 0.772; cells above the null 95th pct: 6
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig07_surviving_cells.png
+
+==============================================================================
+[8] TIED FEATURES AND THE SHARED NULL
+==============================================================================
+  44_univariate_screen.py builds one null per target by correlating shuffles of the
+  target against the FIXED rank vector 0..n-1. Its own comment on that line records
+  the assumption: 'equivalent to the null distribution of any feature WITHOUT ties'.
+  Sharing one null across 608 features is what makes the screen fast, and it is exact
+  for a feature whose 24 values are all distinct. A feature with tied values has a
+  different null, because ties coarsen the set of attainable correlations.
+  This section measures how many features are tied and what happens to the p-values
+  when each feature is tested against its own null instead of the shared one.
+
+  distinct values per feature across the 24 subjects:
+          1 distinct :    0 features
+        2-4 distinct :   31 features
+        5-9 distinct :   42 features
+      10-17 distinct :   17 features
+      18-23 distinct :   47 features
+         24 distinct :  471 features   (no ties: the shared null is exact)
+  features with at least one tie : 137 of 608
+  median distinct values         : 24
+
+  recomputing all 12,160 permutation p-values against feature-specific nulls
+  (100,000 permutations per target, every feature scored on the same shuffles)
+
+  group                                cells  median p published  median p own null
+  all cells                            12160              0.4990             0.4893
+  cells whose feature has no ties       9420              0.4834             0.4802
+  cells whose feature is tied           2740              0.5442             0.5223
+  cells with <= 8 distinct values       1300              0.5468             0.5058
+
+  direction of the change, cells with p_published < 0.05:
+    own null gives a LARGER p (shared null was anti-conservative): 320 of 604
+    own null gives a SMALLER p                                  : 280 of 604
+    unchanged                                                   : 4 of 604
+
+  raw p < 0.05 : 604 cells with the shared null, 642 with feature-specific nulls   (expected under the null: 608)
+  BH-FDR q < 0.05 within target: 3 cells published, 11 recomputed
+
+==============================================================================
+[8b] THE TAIL CONVENTION -- the two tracks do not use the same one
+==============================================================================
+  44_univariate_screen.py:  p = #{null STRICTLY > observed} / NPERM, floored at 1/NPERM
+      (the line 'pval=1-np.searchsorted(null,abs(rho),side="right")/NPERM')
+  45_multivariate_cv.py:    p = (1 + #{null >= observed}) / (1 + NPERM)
+      (the line 'return (hits+1)/(NPERM+1)' with the test written as '>= obs')
+  For a continuous null the two agree to within 1/NPERM. They separate when the null
+  places mass exactly on the observed value, which is what a tied feature produces:
+  the attainable correlations become a short discrete list, and the observed value is
+  frequently the largest entry in it. Then #{null > observed} is 0 -- reported as the
+  floor 1e-5 -- while #{null >= observed} is a substantial count.
+
+  group                                cells  median p (>)  median p (>=,+1)
+  all cells                            12160        0.4893            0.5144
+  feature has no ties                   9420        0.4802            0.4973
+  feature is tied                       2740        0.5223            0.5493
+  feature has <= 8 distinct values      1300        0.5058            0.5537
+
+  cells reported at the 1e-5 floor under the strictly-greater convention: 10
+    of those, the add-one convention gives p > 0.05 for 6 and p > 0.001 for 8
+    their distinct-value counts: min 3, median 3, max 22
+
+  survivors at q < 0.05 under each combination:
+    published (shared null, strictly greater)        : 3
+    feature-specific null, strictly greater          : 11
+    feature-specific null, add-one and >=            : 3
+
+  every cell that reaches q < 0.05 under any of the three, side by side:
+  target               type  feature                    dist    p pub    p own     p +1    q pub    q own     q +1
+  sdq_emo              cont  act_bout_median_w0.5_p80      4  1.0e-05  1.0e-05  1.0e-05   0.0061   0.0030   0.0061
+  snap_inatt           cont  frac_act_short_w10_p20       22  1.0e-05  1.0e-05  2.0e-05   0.0061   0.0061   0.0122
+  snap_adhd_total      cont  frac_act_short_w10_p20       22  1.0e-05  2.0e-05  3.0e-05   0.0061   0.0122   0.0182
+  sdq_emo__qbin        bin   act_bout_median_w0.5_p80      4  3.8e-03  1.0e-05  2.1e-03   0.9639   0.0020   1.0000
+  sdq_emo__qbin        bin   act_bout_median_w2_p70        4  6.9e-02  1.0e-05  3.6e-02   0.9639   0.0020   1.0000
+  sdq_emo              cont  act_bout_median_w2_p90        3  5.0e-02  1.0e-05  5.8e-02   0.8805   0.0030   0.8764
+  sdq_cond__qbin       bin   act_bout_median_w2_p90        3  4.9e-01  1.0e-05  4.7e-01   0.7986   0.0061   0.8385
+  sdq_totdiff__qbin    bin   act_bout_median_w2_p90        3  4.8e-01  1.0e-05  4.9e-01   0.9302   0.0061   0.9940
+  snap_hyper__qbin     bin   act_bout_median_w2_p90        3  4.9e-01  1.0e-05  5.2e-01   0.7883   0.0061   0.8444
+  snap_adhd_total__qbin bin   act_bout_median_w2_p90        3  5.1e-01  1.0e-05  5.2e-01   0.8962   0.0061   0.9330
+  sdq_emo__qbin        bin   act_bout_median_w2_p90        3  5.1e-01  1.0e-05  5.2e-01   0.9639   0.0020   1.0000
+
+  What the three columns together show:
+   - The published p-values are computed against an untied null, which is a
+     continuous distribution, so the strictly-greater convention costs nothing and
+     the published numbers are not distorted by it.
+   - Correcting the null to respect each feature's ties WITHOUT also correcting the
+     tail convention produces floor-level p-values for cells with no effect at all:
+     8 of the 10 cells that land on the 1e-5 floor have an add-one p above 0.001,
+     and 6 of them above 0.05. Those are an artefact of a discrete null, not results.
+   - Correcting both together leaves the same three cells the screen already
+     reported, at q = 0.0061, 0.0122 and 0.0182. The published positive yield of the
+     univariate track therefore stands under a correctly specified test.
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig08_tie_corrected_pvalues.png
 ```
