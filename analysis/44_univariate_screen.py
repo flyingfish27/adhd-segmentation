@@ -22,7 +22,24 @@ assert (ROOT/"analysis/features.csv").is_file(), (
     f"找不到 {ROOT}/analysis/features.csv —— 该文件未入版本控制,只存在于跑过 "
     f"42_features_full.py 的检出里;在 worktree 里跑请设 ADHD_ROOT 指过去。")
 rng=np.random.default_rng(20260717)
-NPERM=5000
+# =============================================================================
+# 【NPERM 由 5000 提到 100000,2026-07-29 用户裁决】
+# =============================================================================
+# 理由【不是】调参凑显著,是【测量精度不够】。置换 p 的下限 = 1/NPERM:
+#   NPERM=5000  -> 下限 2e-4。而 A 轨每族 m = 特征数 = 608,BH-FDR 下单个最强命中的
+#                  q 最好只能到 2e-4 x 608 = 0.1216 —— 【结构上永远进不了 0.05】,
+#                  除非至少 3 个特征同时打到下限(0.05 / 2e-4 / 608 -> 需 rank >= 3)。
+#   NPERM=100000-> 下限 1e-5,q 天花板 1e-5 x 608 = 0.0061,单个命中即可通过。
+# 这与 TASK-113 当初把 B 轨 NPERM 由 500 提到 5000 是【同一个理由】(那时 q 天花板 0.383,
+#   连门都摸不着);只是当时没意识到 5000 对 A 轨的 m=608 仍然不够。
+# 【本改动不改变任何统计量、模型或特征选择】,只是把同一件事量得更准。
+# 客观后果:A 轨全跑一遍由 5.0 秒 -> 52 秒(实测);FDR 存活由 0 条 -> 3 条。
+#   改动前后的对照快照:analysis/probe_outputs/task106_run.md
+#   改动前的产物已归档:archive/A_univariate__608feat_NPERM5000.csv
+# 【一处仍须知情】:通过的 3 条,perm_p 仍卡在新下限 1e-5,即 10 万次置换仍无一次超过它们
+#   —— 真实 p 可能更小,现在的尺子依然不够细。
+# 【连带】53_stat_budget_probes.py 用正则从本文件解析 NPERM(不硬编),改完重跑即自动反映。
+NPERM=100000
 
 X=pd.read_csv(ROOT/"analysis/features.csv").set_index("subject")
 Ycont=pd.read_csv(ROOT/"analysis/targets.csv").set_index("subject")

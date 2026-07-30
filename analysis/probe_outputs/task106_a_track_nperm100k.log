@@ -1,0 +1,214 @@
+[TASK-106] 路径B列(偏相关的对象): 45 列
+           列名: actbout_cv_p10, actbout_cv_p20, actbout_cv_p30, actbout_cv_p40, actbout_cv_p50, actbout_cv_p60, actbout_cv_p70, actbout_cv_p80, actbout_cv_p90, actbout_med_p10, actbout_med_p20, actbout_med_p30, actbout_med_p40, actbout_med_p50, actbout_med_p60, actbout_med_p70, actbout_med_p80, actbout_med_p90, actfrac_p10, actfrac_p20, actfrac_p30, actfrac_p40, actfrac_p50, actfrac_p60, actfrac_p70, actfrac_p80, actfrac_p90, actshort_p10, actshort_p20, actshort_p30, actshort_p40, actshort_p50, actshort_p60, actshort_p70, actshort_p80, actshort_p90, switchmin_p10, switchmin_p20, switchmin_p30, switchmin_p40, switchmin_p50, switchmin_p60, switchmin_p70, switchmin_p80, switchmin_p90
+A轨完成:608 特征 × (10 连续 + 10 二分) 目标  → analysis/A_univariate.csv  (12160 行)
+置换次数: 100000   留一 n: 24
+
+========== 连续目标:各目标 top3(按 |ρ|),并给出留一 R²_cv 和 FDR-q ==========
+
+--- snap_inatt ---
+               feature    rho perm_p q_fdr loo_r2cv loo_rmse
+frac_act_short_w10_p20 +0.767 0.0000 0.006   +0.376     3.70
+              uaZ_skew -0.566 0.0044 0.836   +0.135     4.36
+stl_bout_median_w1_p20 -0.513 0.0112 0.836   +0.178     4.25
+
+--- snap_hyper ---
+               feature    rho perm_p q_fdr loo_r2cv loo_rmse
+frac_act_short_w10_p20 +0.720 0.0001 0.061   +0.322     3.64
+               gyY_max -0.555 0.0059 0.524   +0.172     4.03
+        jerk_dfa_alpha -0.544 0.0071 0.524   +0.275     3.77
+
+--- snap_odd ---
+               feature    rho perm_p q_fdr loo_r2cv loo_rmse
+               gyY_max -0.538 0.0074 0.994   +0.030     3.66
+             roll_mean +0.477 0.0188 0.994   +0.087     3.55
+frac_act_short_w10_p20 +0.456 0.0262 0.994   +0.051     3.62
+
+--- snap_adhd_total ---
+               feature    rho perm_p q_fdr loo_r2cv loo_rmse
+frac_act_short_w10_p20 +0.772 0.0000 0.006   +0.381     6.94
+              uaZ_skew -0.580 0.0034 0.581   +0.176     8.01
+          uaMag_spread +0.561 0.0049 0.581   +0.230     7.74
+
+--- sdq_hyper ---
+               feature    rho perm_p q_fdr loo_r2cv loo_rmse
+              uaZ_skew -0.590 0.0029 0.922   +0.260     1.93
+           uaMag_bp_mf +0.527 0.0087 0.922   +0.139     2.08
+frac_act_short_w10_p20 +0.521 0.0098 0.922   +0.163     2.05
+
+--- sdq_emo ---
+                 feature    rho perm_p q_fdr loo_r2cv loo_rmse
+act_bout_median_w0.5_p80 +0.772 0.0000 0.006   +0.611     1.11
+  act_bout_median_w1_p80 +0.606 0.0019 0.572   +0.430     1.35
+      act_bout_cv_w2_p20 +0.587 0.0031 0.622   -0.048     1.82
+
+--- sdq_cond ---
+            feature    rho perm_p q_fdr loo_r2cv loo_rmse
+stl_bout_cv_w10_p50 +0.668 0.0006 0.231   +0.130     0.88
+ stl_bout_cv_w5_p60 +0.648 0.0009 0.231   -0.141     1.01
+            uaY_max -0.624 0.0015 0.231   +0.419     0.72
+
+--- sdq_peer ---
+            feature    rho perm_p q_fdr loo_r2cv loo_rmse
+            yaw_rms -0.618 0.0014 0.833   +0.206     0.78
+stl_bout_cv_w10_p10 +0.560 0.0046 0.963   +0.214     0.78
+            yaw_std -0.537 0.0070 0.963   +0.210     0.78
+
+--- sdq_pro ---
+ feature    rho perm_p q_fdr loo_r2cv loo_rmse
+ gyY_min -0.572 0.0042 0.916   +0.189     2.11
+uaZ_skew +0.560 0.0052 0.916   +0.123     2.19
+jerk_zcr +0.530 0.0085 0.916   +0.204     2.09
+
+--- sdq_totdiff ---
+               feature    rho perm_p q_fdr loo_r2cv loo_rmse
+frac_act_short_w10_p20 +0.528 0.0088 0.975   +0.190     2.99
+   stl_bout_cv_w10_p40 +0.480 0.0185 0.975   +0.117     3.12
+          gyMag_madiff -0.478 0.0190 0.975   +0.013     3.30
+
+========== 关键:留一 R²_cv > 0 的特征-目标数(真能泛化的) ==========
+  R²_cv>0: 1226 / 6080 个组合
+         target                  feature    rho perm_p q_fdr loo_r2cv
+        sdq_emo act_bout_median_w0.5_p80 +0.772 0.0000 0.006   +0.611
+        sdq_emo   act_bout_median_w1_p80 +0.606 0.0019 0.572   +0.430
+       sdq_cond                  uaY_max -0.624 0.0015 0.231   +0.419
+snap_adhd_total   frac_act_short_w10_p20 +0.772 0.0000 0.006   +0.381
+     snap_inatt   frac_act_short_w10_p20 +0.767 0.0000 0.006   +0.376
+       sdq_cond               jerk_range -0.589 0.0031 0.231   +0.328
+     snap_hyper   frac_act_short_w10_p20 +0.720 0.0001 0.061   +0.322
+       sdq_cond                 jerk_min +0.570 0.0042 0.231   +0.310
+       sdq_cond                 jerk_max -0.574 0.0040 0.231   +0.303
+     snap_hyper           uaMag_centroid +0.535 0.0080 0.524   +0.287
+
+========== FDR q<0.05 的组合(校正后仍显著) ==========
+  连续+二分共 3 个 (总组合 12160)
+         target type                  feature      rho  perm_p   q_fdr  loo_r2cv
+     snap_inatt cont   frac_act_short_w10_p20 0.766602 0.00001 0.00608  0.375980
+snap_adhd_total cont   frac_act_short_w10_p20 0.771768 0.00001 0.00608  0.381062
+        sdq_emo cont act_bout_median_w0.5_p80 0.771974 0.00001 0.00608  0.611471
+
+========== 负对照 uaMag_median(总运动量)对各连续目标 ==========
+         target    rho perm_p q_fdr loo_r2cv
+        sdq_pro -0.247 0.2416 0.916   +0.001
+    sdq_totdiff -0.153 0.4728 0.975   -0.062
+      sdq_hyper -0.146 0.4908 0.942   -0.020
+     snap_inatt -0.076 0.7205 0.997   -0.070
+     snap_hyper -0.063 0.7683 0.978   -0.075
+       sdq_peer +0.058 0.7842 0.994   -0.122
+        sdq_emo -0.054 0.8012 0.961   -0.052
+snap_adhd_total -0.047 0.8239 0.981   -0.069
+       sdq_cond +0.045 0.8302 0.993   -0.078
+       snap_odd +0.008 0.9675 0.994   -0.097
+
+========== TASK-106:路径B 45 列 扣掉运动总量后还剩多少(连续目标) ==========
+  判读三种情形:|偏相关| 相对 |ρ| 大幅【缩小】⇒ 原相关是运动总量假象;
+             【基本不变】⇒ 真结构信号;【反而变大】⇒ 抑制(suppression),
+             即结构信号原先被运动总量盖住,扣掉才露出来——不是假象。
+  注:本列无 p 值、无 q 值,是效应量,不进多重比较的账。二分目标那半报的是
+      『残差化后的 AUC』(与该行 rho 列的 AUC 同量纲),见下方单独一节。
+
+  路径B连续组合共 450 个(45 列 × 10 连续目标)
+  |ρ| 中位 0.134 -> |偏相关| 中位 0.137  (中位缩小 -0.009)
+  |ρ|>0.3 的组合数 42 -> 扣掉总量后仍 >0.3 的 69 个
+  三种情形各有多少(以 |偏相关|-|ρ| 分档): 缩小>0.1 的 22 个 / 基本不变(±0.1) 的 392 个 / 变大>0.1 的 36 个
+
+  缩小最多的 10 个(最像总量假象):
+ target       feature    rho rho_partial_uamag
+sdq_pro   actfrac_p40 -0.223            +0.011
+sdq_pro   actfrac_p50 -0.227            +0.023
+sdq_pro switchmin_p80 -0.244            -0.061
+sdq_pro  actshort_p20 +0.191            +0.027
+sdq_pro switchmin_p10 +0.201            +0.037
+sdq_pro switchmin_p20 +0.173            -0.010
+sdq_pro  actshort_p30 +0.219            +0.065
+sdq_pro   actfrac_p30 -0.191            +0.047
+sdq_pro switchmin_p70 -0.159            +0.025
+sdq_pro  actshort_p40 +0.146            -0.016
+
+  变大最多的 10 个(抑制:结构信号原先被总量盖住):
+         target       feature    rho rho_partial_uamag
+snap_adhd_total   actfrac_p60 -0.201            -0.526
+     snap_hyper   actfrac_p60 -0.217            -0.530
+        sdq_pro   actfrac_p80 -0.023            +0.334
+        sdq_pro switchmin_p90 +0.061            +0.359
+     snap_inatt   actfrac_p60 -0.211            -0.466
+       snap_odd   actfrac_p60 -0.092            -0.337
+snap_adhd_total   actfrac_p70 -0.263            -0.494
+     snap_hyper   actfrac_p70 -0.287            -0.515
+        sdq_emo   actfrac_p70 +0.093            +0.315
+       snap_odd   actfrac_p70 -0.150            -0.350
+
+  扣掉总量后 |偏相关| 仍最大的 10 个(最像真结构信号):
+         target       feature    rho rho_partial_uamag
+     snap_hyper   actfrac_p60 -0.217            -0.530
+     snap_hyper   actfrac_p90 -0.482            -0.530
+snap_adhd_total   actfrac_p60 -0.201            -0.526
+     snap_hyper   actfrac_p70 -0.287            -0.515
+snap_adhd_total   actfrac_p90 -0.459            -0.512
+snap_adhd_total   actfrac_p80 -0.322            -0.504
+     snap_hyper   actfrac_p80 -0.334            -0.503
+snap_adhd_total   actfrac_p70 -0.263            -0.494
+     snap_hyper switchmin_p90 -0.380            -0.486
+snap_adhd_total switchmin_p90 -0.366            -0.481
+
+========== 二分目标:各目标 top3(按 |AUC-0.5|) ==========
+
+--- snap_inatt__qbin (AUC) ---
+               feature   rho perm_p q_fdr
+frac_act_short_w10_p20 0.868 0.0011 0.669
+            gyY_madiff 0.208 0.0118 0.669
+    gyMag_peak_amp_med 0.215 0.0142 0.669
+
+--- snap_hyper__qbin (AUC) ---
+               feature   rho perm_p q_fdr
+frac_act_short_w10_p20 0.818 0.0058 0.675
+               gyY_max 0.189 0.0071 0.675
+            pitch_kurt 0.210 0.0127 0.675
+
+--- snap_odd__qbin (AUC) ---
+               feature   rho perm_p q_fdr
+               gyY_max 0.133 0.0019 0.884
+stl_bout_median_w5_p30 0.200 0.0136 0.884
+              uaX_skew 0.785 0.0178 0.884
+
+--- snap_adhd_total__qbin (AUC) ---
+               feature   rho perm_p q_fdr
+frac_act_short_w10_p20 0.896 0.0004 0.231
+               gyY_max 0.194 0.0081 0.777
+           roll_median 0.806 0.0081 0.777
+
+--- sdq_hyper__qbin (AUC) ---
+               feature   rho perm_p q_fdr
+              uaZ_skew 0.150 0.0025 0.504
+frac_act_short_w10_p20 0.839 0.0039 0.504
+               uaX_var 0.179 0.0060 0.504
+
+--- sdq_emo__qbin (AUC) ---
+                 feature   rho perm_p q_fdr
+act_bout_median_w0.5_p80 0.833 0.0038 0.964
+      act_bout_cv_w2_p20 0.833 0.0038 0.964
+  switch_per_min_w10_p10 0.792 0.0123 0.964
+
+--- sdq_cond__qbin (AUC) ---
+            feature   rho perm_p q_fdr
+stl_bout_cv_w10_p50 0.914 0.0004 0.127
+ act_bout_cv_w5_p10 0.898 0.0007 0.127
+          uaX_range 0.102 0.0007 0.127
+
+--- sdq_peer__qbin (AUC) ---
+            feature   rho perm_p q_fdr
+ stl_bout_cv_w5_p40 0.889 0.0030 0.542
+ stl_bout_cv_w5_p30 0.880 0.0033 0.542
+stl_bout_cv_w10_p10 0.880 0.0033 0.542
+
+--- sdq_pro__qbin (AUC) ---
+ feature   rho perm_p q_fdr
+uaZ_skew 0.807 0.0103 0.980
+ gyY_min 0.215 0.0181 0.980
+ gyY_std 0.770 0.0255 0.980
+
+--- sdq_totdiff__qbin (AUC) ---
+   feature   rho perm_p q_fdr
+yaw_spread 0.104 0.0007 0.210
+ yaw_bp_hf 0.104 0.0007 0.210
+ yaw_bp_mf 0.119 0.0013 0.255
+.venv/bin/python analysis/44_univariate_screen.py  52.16s user 1.82s system 103% cpu 52.039 total

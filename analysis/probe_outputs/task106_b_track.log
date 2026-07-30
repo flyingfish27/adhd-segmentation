@@ -1,0 +1,271 @@
+zsh: command not found:  
+  sdq_emo      负对照(uaMag_median) skill=-0.061
+  sdq_cond     负对照(uaMag_median) skill=-0.070
+  sdq_peer     负对照(uaMag_median) skill=-0.086
+  sdq_pro      负对照(uaMag_median) skill=-0.034
+  sdq_totdiff  负对照(uaMag_median) skill=-0.063
+=== [main] bin(10 目标 × 3 模型 × k{5,10}) 主指标 ===
+  snap_inatt__qbin 完成
+  snap_hyper__qbin 完成
+  snap_odd__qbin 完成
+  snap_adhd_total__qbin 完成
+  sdq_hyper__qbin 完成
+  sdq_emo__qbin 完成
+  sdq_cond__qbin 完成
+  sdq_peer__qbin 完成
+  sdq_pro__qbin 完成
+  sdq_totdiff__qbin 完成
+=== [main] multi(12 目标 × 3 模型 × k{5,10}) 主指标 ===
+  snap_inatt__qter 完成
+  snap_inatt__qquar 完成
+  snap_hyper__qter 完成
+  snap_hyper__qquar 完成
+  snap_odd__qter 完成
+  snap_odd__qquar 完成
+  snap_adhd_total__qter 完成
+  snap_adhd_total__qquar 完成
+  sdq_hyper__qter 完成
+  sdq_hyper__qquar 完成
+  sdq_totdiff__qter 完成
+  sdq_totdiff__qquar 完成
+=== [nobmi_n23] 回归(10 连续 × 3 模型 × k{5,10}) 主指标  n=23 列=608 ===
+  snap_inatt   负对照(uaMag_median) skill=-0.069
+  snap_hyper   负对照(uaMag_median) skill=-0.072
+  snap_odd     负对照(uaMag_median) skill=-0.079
+  snap_adhd_total 负对照(uaMag_median) skill=-0.069
+  sdq_hyper    负对照(uaMag_median) skill=-0.048
+  sdq_emo      负对照(uaMag_median) skill=-0.062
+  sdq_cond     负对照(uaMag_median) skill=-0.073
+  sdq_peer     负对照(uaMag_median) skill=-0.087
+  sdq_pro      负对照(uaMag_median) skill=-0.035
+  sdq_totdiff  负对照(uaMag_median) skill=-0.066
+=== [nobmi_n23] bin(10 目标 × 3 模型 × k{5,10}) 主指标 ===
+  snap_inatt__qbin 完成
+  snap_hyper__qbin 完成
+  snap_odd__qbin 完成
+  snap_adhd_total__qbin 完成
+  sdq_hyper__qbin 完成
+  sdq_emo__qbin 完成
+  sdq_cond__qbin 完成
+  sdq_peer__qbin 完成
+  sdq_pro__qbin 完成
+  sdq_totdiff__qbin 完成
+=== [nobmi_n23] multi(12 目标 × 3 模型 × k{5,10}) 主指标 ===
+  snap_inatt__qter 完成
+  snap_inatt__qquar 完成
+  snap_hyper__qter 完成
+  snap_hyper__qquar 完成
+  snap_odd__qter 完成
+  snap_odd__qquar 完成
+  snap_adhd_total__qter 完成
+  snap_adhd_total__qquar 完成
+  sdq_hyper__qter 完成
+  sdq_hyper__qquar 完成
+  sdq_totdiff__qter 完成
+  sdq_totdiff__qquar 完成
+=== [bmi_n23] 回归(10 连续 × 3 模型 × k{5,10}) 主指标  n=23 列=609 ===
+  snap_inatt   负对照(uaMag_median) skill=-0.069
+  snap_hyper   负对照(uaMag_median) skill=-0.072
+  snap_odd     负对照(uaMag_median) skill=-0.079
+  snap_adhd_total 负对照(uaMag_median) skill=-0.069
+  sdq_hyper    负对照(uaMag_median) skill=-0.048
+  sdq_emo      负对照(uaMag_median) skill=-0.062
+  sdq_cond     负对照(uaMag_median) skill=-0.073
+  sdq_peer     负对照(uaMag_median) skill=-0.087
+  sdq_pro      负对照(uaMag_median) skill=-0.035
+  sdq_totdiff  负对照(uaMag_median) skill=-0.066
+=== [bmi_n23] bin(10 目标 × 3 模型 × k{5,10}) 主指标 ===
+  snap_inatt__qbin 完成
+  snap_hyper__qbin 完成
+  snap_odd__qbin 完成
+  snap_adhd_total__qbin 完成
+  sdq_hyper__qbin 完成
+  sdq_emo__qbin 完成
+  sdq_cond__qbin 完成
+  sdq_peer__qbin 完成
+  sdq_pro__qbin 完成
+  sdq_totdiff__qbin 完成
+=== [bmi_n23] multi(12 目标 × 3 模型 × k{5,10}) 主指标 ===
+  snap_inatt__qter 完成
+  snap_inatt__qquar 完成
+  snap_hyper__qter 完成
+  snap_hyper__qquar 完成
+  snap_odd__qter 完成
+  snap_odd__qquar 完成
+  snap_adhd_total__qter 完成
+  snap_adhd_total__qquar 完成
+  sdq_hyper__qter 完成
+  sdq_hyper__qquar 完成
+  sdq_totdiff__qter 完成
+  sdq_totdiff__qquar 完成
+
+=== 置换阶段(仅 main 臂,NPERM=5000):回归 14 个(skill>0)+ 分类 29 个(bacc>0.5) 待检 ===
+  perm reg snap_inatt/svr/k10 skill=+0.015 -> p=0.076
+  perm reg snap_inatt/rf/k5 skill=+0.021 -> p=0.112
+  perm reg snap_inatt/rf/k10 skill=+0.049 -> p=0.071
+  perm reg snap_hyper/ridge/k5 skill=+0.050 -> p=0.086
+  perm reg snap_hyper/ridge/k10 skill=+0.055 -> p=0.070
+  perm reg snap_adhd_total/rf/k5 skill=+0.027 -> p=0.119
+  perm reg snap_adhd_total/rf/k10 skill=+0.051 -> p=0.073
+  perm reg sdq_emo/ridge/k5 skill=+0.163 -> p=0.025
+  perm reg sdq_emo/ridge/k10 skill=+0.155 -> p=0.021
+  perm reg sdq_emo/svr/k10 skill=+0.085 -> p=0.034
+  perm reg sdq_emo/rf/k5 skill=+0.009 -> p=0.147
+  perm reg sdq_emo/rf/k10 skill=+0.044 -> p=0.095
+  perm reg sdq_cond/ridge/k5 skill=+0.016 -> p=0.117
+  perm reg sdq_peer/rf/k10 skill=+0.015 -> p=0.106
+  perm clf snap_inatt__qbin/svm/k10 bacc=0.542 -> p=0.366
+  perm clf snap_hyper__qbin/logit/k10 bacc=0.503 -> p=0.416
+  perm clf snap_hyper__qbin/svm/k10 bacc=0.503 -> p=0.434
+  perm clf snap_odd__qbin/logit/k5 bacc=0.556 -> p=0.334
+  perm clf snap_odd__qbin/logit/k10 bacc=0.589 -> p=0.244
+  perm clf snap_odd__qbin/svm/k5 bacc=0.556 -> p=0.326
+  perm clf snap_odd__qbin/svm/k10 bacc=0.678 -> p=0.109
+  perm clf snap_odd__qbin/rf/k10 bacc=0.567 -> p=0.280
+  perm clf sdq_hyper__qbin/logit/k10 bacc=0.521 -> p=0.397
+  perm clf sdq_hyper__qbin/svm/k10 bacc=0.521 -> p=0.403
+  perm clf sdq_hyper__qbin/rf/k5 bacc=0.607 -> p=0.244
+  perm clf sdq_hyper__qbin/rf/k10 bacc=0.607 -> p=0.217
+  perm clf sdq_emo__qbin/logit/k5 bacc=0.583 -> p=0.292
+  perm clf sdq_emo__qbin/logit/k10 bacc=0.625 -> p=0.209
+  perm clf sdq_emo__qbin/svm/k10 bacc=0.542 -> p=0.359
+  perm clf sdq_emo__qbin/rf/k10 bacc=0.583 -> p=0.264
+  perm clf sdq_cond__qbin/logit/k10 bacc=0.594 -> p=0.244
+  perm clf sdq_cond__qbin/svm/k10 bacc=0.656 -> p=0.139
+  perm clf sdq_cond__qbin/rf/k10 bacc=0.562 -> p=0.271
+  perm clf sdq_peer__qbin/logit/k5 bacc=0.639 -> p=0.127
+  perm clf sdq_peer__qbin/logit/k10 bacc=0.556 -> p=0.274
+  perm clf sdq_peer__qbin/svm/k5 bacc=0.611 -> p=0.195
+  perm clf sdq_peer__qbin/svm/k10 bacc=0.639 -> p=0.149
+  perm clf sdq_peer__qbin/rf/k5 bacc=0.583 -> p=0.194
+  perm clf sdq_totdiff__qbin/logit/k5 bacc=0.689 -> p=0.080
+  perm clf sdq_totdiff__qbin/svm/k5 bacc=0.767 -> p=0.043
+  perm clf sdq_totdiff__qbin/rf/k5 bacc=0.822 -> p=0.013
+  perm clf sdq_totdiff__qbin/rf/k10 bacc=0.589 -> p=0.241
+  perm clf snap_inatt__qquar/rf/k5 bacc=0.521 -> p=0.008
+
+=== TASK-113 BH-FDR:家族 = main 臂全部 192 个组合 ===
+  其中有置换 p 的 43 个;无 p 的 149 个按 p=1 计入分母(故 m=192,不是 m=43)
+  !! 注意:main 臂组合数为 192,不是 ISSUE-121/TASK-113 写定的 198。家族大小变了,q 值口径随之改变,须回头核对条目。
+  q<0.05 的组合数:0
+  提醒:p=1 是【保守近似】——那 149 个是『没赢过哑基线』,不是『真跑了置换得 p=1』。
+        这样只会漏掉真发现、不会制造假发现;两个 n=23 的 BMI 探索臂不在本家族内(q 留空)。
+  已清除中间档 .B_multivariate.partial.csv
+  已清除中间档 .B_perm_progress.json
+
+>>> analysis/B_multivariate.csv  共 576 行
+  各臂行数:main=192  nobmi_n23=192  bmi_n23=192
+
+===== [main] 回归:skill>0(击败哑基线) =====
+  14/60 击败哑基线
+         target model  k     rmse      rho    skill  nc_skill  skill_over_nc   perm_p  q_fdr
+        sdq_emo ridge  5 1.428471 0.504331 0.163324 -0.060667       0.223991 0.024995    1.0
+        sdq_emo ridge 10 1.443208 0.563348 0.154692 -0.060667       0.215359 0.020596    1.0
+        sdq_emo   svr 10 1.561400 0.322360 0.085466 -0.060667       0.146133 0.033593    1.0
+     snap_hyper ridge 10 4.007226 0.393076 0.055306 -0.069748       0.125053 0.069986    1.0
+snap_adhd_total    rf 10 8.025792 0.435771 0.050838 -0.067230       0.118068 0.073385    1.0
+     snap_hyper ridge  5 4.029411 0.457781 0.050076 -0.069748       0.119823 0.085583    1.0
+     snap_inatt    rf 10 4.270796 0.367266 0.048934 -0.067457       0.116392 0.071186    1.0
+        sdq_emo    rf 10 1.632685 0.342927 0.043713 -0.060667       0.104380 0.094581    1.0
+snap_adhd_total    rf  5 8.230040 0.290950 0.026683 -0.067230       0.093913 0.118576    1.0
+     snap_inatt    rf  5 4.395295 0.328307 0.021210 -0.067457       0.088667 0.112178    1.0
+       sdq_cond ridge  5 0.894110 0.334533 0.016445 -0.069890       0.086335 0.116777    1.0
+     snap_inatt   svr 10 4.422797 0.348005 0.015085 -0.067457       0.082543 0.075785    1.0
+       sdq_peer    rf 10 0.828000 0.391236 0.014982 -0.085904       0.100886 0.106179    1.0
+        sdq_emo    rf  5 1.692223 0.213268 0.008841 -0.060667       0.069508 0.146771    1.0
+
+===== [main] 回归:skill_over_nc 排名(完整模型比『只知道运动总量』好出多少) =====
+  >0 结构特征带来了总量之外的信息;≈0 那点成绩只用总量就能拿到(R10 担心的情形);<0 更差。
+         target model  k    skill  nc_skill  skill_over_nc
+        sdq_emo ridge  5 0.163324 -0.060667       0.223991
+        sdq_emo ridge 10 0.154692 -0.060667       0.215359
+        sdq_emo   svr 10 0.085466 -0.060667       0.146133
+     snap_hyper ridge 10 0.055306 -0.069748       0.125053
+     snap_hyper ridge  5 0.050076 -0.069748       0.119823
+snap_adhd_total    rf 10 0.050838 -0.067230       0.118068
+     snap_inatt    rf 10 0.048934 -0.067457       0.116392
+        sdq_emo    rf 10 0.043713 -0.060667       0.104380
+       sdq_peer    rf 10 0.014982 -0.085904       0.100886
+snap_adhd_total    rf  5 0.026683 -0.067230       0.093913
+
+===== [main] 二分类:balanced_acc>0.5 =====  28/60
+  (分类那半无负对照字段——B 轨的运动总量对照只有回归那半有,见文件头部声明)
+           target model  k       f1      acc     bacc   perm_p  q_fdr
+sdq_totdiff__qbin    rf  5 0.822222 0.833333 0.822222 0.012997    1.0
+sdq_totdiff__qbin   svm  5 0.772296 0.791667 0.766667 0.042591    1.0
+sdq_totdiff__qbin logit  5 0.697479 0.750000 0.688889 0.080184    1.0
+   snap_odd__qbin   svm 10 0.681214 0.708333 0.677778 0.109378    1.0
+   sdq_cond__qbin   svm 10 0.660606 0.708333 0.656250 0.139372    1.0
+   sdq_peer__qbin logit  5 0.658120 0.791667 0.638889 0.126975    1.0
+   sdq_peer__qbin   svm 10 0.658120 0.791667 0.638889 0.149370    1.0
+    sdq_emo__qbin logit 10 0.619048 0.625000 0.625000 0.209158    1.0
+   sdq_peer__qbin   svm  5 0.621053 0.750000 0.611111 0.195361    1.0
+  sdq_hyper__qbin    rf  5 0.607985 0.625000 0.607143 0.243551    1.0
+  sdq_hyper__qbin    rf 10 0.607985 0.625000 0.607143 0.216757    1.0
+   sdq_cond__qbin logit 10 0.596639 0.666667 0.593750 0.244151    1.0
+   snap_odd__qbin logit 10 0.590133 0.625000 0.588889 0.244151    1.0
+sdq_totdiff__qbin    rf 10 0.590133 0.625000 0.588889 0.240952    1.0
+   sdq_peer__qbin    rf  5 0.587224 0.708333 0.583333 0.193761    1.0
+    sdq_emo__qbin    rf 10 0.583333 0.583333 0.583333 0.263547    1.0
+    sdq_emo__qbin logit  5 0.580420 0.583333 0.583333 0.291942    1.0
+   snap_odd__qbin    rf 10 0.563636 0.625000 0.566667 0.279744    1.0
+   sdq_cond__qbin    rf 10 0.563636 0.625000 0.562500 0.270746    1.0
+   snap_odd__qbin   svm  5 0.555556 0.583333 0.555556 0.325935    1.0
+   snap_odd__qbin logit  5 0.555556 0.583333 0.555556 0.333733    1.0
+   sdq_peer__qbin logit 10 0.550000 0.750000 0.555556 0.273745    1.0
+ snap_inatt__qbin   svm 10 0.540870 0.541667 0.541667 0.365727    1.0
+    sdq_emo__qbin   svm 10 0.540870 0.541667 0.541667 0.358528    1.0
+  sdq_hyper__qbin   svm 10 0.520871 0.541667 0.521429 0.402719    1.0
+  sdq_hyper__qbin logit 10 0.520871 0.541667 0.521429 0.396521    1.0
+ snap_hyper__qbin logit 10 0.500000 0.500000 0.503497 0.415917    1.0
+ snap_hyper__qbin   svm 10 0.500000 0.500000 0.503497 0.433713    1.0
+
+===== [main] 多分类:balanced_acc>0.5 =====  1/72
+  (分类那半无负对照字段——B 轨的运动总量对照只有回归那半有,见文件头部声明)
+           target model  k       f1      acc     bacc   perm_p  q_fdr
+snap_inatt__qquar    rf  5 0.479167 0.583333 0.520833 0.008198    1.0
+
+===== [main] 置换 p<0.05 =====
+  6 个
+track            target model  k    skill     bacc   perm_p  q_fdr
+multi snap_inatt__qquar    rf  5      NaN 0.520833 0.008198    1.0
+  bin sdq_totdiff__qbin    rf  5      NaN 0.822222 0.012997    1.0
+  reg           sdq_emo ridge 10 0.154692      NaN 0.020596    1.0
+  reg           sdq_emo ridge  5 0.163324      NaN 0.024995    1.0
+  reg           sdq_emo   svr 10 0.085466      NaN 0.033593    1.0
+  bin sdq_totdiff__qbin   svm  5      NaN 0.766667 0.042591    1.0
+
+===== [main] FDR q<0.05(校正后仍显著) =====
+  0 个 / 家族 192
+
+===== [TASK-105] BMI 探索臂:bmi_n23 vs nobmi_n23(同 23 人,唯一差别是多了 BMI 列) =====
+  这两臂【不进 FDR 家族、不跑置换】,属探索层,不下确证性结论。
+
+  BMI 被 SelectKBest 选进模型的折比例 bmi_sel_frac: 均值 0.001  最大 0.043  从未被选中(=0) 的组合数 189/192
+  读法:若 bmi_sel_frac 多为 0,则『加了 BMI 没差别』说明的是 BMI 压根没进模型,
+        而不是『BMI 与症状无关』——两者是不同的结论,不可混为一谈。
+
+  [reg] skill 差值(bmi_n23 − nobmi_n23):中位 +0.0000  最大 +0.0000  最小 +0.0000  非零组合数 0/60
+      reg/snap_inatt/ridge/5                         +0.0000  (bmi_sel_frac=0.00)
+      reg/snap_inatt/ridge/10                        +0.0000  (bmi_sel_frac=0.00)
+      reg/sdq_emo/svr/5                              +0.0000  (bmi_sel_frac=0.00)
+      reg/sdq_emo/svr/10                             +0.0000  (bmi_sel_frac=0.00)
+      reg/sdq_emo/rf/5                               +0.0000  (bmi_sel_frac=0.00)
+
+  [bin] bacc 差值(bmi_n23 − nobmi_n23):中位 +0.0000  最大 +0.0000  最小 +0.0000  非零组合数 0/60
+      bin/snap_inatt__qbin/logit/5                   +0.0000  (bmi_sel_frac=0.00)
+      bin/snap_inatt__qbin/logit/10                  +0.0000  (bmi_sel_frac=0.00)
+      bin/sdq_emo__qbin/svm/5                        +0.0000  (bmi_sel_frac=0.00)
+      bin/sdq_emo__qbin/svm/10                       +0.0000  (bmi_sel_frac=0.00)
+      bin/sdq_emo__qbin/rf/5                         +0.0000  (bmi_sel_frac=0.00)
+
+  [multi] bacc 差值(bmi_n23 − nobmi_n23):中位 +0.0000  最大 +0.0000  最小 -0.0312  非零组合数 1/72
+      multi/sdq_totdiff__qquar/svm/10                -0.0312  (bmi_sel_frac=0.04)
+      multi/snap_inatt__qter/logit/5                 +0.0000  (bmi_sel_frac=0.00)
+      multi/snap_adhd_total__qquar/svm/10            +0.0000  (bmi_sel_frac=0.00)
+      multi/sdq_hyper__qter/svm/10                   +0.0000  (bmi_sel_frac=0.00)
+      multi/sdq_hyper__qter/svm/5                    +0.0000  (bmi_sel_frac=0.00)
+
+  另一个对照(不是 BMI 的效果,是【少了 Y55 一个人】的效果):nobmi_n23 vs main
+      [reg] skill 差值中位 +0.0287  最大 |差| 0.2319
+      若这一行的量级与上面 BMI 那一行相当或更大,则 BMI 那点差异无法与『少一个人』区分开。
