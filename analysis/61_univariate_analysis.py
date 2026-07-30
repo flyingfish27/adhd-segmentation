@@ -1039,6 +1039,149 @@ plt.close(fig)
 print(f"\n  wrote {FIGDIR / 'fig08_tie_corrected_pvalues.png'}")
 
 # ---------------------------------------------------------------------------
+# [9] FIGURE 09 -- where the movement-total negative control ranks
+# ---------------------------------------------------------------------------
+head("[9] NEGATIVE CONTROL -- how uaMag_median ranks among the 608 features")
+NC = "uaMag_median"
+print(f"  The project's claim is 'structure, not amount' (45_multivariate_cv.py, header).")
+print(f"  {NC} is the designated stand-in for amount: the median magnitude of gravity-removed")
+print(f"  acceleration. If it ranks near the top of a target's 608 features, the leading hits")
+print(f"  for that target cannot be attributed to structure without a further control.")
+
+eff = A.copy()
+eff["effect"] = np.where(eff["type"] == "cont", eff["rho"].abs(), (eff["auc"] - 0.5).abs())
+ncrank = []
+for t in CONT + BIN:
+    g = eff[eff["target"] == t]
+    v = float(g.loc[g["feature"] == NC, "effect"].iloc[0])
+    rank = int((g["effect"] > v).sum()) + 1
+    ncrank.append(dict(target=t, kind="cont" if t in CONT else "bin", effect=v, rank=rank,
+                       pct=100 * (1 - (rank - 1) / len(g)),
+                       maxeff=float(g["effect"].max()),
+                       p=float(g.loc[g["feature"] == NC, "perm_p"].iloc[0])))
+NCR = pd.DataFrame(ncrank)
+print(f"\n  {'target':24} {'kind':5} {'effect of NC':>12} {'rank of 608':>12} {'top %':>7}"
+      f" {'best feature effect':>19} {'perm_p of NC':>13}")
+for _, r in NCR.iterrows():
+    print(f"  {r['target']:24} {r['kind']:5} {r['effect']:12.3f} {r['rank']:12d}"
+          f" {100 - r['pct']:6.1f}% {r['maxeff']:19.3f} {r['p']:13.4f}")
+print(f"\n  median rank of the negative control across the 20 targets: "
+      f"{int(NCR['rank'].median())} of 608")
+print(f"  targets where it ranks in the top 5% (rank <= 30): "
+      f"{sorted(NCR.loc[NCR['rank'] <= 30, 'target'].tolist()) or 'none'}")
+print(f"  targets where it reaches perm_p < 0.05: "
+      f"{sorted(NCR.loc[NCR['p'] < 0.05, 'target'].tolist()) or 'none'}")
+
+print(f"\n  how much movement-total is inside the features that produced the three survivors:")
+print(f"  {'feature':30} {'Spearman rho with ' + NC:>28}")
+for f in sorted({r['feature'] for r in SURV}):
+    rr = spearman(rankdata(X[f].to_numpy()), rankdata(X[NC].to_numpy()))
+    print(f"  {f:30} {rr:28.3f}")
+print(f"  (path-A features threshold each child against that child's own percentile, which is")
+print(f"   what makes them amplitude-invariant; these numbers measure that claim directly")
+print(f"   rather than assuming it.)")
+
+fig, ax = plt.subplots(figsize=(12.6, 6.4))
+NCR2 = NCR.sort_values("rank")
+for i, (_, r) in enumerate(NCR2.iterrows()):
+    g = eff[eff["target"] == r["target"]]
+    xs = g["effect"].to_numpy() / g["effect"].max()
+    ax.scatter(xs, np.full(len(xs), i) + (np.random.default_rng(i).random(len(xs)) - .5) * 0.4,
+               s=1.5, color="#cccccc", alpha=0.55, linewidths=0)
+    ax.scatter([r["effect"] / r["maxeff"]], [i], s=70, color="#b2182b", zorder=5,
+               marker="D", edgecolor="white", linewidth=0.8)
+    ax.text(1.012, i, f"rank {r['rank']:3d} / 608", transform=ax.get_yaxis_transform(),
+            va="center", fontsize=7.8, family="monospace")
+ax.set_yticks(range(len(NCR2)))
+ax.set_yticklabels([f"{r['target']}  [{r['kind']}]" for _, r in NCR2.iterrows()], fontsize=8.4)
+ax.invert_yaxis()
+ax.set_xlim(-0.02, 1.04)
+ax.set_xlabel("Effect size relative to the strongest feature for that target\n"
+              "(|Spearman rho| for continuous targets, |AUC - 0.5| for binary; 1.0 = that target's best feature)")
+ax.set_title("Fig 9  Where the movement-total negative control uaMag_median sits among the 608 screened features\n"
+             "grey = all 608 features for that target;  red diamond = the negative control",
+             fontsize=11)
+ax.grid(axis="x", alpha=0.22, lw=0.6)
+ax.set_axisbelow(True)
+fig.tight_layout()
+fig.subplots_adjust(bottom=0.20, right=0.88)
+fig.text(0.012, 0.018,
+         "Effect sizes are scaled within each target so that the two statistics can share one axis; the ranks in the right-hand column are computed on the raw effect sizes and are not affected by that scaling.\n"
+         "A high rank for the negative control would mean the target is tracking how much the child moved. Absolute effect sizes and the control's own permutation p are in section [9] of the snapshot.",
+         fontsize=7.2, color="#444444", linespacing=1.5)
+fig.savefig(FIGDIR / "fig09_negative_control_rank.png", dpi=200)
+plt.close(fig)
+print(f"\n  wrote {FIGDIR / 'fig09_negative_control_rank.png'}")
+
+# ---------------------------------------------------------------------------
+# [10] FIGURE 10 -- the movement-total control on the 45 path-B columns
+# ---------------------------------------------------------------------------
+head("[10] PARTIAL CONTROL -- the 45 path-B columns, before and after removing movement total")
+PB = sorted(A.loc[A["rho_partial_uamag"].notna() | A["auc_partial_uamag"].notna(), "feature"].unique())
+print(f"  Path-B features threshold every child against ONE pooled line, so a child who moves")
+print(f"  harder spends more time above it; MODEL_MENU.md records |rho| = 0.877 between the")
+print(f"  p50 actfrac column and the negative control. These {len(PB)} columns are the only ones the")
+print(f"  screen re-tests with movement total removed. The other {len(FEATS) - len(PB)} are not re-tested at all.")
+print("  Reading, from 44_univariate_screen.py: shrinks a lot => the original association was")
+print("  a movement-total artefact; unchanged => structure; grows => suppression, structure")
+print("  that total movement was masking.")
+
+pbc = A[(A["type"] == "cont") & (A["feature"].isin(PB))].copy()
+pbc["before"] = pbc["rho"].abs()
+pbc["after"] = pbc["rho_partial_uamag"].abs()
+pbb = A[(A["type"] == "bin") & (A["feature"].isin(PB))].copy()
+pbb["before"] = (pbb["auc"] - 0.5).abs()
+pbb["after"] = (pbb["auc_partial_uamag"] - 0.5).abs()
+for lbl, d, band in [("continuous (|rho|, no-effect 0, range [0,1])", pbc, 0.10),
+                     ("binary (|AUC-0.5|, no-effect 0, range [0,0.5])", pbb, 0.05)]:
+    sh = d["before"] - d["after"]
+    print(f"\n  {lbl}   {len(d)} cells")
+    print(f"    median effect before {d['before'].median():.3f} -> after {d['after'].median():.3f}"
+          f"   (median change {-sh.median():+.3f})")
+    print(f"    shrank by more than {band}: {int((sh > band).sum()):4d}"
+          f"   |  within +/-{band}: {int((sh.abs() <= band).sum()):4d}"
+          f"   |  grew by more than {band}: {int((sh < -band).sum()):4d}")
+    NULLS = NULL_C if d is pbc else NULL_B
+    b_ok = sum(int(r["before"] > np.quantile(NULLS[r["target"]], .95)) for _, r in d.iterrows())
+    a_ok = sum(int(r["after"] > np.quantile(NULLS[r["target"]], .95)) for _, r in d.iterrows())
+    print(f"    cells above the target's null 95th percentile, before -> after: {b_ok} -> {a_ok}")
+
+fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.9))
+for ax, d, lbl, base, rng_ in [
+        (axes[0], pbc, "Continuous targets:  |Spearman rho|", 0.0, 1.0),
+        (axes[1], pbb, "Binary targets:  |AUC - 0.5|", 0.0, 0.5)]:
+    top = max(d["before"].max(), d["after"].max()) * 1.06
+    ax.plot([0, top], [0, top], color="#333333", lw=1.2, ls="--", label="unchanged by the control")
+    sc = ax.scatter(d["before"], d["after"], s=16, alpha=0.7, linewidths=0,
+                    c=[CONT.index(t) if t in CONT else BIN.index(t) for t in d["target"]],
+                    cmap="tab10")
+    ax.set_xlim(0, top)
+    ax.set_ylim(0, top)
+    ax.set_xlabel(f"before: {lbl.split(':')[1].strip()}")
+    ax.set_ylabel(f"after removing movement total")
+    sh = d["before"] - d["after"]
+    ax.set_title(f"{lbl}\n{len(d)} cells;  {int((sh > 0).sum())} shrank, {int((sh < 0).sum())} grew"
+                 f"   (axis range [0, {rng_:g}])", fontsize=10.2)
+    ax.text(0.03, 0.97, f"median before {d['before'].median():.3f}\nmedian after  {d['after'].median():.3f}",
+            transform=ax.transAxes, va="top", fontsize=8.4, family="monospace",
+            bbox=dict(boxstyle="round,pad=0.4", fc="white", ec="#cccccc"))
+    ax.legend(fontsize=8.2, frameon=False, loc="lower right")
+    ax.grid(alpha=0.22, lw=0.6)
+    ax.set_axisbelow(True)
+fig.suptitle("Fig 10  The only movement-total control in the univariate track, applied to the 45 path-B columns\n"
+             "points below the dashed line lost effect when total movement was removed; points above it gained",
+             fontsize=11)
+fig.tight_layout(rect=[0, 0.10, 1, 0.94])
+fig.text(0.012, 0.018,
+         "Left and right panels use different statistics on different ranges and are deliberately not drawn on a shared scale: |rho| lives in [0,1] with no effect at 0, |AUC - 0.5| lives in [0,0.5] with no\n"
+         f"effect at 0. Colour distinguishes targets. These {len(PB)} of {len(FEATS)} features are the whole extent of the control: the remaining {len(FEATS) - len(PB)} columns carry no movement-total adjustment in this track, and the\n"
+         "classification half of the multivariate track carries none at all. The partial statistic has no p-value and no q-value in the published table; it is an effect size only.",
+         fontsize=7.2, color="#444444", linespacing=1.5)
+fig.savefig(FIGDIR / "fig10_partial_control_pathB.png", dpi=200)
+plt.close(fig)
+print(f"\n  wrote {FIGDIR / 'fig10_partial_control_pathB.png'}")
+
+# ---------------------------------------------------------------------------
 # snapshot
 # ---------------------------------------------------------------------------
 try:

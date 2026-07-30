@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/61_univariate_analysis.py`
-- Repository HEAD when this snapshot was generated: `558177fc103baccb6b74ef91a2ecc8fb2dfcf858`
+- Repository HEAD when this snapshot was generated: `263360dfe423a9c098b86fb0fe25b224906c0679`
 - Reproduce with: `.venv/bin/python analysis/61_univariate_analysis.py`
 - Permutation nulls rebuilt here use 100,000 draws per target, seed 20260730. The screen
   itself used seed 20260717, so permutation p-values agree only to Monte-Carlo error.
@@ -366,4 +366,71 @@
      univariate track therefore stands under a correctly specified test.
 
   wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig08_tie_corrected_pvalues.png
+
+==============================================================================
+[9] NEGATIVE CONTROL -- how uaMag_median ranks among the 608 features
+==============================================================================
+  The project's claim is 'structure, not amount' (45_multivariate_cv.py, header).
+  uaMag_median is the designated stand-in for amount: the median magnitude of gravity-removed
+  acceleration. If it ranks near the top of a target's 608 features, the leading hits
+  for that target cannot be attributed to structure without a further control.
+
+  target                   kind  effect of NC  rank of 608   top % best feature effect  perm_p of NC
+  sdq_cond                 cont         0.045          501   82.2%               0.668        0.8302
+  sdq_emo                  cont         0.054          504   82.7%               0.772        0.8012
+  sdq_hyper                cont         0.146          303   49.7%               0.590        0.4908
+  sdq_peer                 cont         0.058          460   75.5%               0.618        0.7842
+  sdq_pro                  cont         0.247          131   21.4%               0.572        0.2416
+  sdq_totdiff              cont         0.153          283   46.4%               0.528        0.4728
+  snap_adhd_total          cont         0.047          501   82.2%               0.772        0.8239
+  snap_hyper               cont         0.063          471   77.3%               0.720        0.7683
+  snap_inatt               cont         0.076          415   68.1%               0.767        0.7205
+  snap_odd                 cont         0.008          588   96.5%               0.538        0.9675
+  sdq_cond__qbin           bin          0.008          579   95.1%               0.414        0.9288
+  sdq_emo__qbin            bin          0.028          462   75.8%               0.333        0.7990
+  sdq_hyper__qbin          bin          0.179          115   18.8%               0.350        0.1446
+  sdq_peer__qbin           bin          0.037          435   71.4%               0.389        0.7716
+  sdq_pro__qbin            bin          0.004          589   96.7%               0.307        0.9765
+  sdq_totdiff__qbin        bin          0.100          247   40.5%               0.396        0.4106
+  snap_adhd_total__qbin    bin          0.035          484   79.4%               0.396        0.7555
+  snap_hyper__qbin         bin          0.031          510   83.7%               0.318        0.7753
+  snap_inatt__qbin         bin          0.139          144   23.5%               0.368        0.2419
+  snap_odd__qbin           bin          0.011          560   91.9%               0.367        0.9079
+
+  median rank of the negative control across the 20 targets: 466 of 608
+  targets where it ranks in the top 5% (rank <= 30): none
+  targets where it reaches perm_p < 0.05: none
+
+  how much movement-total is inside the features that produced the three survivors:
+  feature                        Spearman rho with uaMag_median
+  act_bout_median_w0.5_p80                             -0.175
+  frac_act_short_w10_p20                               -0.211
+  (path-A features threshold each child against that child's own percentile, which is
+   what makes them amplitude-invariant; these numbers measure that claim directly
+   rather than assuming it.)
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig09_negative_control_rank.png
+
+==============================================================================
+[10] PARTIAL CONTROL -- the 45 path-B columns, before and after removing movement total
+==============================================================================
+  Path-B features threshold every child against ONE pooled line, so a child who moves
+  harder spends more time above it; MODEL_MENU.md records |rho| = 0.877 between the
+  p50 actfrac column and the negative control. These 45 columns are the only ones the
+  screen re-tests with movement total removed. The other 563 are not re-tested at all.
+  Reading, from 44_univariate_screen.py: shrinks a lot => the original association was
+  a movement-total artefact; unchanged => structure; grows => suppression, structure
+  that total movement was masking.
+
+  continuous (|rho|, no-effect 0, range [0,1])   450 cells
+    median effect before 0.134 -> after 0.137   (median change +0.009)
+    shrank by more than 0.1:   22   |  within +/-0.1:  392   |  grew by more than 0.1:   36
+    cells above the target's null 95th percentile, before -> after: 4 -> 14
+
+  binary (|AUC-0.5|, no-effect 0, range [0,0.5])   450 cells
+    median effect before 0.085 -> after 0.086   (median change +0.007)
+    shrank by more than 0.05:   38   |  within +/-0.05:  358   |  grew by more than 0.05:   54
+    cells above the target's null 95th percentile, before -> after: 9 -> 16
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig10_partial_control_pathB.png
 ```
