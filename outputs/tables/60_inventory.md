@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/60_results_inventory.py`
-- Repository HEAD when this snapshot was generated: `beae3b047e50d885330542202a5df43384539c85`
+- Repository HEAD when this snapshot was generated: `2ea6630f7cecf3eabe4368008d6eef022f1475d7`
 - Reproduce with: `.venv/bin/python analysis/60_results_inventory.py`
 - Figures written by the same run: `outputs/figures/fig01_label_group_sizes.png`, `outputs/figures/fig02_feature_families.png`
 
@@ -248,6 +248,15 @@ reference = features: n=24
       ('duration correlates with sdq_totdiff, rho=-0.46; modelling does not control
       for it'). It is therefore both a listed confound and one of the 608 candidate
       predictors that SelectKBest may choose inside the B-track pipeline.
+
+    Scope of the previous three points: they are about FEATURE_MENU.md, the document
+    designated for decoding feature names, and not about the repository as a whole.
+    INVENTORY.md line 186 (the entry beginning '当前 features.csv 有 276 列') does
+    record the same breakdown and attributes it to three tasks: a window sweep
+    adding 220 columns, rec_dur_min adding 1, and six new feature classes on three
+    channels adding 36. 55 + 220 = 275 path-A, +36, +1 reproduces the count measured
+    here exactly. So the columns are accounted for somewhere; the naming-rule
+    document a reader would consult to decode them is the copy that is out of date.
 
   movement-total control (partial correlation / residualised AUC) coverage:
     features carrying it, measured from A_univariate non-null cells: 45

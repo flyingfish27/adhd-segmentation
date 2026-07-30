@@ -415,6 +415,14 @@ print(f"      MODEL_MENU.md section 5 lists recording duration as an UNCONTROLLE
 print(f"      ('duration correlates with sdq_totdiff, rho=-0.46; modelling does not control")
 print(f"      for it'). It is therefore both a listed confound and one of the 608 candidate")
 print(f"      predictors that SelectKBest may choose inside the B-track pipeline.")
+print(f"\n    Scope of the previous three points: they are about FEATURE_MENU.md, the document")
+print(f"    designated for decoding feature names, and not about the repository as a whole.")
+print(f"    INVENTORY.md line 186 (the entry beginning '当前 features.csv 有 276 列') does")
+print(f"    record the same breakdown and attributes it to three tasks: a window sweep")
+print(f"    adding 220 columns, rec_dur_min adding 1, and six new feature classes on three")
+print(f"    channels adding 36. 55 + 220 = 275 path-A, +36, +1 reproduces the count measured")
+print(f"    here exactly. So the columns are accounted for somewhere; the naming-rule")
+print(f"    document a reader would consult to decode them is the copy that is out of date.")
 
 # path B identified empirically from the result table, not from the name list
 pb_named = set(fam.loc[fam["family"].str.contains("path B"), "feature"])
