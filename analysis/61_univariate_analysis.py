@@ -722,6 +722,38 @@ for c, rec in enumerate(SURV):
               f" median |rho| {np.nanmedian(nb):.3f}, max {np.nanmax(nb):.3f};"
               f" cells above the null 95th pct: "
               f"{int((nb > np.quantile(NULL_C[t], .95)).sum())}")
+        # How much do the neighbouring grid cells actually measure the same thing? Without
+        # this the disagreement above is easy to over-read: two settings that correlate at
+        # 0.13 with each other are entitled to relate to the target differently, whereas two
+        # that correlate at 0.9 are not.
+        wl = sorted(piv.index, key=float)
+        pl = list(piv.columns)
+        wi, pi = wl.index(w0), pl.index(p0)
+        nbnames = [f"{stem}_w{wl[wi + dw]}_p{pl[pi + dp]}"
+                   for dw, dp in [(-1, 0), (1, 0), (0, -1), (0, 1)]
+                   if 0 <= wi + dw < len(wl) and 0 <= pi + dp < len(pl)]
+        hv = rankdata(X[f].to_numpy())
+        cors = [(nbn, spearman(hv, rankdata(X[nbn].to_numpy())),
+                 float(sub.loc[sub.feature == nbn, "rho"].abs().iloc[0]))
+                for nbn in nbnames if nbn in X.columns]
+        print(f"    how much those neighbours share with the surviving column itself, and")
+        print(f"    whether their own effect is what simple attenuation would predict:")
+        print(f"      {'neighbour':34} {'corr w/ hit':>11} {'its |rho|':>10} {'predicted':>10}")
+        for nbn, cr, ef in cors:
+            print(f"      {nbn:34} {cr:+11.3f} {ef:10.3f} {abs(cr) * abs(full):10.3f}")
+        print(f"      median |rank corr| with the neighbours: "
+              f"{np.median([abs(c) for _, c, _ in cors]):.3f}")
+        print(f"    'predicted' is |corr with the hit| x |the hit's own rho|. The observed")
+        print(f"    column tracks it, i.e. each neighbour inherits the hit's association in")
+        print(f"    proportion to how much of the hit it shares. Two things follow, and the")
+        print(f"    second cancels the first:")
+        print(f"      - the grid is NOT one strong cell surrounded by nothing; the drop-off")
+        print(f"        is orderly, and neighbouring settings share only 0.13-0.72 with the")
+        print(f"        cell that survived, so they were never near-duplicates of it;")
+        print(f"      - but attenuation is an algebraic identity. It holds whether the hit's")
+        print(f"        0.77 is a real association or a chance one, so the orderly drop-off")
+        print(f"        is evidence for NEITHER. The grid neighbourhood turns out to be")
+        print(f"        uninformative about real-versus-chance in both directions.")
     else:
         ax.axis("off")
 

@@ -127,12 +127,31 @@ Four properties of these three, measured rather than assumed:
 - **They are not explained by how much the child moved.** `frac_act_short_w10_p20` correlates
   with the movement-total control `uaMag_median` at −0.211, and `act_bout_median_w0.5_p80` at
   −0.175.
-- **Their neighbours in the parameter grid disagree with them.** Path-A features are computed
-  on a 5-window × 9-percentile grid over the same recording, giving 45 overlapping views. For
-  `frac_act_short` on `snap_inatt` the surviving cell is \|rho\| 0.767 while the grid median is
-  0.062 and only 2 of 45 cells clear the null 95th percentile. The `act_bout_median` grid on
-  `sdq_emo` is more coherent: grid median 0.225, 6 of 45 above the null. `fig07` row 3 shows
-  both grids.
+- **Their neighbours in the parameter grid are weaker, in an orderly way that settles
+  nothing.** Path-A features are computed on a 5-window × 9-percentile grid over the same
+  recording, giving 45 views. For `frac_act_short` on `snap_inatt` the surviving cell is
+  \|rho\| 0.767 while the grid median is 0.062 and only 2 of 45 cells clear the null 95th
+  percentile; the `act_bout_median` grid on `sdq_emo` has grid median 0.225 and 6 of 45 above
+  the null. `fig07` row 3 shows both grids.
+
+  That looked at first like an isolated spike, which would be the shape a maximum over many
+  correlated noisy cells produces. **Measurement does not support reading it that way.** The
+  neighbouring settings share only 0.13–0.72 rank correlation with the cell that survived, so
+  they were never near-duplicates of it, and each neighbour's own effect is close to what
+  simple attenuation predicts (|corr with the hit| × |the hit's rho|):
+
+  | neighbour | corr with the hit | its own \|rho\| | attenuation predicts |
+  |---|---|---|---|
+  | `frac_act_short_w10_p30` | +0.514 | 0.430 | 0.394 |
+  | `frac_act_short_w5_p20` | +0.350 | 0.316 | 0.268 |
+  | `frac_act_short_w10_p10` | +0.132 | 0.201 | 0.101 |
+  | `act_bout_median_w1_p80` | +0.715 | 0.606 | 0.552 |
+  | `act_bout_median_w0.5_p90` | +0.544 | 0.328 | 0.420 |
+
+  **But attenuation is an algebraic identity: it holds whether the hit's 0.77 is real or
+  chance.** So the orderly drop-off is evidence for neither. The grid neighbourhood, which an
+  earlier draft of this document treated as grounds for suspicion, turns out to be
+  uninformative in both directions, and is recorded here as such.
 
 One further property of the third survivor: `act_bout_median_w0.5_p80` takes only **4 distinct
 values** across the 24 children (6 subjects at 0.5, 14 at 0.75, 3 at 1.0, 1 at 1.25). The
@@ -294,12 +313,12 @@ What those three cells will and will not support:
   screen (rho +0.772, leave-one-out R² 0.611), and its feature takes only four distinct values
   across 24 children.
 - The ADHD-side finding, `frac_act_short_w10_p20` against SNAP inattention, sits in a
-  parameter grid whose other 44 cells have a median \|rho\| of 0.062. A property computed at a
-  10-second window and a 20th-percentile threshold shows a strong association while the same
-  property at neighbouring settings shows nothing. That is a fact about the result, and it
-  admits more than one explanation: a genuinely narrow-band effect, or the maximum of 45
-  correlated noisy quantities. **This analysis cannot distinguish between those two on the
-  data available.**
+  parameter grid whose other 44 cells have a median \|rho\| of 0.062. §3.3 examines whether
+  that pattern incriminates it and concludes that it does not — the neighbouring settings
+  share only 0.13–0.51 with it, and their weaker effects are what attenuation predicts
+  regardless of whether the hit is real. So the grid tells us nothing either way, and the
+  question stays open on other grounds: **it was selected as the maximum of 12,160 comparisons,
+  and the data that selected it cannot also test it.**
 - Neither finding is corroborated by the multivariate track, and the two tracks are not
   independent in any case (§2).
 

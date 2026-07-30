@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/61_univariate_analysis.py`
-- Repository HEAD when this snapshot was generated: `b5c349a625cfcd280bee7c61ab30064a07a651cf`
+- Repository HEAD when this snapshot was generated: `bd710eed4c5cae448ad45b5ad83024694440b492`
 - Reproduce with: `.venv/bin/python analysis/61_univariate_analysis.py`
 - Permutation nulls rebuilt here use 100,000 draws per target, seed 20260730. The screen
   itself used seed 20260717, so permutation p-values agree only to Monte-Carlo error.
@@ -257,18 +257,72 @@
     subjects whose removal pushes rho below the null 95th percentile (0.405): none
     feature has 22 distinct values across 24 subjects
     neighbourhood: the frac_act_short grid on snap_inatt has 45 cells, median |rho| 0.062, max 0.767; cells above the null 95th pct: 2
+    how much those neighbours share with the surviving column itself, and
+    whether their own effect is what simple attenuation would predict:
+      neighbour                          corr w/ hit  its |rho|  predicted
+      frac_act_short_w5_p20                   +0.350      0.316      0.268
+      frac_act_short_w10_p10                  +0.132      0.201      0.101
+      frac_act_short_w10_p30                  +0.514      0.430      0.394
+      median |rank corr| with the neighbours: 0.350
+    'predicted' is |corr with the hit| x |the hit's own rho|. The observed
+    column tracks it, i.e. each neighbour inherits the hit's association in
+    proportion to how much of the hit it shares. Two things follow, and the
+    second cancels the first:
+      - the grid is NOT one strong cell surrounded by nothing; the drop-off
+        is orderly, and neighbouring settings share only 0.13-0.72 with the
+        cell that survived, so they were never near-duplicates of it;
+      - but attenuation is an algebraic identity. It holds whether the hit's
+        0.77 is a real association or a chance one, so the orderly drop-off
+        is evidence for NEITHER. The grid neighbourhood turns out to be
+        uninformative about real-versus-chance in both directions.
 
   snap_adhd_total x frac_act_short_w10_p20
     full-sample rho +0.772;  drop-one range +0.747 .. +0.827
     subjects whose removal pushes rho below the null 95th percentile (0.407): none
     feature has 22 distinct values across 24 subjects
     neighbourhood: the frac_act_short grid on snap_adhd_total has 45 cells, median |rho| 0.113, max 0.772; cells above the null 95th pct: 2
+    how much those neighbours share with the surviving column itself, and
+    whether their own effect is what simple attenuation would predict:
+      neighbour                          corr w/ hit  its |rho|  predicted
+      frac_act_short_w5_p20                   +0.350      0.225      0.270
+      frac_act_short_w10_p10                  +0.132      0.100      0.102
+      frac_act_short_w10_p30                  +0.514      0.472      0.397
+      median |rank corr| with the neighbours: 0.350
+    'predicted' is |corr with the hit| x |the hit's own rho|. The observed
+    column tracks it, i.e. each neighbour inherits the hit's association in
+    proportion to how much of the hit it shares. Two things follow, and the
+    second cancels the first:
+      - the grid is NOT one strong cell surrounded by nothing; the drop-off
+        is orderly, and neighbouring settings share only 0.13-0.72 with the
+        cell that survived, so they were never near-duplicates of it;
+      - but attenuation is an algebraic identity. It holds whether the hit's
+        0.77 is a real association or a chance one, so the orderly drop-off
+        is evidence for NEITHER. The grid neighbourhood turns out to be
+        uninformative about real-versus-chance in both directions.
 
   sdq_emo x act_bout_median_w0.5_p80
     full-sample rho +0.772;  drop-one range +0.737 .. +0.807
     subjects whose removal pushes rho below the null 95th percentile (0.406): none
     feature has 4 distinct values across 24 subjects
     neighbourhood: the act_bout_median grid on sdq_emo has 45 cells, median |rho| 0.225, max 0.772; cells above the null 95th pct: 6
+    how much those neighbours share with the surviving column itself, and
+    whether their own effect is what simple attenuation would predict:
+      neighbour                          corr w/ hit  its |rho|  predicted
+      act_bout_median_w1_p80                  +0.715      0.606      0.552
+      act_bout_median_w0.5_p70                +0.366      0.112      0.283
+      act_bout_median_w0.5_p90                +0.544      0.328      0.420
+      median |rank corr| with the neighbours: 0.544
+    'predicted' is |corr with the hit| x |the hit's own rho|. The observed
+    column tracks it, i.e. each neighbour inherits the hit's association in
+    proportion to how much of the hit it shares. Two things follow, and the
+    second cancels the first:
+      - the grid is NOT one strong cell surrounded by nothing; the drop-off
+        is orderly, and neighbouring settings share only 0.13-0.72 with the
+        cell that survived, so they were never near-duplicates of it;
+      - but attenuation is an algebraic identity. It holds whether the hit's
+        0.77 is a real association or a chance one, so the orderly drop-off
+        is evidence for NEITHER. The grid neighbourhood turns out to be
+        uninformative about real-versus-chance in both directions.
 
   wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig07_surviving_cells.png
 
