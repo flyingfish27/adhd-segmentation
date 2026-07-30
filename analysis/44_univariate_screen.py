@@ -28,6 +28,29 @@
 # 【一处仍未处理,知情保留】rho_partial_uamag 那一列【有同样的双含义问题】:
 #   cont 行装偏相关(基准 0)、bin 行装残差化后的 AUC(基准 0.5)。本次【未拆】,
 #   因 TASK-120 的登记范围只写了 rho 列。去向未定,见 working/task.md 的 TASK-120 条目。
+#   〔【已处理】2026-07-30 同日:用户看过实测排错证据后裁决"照样拆",见下方 TASK-121 注释块。〕
+#
+# =============================================================================
+# 【TASK-121:rho_partial_uamag 也拆成两列,2026-07-30 用户裁决】
+# =============================================================================
+# 【和 TASK-120 是同一个毛病的第二处】改动前 rho_partial_uamag 一列装两种量:
+#     type=cont 的行装【控制 uaMag_median 后的偏相关】 —— 无效应基准 = 0  ,实测范围 -0.530 ~ +0.451
+#     type=bin  的行装【残差化后的 AUC】               —— 无效应基准 = 0.5,实测范围  0.185 ~  0.861
+# 【实测排错有多严重】把这 900 个有值的格子按 |值| 从大到小排(最自然的动作):
+#     - 前 50 名【全部 50 个都是 bin 行】,450 个 cont 行一个都进不去
+#       —— 因为 bin 的数绕着 0.5 转、|值| 天然 0.5 上下,cont 的数绕着 0 转、|值| 最大只 0.53。
+#          排序变成了"先按行的类型分堆",而不是按关系强弱。
+#     - 最强的 cont 行 actfrac_p60 x snap_hyper(值 -0.530):正确第 1 名 -> 按|值|排第 168 名
+#     - actfrac_p90 x snap_odd__qbin(值 0.185,即 |0.185-0.5|=0.315,bin 行里第二强的反向关系):
+#       正确第 66 名 -> 按|值|排【第 616 名】,掉 550 位
+#     - 反过来 actshort_p10 x sdq_cond__qbin(值 0.719):按|值|排第 8 名 -> 正确其实第 161 名
+# 【改动后】rho_partial_uamag 只在 cont 行有值,新列 auc_partial_uamag 只在 bin 行有值。
+# 【不改变任何数值】算法一行未动,rng 种子仍 20260717。逐格比对见
+#   analysis/probe_outputs/task121_partial_column_split.md。
+# 【顺带订正一处假引用】原第 273 行那句「二分目标那半报的是『残差化后的 AUC』,见下方单独一节」
+#   ——【那一节根本不存在】。全脚本 6 个小节标题里没有它,故这一列的 450 个 bin 行
+#   【从未被打印过任何一次】,只写进 csv。该句已改成实话;要不要补那一节,去向未定
+#   (见 working/task.md 的 TASK-121 条目)。
 import os, numpy as np, pandas as pd, pathlib
 from scipy.stats import rankdata
 # ROOT 定位(2026-07-26 改,原为写死的主检出绝对路径 "/Users/shiyu/Projects/adhd-segmentation"):
@@ -184,8 +207,10 @@ for tcol in Ycont.columns:
         # 连续目标的偏相关 = 两个残差的相关,与同行 rho 同量纲、可直接比较"掉了多少"
         pr=spearman(XresidB[f],yresid) if f in PATHB else np.nan
         # TASK-120:rho 只在连续行有值,auc 留空 —— 两种量不再挤在同一列(见头部注释)
+        # TASK-121:同理,rho_partial_uamag 只在连续行、auc_partial_uamag 留空
         rows.append(dict(target=tcol,type="cont",feature=f,rho=rho,auc=np.nan,perm_p=pval,
-                         loo_r2cv=r2,loo_rmse=rmse,loo_mae=mae,rho_partial_uamag=pr))
+                         loo_r2cv=r2,loo_rmse=rmse,loo_mae=mae,
+                         rho_partial_uamag=pr,auc_partial_uamag=np.nan))
 
 # ---------- 二分目标 ----------
 def auc(x,lab):
@@ -212,8 +237,10 @@ for tcol in BIN:
         #   rho 列在二分行为空;引用改为 auc 列。2026-07-30〕
         pr=auc(XresidB[f],lab) if f in PATHB else np.nan
         # TASK-120:auc 只在二分行有值,rho 留空
+        # TASK-121:这个残差化 AUC 现在写进【auc_partial_uamag】列,不再挤进 rho_partial_uamag
         rows.append(dict(target=tcol,type="bin",feature=f,rho=np.nan,auc=a,perm_p=pval,
-                         loo_r2cv=np.nan,loo_rmse=np.nan,loo_mae=np.nan,rho_partial_uamag=pr))
+                         loo_r2cv=np.nan,loo_rmse=np.nan,loo_mae=np.nan,
+                         rho_partial_uamag=np.nan,auc_partial_uamag=pr))
 
 R=pd.DataFrame(rows)
 R.to_csv(ROOT/"analysis/A_univariate.csv",index=False)
@@ -269,8 +296,11 @@ print("\n========== TASK-106:路径B 45 列 扣掉运动总量后还剩多少(�
 print("  判读三种情形:|偏相关| 相对 |ρ| 大幅【缩小】⇒ 原相关是运动总量假象;")
 print("             【基本不变】⇒ 真结构信号;【反而变大】⇒ 抑制(suppression),")
 print("             即结构信号原先被运动总量盖住,扣掉才露出来——不是假象。")
-print("  注:本列无 p 值、无 q 值,是效应量,不进多重比较的账。二分目标那半报的是")
-print("      『残差化后的 AUC』(与该行 auc 列同量纲),见下方单独一节。")
+print("  注:本列无 p 值、无 q 值,是效应量,不进多重比较的账。")
+print("  【二分目标那半在本脚本的 stdout 里不报】:它写在 csv 的 auc_partial_uamag 列")
+print("      (TASK-121 由 rho_partial_uamag 拆出),是『残差化后的 AUC』、与该行 auc 列同量纲,")
+print("      无效应基准 0.5。〔原文这里写的是『见下方单独一节』,而【那一节根本不存在】——")
+print("       TASK-121 于 2026-07-30 查实并改成本句实话。要不要补上那一节,去向未定。〕")
 pb=cont[cont.feature.isin(PATHB)].copy()
 if len(pb):
     pb["abs_partial"]=pb.rho_partial_uamag.abs()
