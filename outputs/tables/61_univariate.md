@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/61_univariate_analysis.py`
-- Repository HEAD when this snapshot was generated: `6846b478161f7e0629d0317266d2bbb215b6e754`
+- Repository HEAD when this snapshot was generated: `d161d10e8a02386b0a74cced26ef63c326317751`
 - Reproduce with: `.venv/bin/python analysis/61_univariate_analysis.py`
 - Permutation nulls rebuilt here use 100,000 draws per target, seed 20260730. The screen
   itself used seed 20260717, so permutation p-values agree only to Monte-Carlo error.
@@ -149,4 +149,85 @@
   TOTAL                                                               316   304   1.04     44
 
   wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig04_effect_vs_null_binary.png
+
+==============================================================================
+[5] MULTIPLE COMPARISONS -- BH-FDR within each target family
+==============================================================================
+  family definition, read off the data: one family per target, m = 608 features, 20 families.
+  verification of the published q_fdr column against an independent BH
+    implementation: largest disagreement over all 12160 cells = 5.462e-14
+    verdict: reproduces exactly
+
+  permutation resolution: the smallest p the screen can report is 1/NPERM = 1.0e-05
+  cells sitting exactly on that floor: 3
+  best attainable q for a single cell = floor * m / 1 = 0.0061  (so one cell alone can pass q < 0.05)
+
+  target                    min perm_p  min q_fdr  q<0.05  q<0.10  p<0.05   exp
+  sdq_cond                     5.5e-04     0.2310       0       0      57    30
+  sdq_emo                      1.0e-05     0.0061       1       1      21    30
+  sdq_hyper                    2.9e-03     0.9217       0       0      17    30
+  sdq_peer                     1.4e-03     0.8330       0       0      17    30
+  sdq_pro                      4.2e-03     0.9159       0       0      20    30
+  sdq_totdiff                  8.8e-03     0.9753       0       0      15    30
+  snap_adhd_total              1.0e-05     0.0061       1       1      44    30
+  snap_hyper                   1.0e-04     0.0608       0       1      45    30
+  snap_inatt                   1.0e-05     0.0061       1       1      25    30
+  snap_odd                     7.4e-03     0.9937       0       0      10    30
+  sdq_cond__qbin               3.8e-04     0.1271       0       0      91    30
+  sdq_emo__qbin                3.8e-03     0.9639       0       0      11    30
+  sdq_hyper__qbin              2.5e-03     0.5039       0       0      49    30
+  sdq_peer__qbin               3.0e-03     0.5423       0       0      28    30
+  sdq_pro__qbin                1.0e-02     0.9797       0       0      10    30
+  sdq_totdiff__qbin            6.9e-04     0.2098       0       0      33    30
+  snap_adhd_total__qbin        3.8e-04     0.2310       0       0      20    30
+  snap_hyper__qbin             5.8e-03     0.6746       0       0      27    30
+  snap_inatt__qbin             1.1e-03     0.6688       0       0      36    30
+  snap_odd__qbin               1.9e-03     0.8837       0       0      28    30
+  TOTAL                                                 3       4     604   608
+
+  cells surviving BH-FDR at q < 0.05: 3 of 12160
+  target                   type  feature                           rho     auc    perm_p    q_fdr  loo_r2cv
+  snap_inatt               cont  frac_act_short_w10_p20          0.767       -   1.0e-05   0.0061     0.376
+  snap_adhd_total          cont  frac_act_short_w10_p20          0.772       -   1.0e-05   0.0061     0.381
+  sdq_emo                  cont  act_bout_median_w0.5_p80        0.772       -   1.0e-05   0.0061     0.611
+
+  Every surviving cell sits on the permutation floor, meaning 100,000 shuffles
+  never produced an effect as large. The true p is smaller than 1e-5 but by how
+  much is not resolved by this many permutations.
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig05_fdr_per_target.png
+
+==============================================================================
+[6] GENERALISATION -- leave-one-out R^2 against in-sample |rho| (continuous half)
+==============================================================================
+  MODEL_MENU.md section 4 trap 1: rho is not generalisation evidence, because the
+  leave-one-out prediction of a single-feature linear fit is a monotone transform of
+  the feature. Generalisation is carried by loo_r2cv (closed-form PRESS) alone, and
+  the binary half has no loo_r2cv at all, so this section covers the continuous half.
+
+  Null for loo_r2cv built by permuting the target against 40 randomly chosen
+  features per target, 2,000 permutations each. The leverage profile differs
+  from feature to feature, so the null is sampled across features rather than one.
+
+  target                    null P(R2cv>0)  null p95  null p99
+  sdq_cond                          0.1835     0.091     0.199
+  sdq_emo                           0.1941     0.099     0.206
+  sdq_hyper                         0.1876     0.097     0.208
+  sdq_peer                          0.1705     0.084     0.191
+  sdq_pro                           0.1954     0.092     0.197
+  sdq_totdiff                       0.1852     0.091     0.203
+  snap_adhd_total                   0.1852     0.088     0.197
+  snap_hyper                        0.1932     0.096     0.207
+  snap_inatt                        0.1811     0.080     0.195
+  snap_odd                          0.1662     0.072     0.180
+  POOLED                            0.1842     0.090     0.199
+
+  observed cells with loo_r2cv > 0            : 1226 of 6080   (20.16%)
+  expected under the null                     : 1120   (18.42%)
+  observed cells above the null 95th pct      : 254   (expected 304)
+  largest loo_r2cv anywhere in the screen     : 0.6115
+    attained by act_bout_median_w0.5_p80 on sdq_emo  (rho +0.772, perm_p 1.0e-05, q_fdr 0.006)
+  median loo_r2cv across the continuous half  : -0.0555
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig06_effect_vs_generalization.png
 ```

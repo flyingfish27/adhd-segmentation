@@ -354,6 +354,250 @@ plt.close(fig)
 print(f"\n  wrote {FIGDIR / 'fig04_effect_vs_null_binary.png'}")
 
 # ---------------------------------------------------------------------------
+# [5] FIGURE 05 -- what survives the correction the screen itself applies
+# ---------------------------------------------------------------------------
+head("[5] MULTIPLE COMPARISONS -- BH-FDR within each target family")
+
+
+def bh(p):
+    """Benjamini-Hochberg step-up. Written independently here so that the q_fdr
+    column can be checked rather than trusted; 44_ and 45_ carry a shared copy."""
+    p = np.asarray(p, float)
+    m = len(p)
+    o = np.argsort(p)
+    q = np.empty(m)
+    prev = 1.0
+    for rank, idx in enumerate(o[::-1]):
+        i = m - rank
+        val = min(prev, p[idx] * m / i)
+        prev = val
+        q[idx] = val
+    return q
+
+
+qrec = np.empty(len(A))
+for t, g in A.groupby("target"):
+    qrec[g.index.to_numpy()] = bh(g["perm_p"].to_numpy())
+dq = np.abs(qrec - A["q_fdr"].to_numpy())
+print(f"  family definition, read off the data: one family per target, m = "
+      f"{len(A) // A['target'].nunique()} features, {A['target'].nunique()} families.")
+print(f"  verification of the published q_fdr column against an independent BH")
+print(f"    implementation: largest disagreement over all {len(A)} cells = {dq.max():.3e}")
+print(f"    verdict: {'reproduces exactly' if dq.max() < 1e-12 else 'DISAGREEMENT -- see above'}")
+
+floor = A["perm_p"].min()
+print(f"\n  permutation resolution: the smallest p the screen can report is 1/NPERM = {floor:.1e}")
+print(f"  cells sitting exactly on that floor: {int((A['perm_p'] <= floor).sum())}")
+print(f"  best attainable q for a single cell = floor * m / 1 = {floor * 608:.4f}"
+      f"  (so one cell alone can pass q < 0.05)")
+
+print(f"\n  {'target':24} {'min perm_p':>11} {'min q_fdr':>10} {'q<0.05':>7} {'q<0.10':>7} {'p<0.05':>7} {'exp':>5}")
+fdr_rows = []
+for t in CONT + BIN:
+    g = A[A["target"] == t]
+    fdr_rows.append(dict(target=t, kind="cont" if t in CONT else "bin",
+                         minp=g["perm_p"].min(), minq=g["q_fdr"].min(),
+                         s05=int((g["q_fdr"] < 0.05).sum()), s10=int((g["q_fdr"] < 0.10).sum()),
+                         raw=int((g["perm_p"] < 0.05).sum()), exp=len(g) * 0.05))
+    r = fdr_rows[-1]
+    print(f"  {t:24} {r['minp']:11.1e} {r['minq']:10.4f} {r['s05']:7d} {r['s10']:7d}"
+          f" {r['raw']:7d} {r['exp']:5.0f}")
+F = pd.DataFrame(fdr_rows)
+print(f"  {'TOTAL':24} {'':>11} {'':>10} {F.s05.sum():7d} {F.s10.sum():7d}"
+      f" {F.raw.sum():7d} {F.exp.sum():5.0f}")
+
+surv = A[A["q_fdr"] < 0.05].sort_values("q_fdr")
+print(f"\n  cells surviving BH-FDR at q < 0.05: {len(surv)} of {len(A)}")
+if len(surv):
+    print(f"  {'target':24} {'type':5} {'feature':28} {'rho':>8} {'auc':>7} {'perm_p':>9} {'q_fdr':>8} {'loo_r2cv':>9}")
+    for _, r in surv.iterrows():
+        print(f"  {r['target']:24} {r['type']:5} {r['feature']:28}"
+              f" {r['rho']:8.3f}" .replace("nan", "  -") +
+              (f" {r['auc']:7.3f}" if pd.notna(r["auc"]) else f" {'-':>7}") +
+              f" {r['perm_p']:9.1e} {r['q_fdr']:8.4f}" +
+              (f" {r['loo_r2cv']:9.3f}" if pd.notna(r["loo_r2cv"]) else f" {'-':>9}"))
+    print("\n  Every surviving cell sits on the permutation floor, meaning 100,000 shuffles")
+    print("  never produced an effect as large. The true p is smaller than 1e-5 but by how")
+    print("  much is not resolved by this many permutations.")
+
+fig, (axA, axB) = plt.subplots(1, 2, figsize=(13.8, 5.8),
+                               gridspec_kw={"width_ratios": [1.25, 1], "wspace": 0.26})
+ax = axA
+m = 608
+ranks = np.arange(1, m + 1)
+for t in CONT + BIN:
+    p = np.sort(A.loc[A["target"] == t, "perm_p"].to_numpy())
+    ax.plot(ranks, p, lw=1.0, alpha=0.75,
+            color="#4878a8" if t in CONT else "#e08214")
+ax.plot(ranks, 0.05 * ranks / m, color="#b2182b", lw=2.2,
+        label="BH threshold, q = 0.05  (p = q·i/m, m = 608)")
+ax.axhline(floor, color="#555555", ls="--", lw=1.2,
+           label=f"permutation floor 1/NPERM = {floor:.0e}")
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlim(1, m)
+ax.set_xlabel("Rank i of the p-value within its target family (log scale)")
+ax.set_ylabel("Permutation p, sorted ascending (log scale)")
+ax.set_title("Fig 5a  Each target's 608 p-values against the correction applied to them",
+             fontsize=10.5)
+ax.plot([], [], color="#4878a8", lw=1.4, label="a continuous target (10)")
+ax.plot([], [], color="#e08214", lw=1.4, label="a binary target (10)")
+ax.legend(fontsize=8.0, frameon=False, loc="lower right")
+ax.grid(alpha=0.22, lw=0.6, which="both")
+ax.set_axisbelow(True)
+
+ax = axB
+F2 = F.sort_values("minq")
+cols = ["#4878a8" if k == "cont" else "#e08214" for k in F2["kind"]]
+ax.barh(range(len(F2)), F2["minq"], color=cols, height=0.66)
+ax.axvline(0.05, color="#b2182b", lw=1.8, label="q = 0.05")
+ax.set_xscale("log")
+ax.set_yticks(range(len(F2)))
+ax.set_yticklabels(F2["target"], fontsize=8)
+ax.invert_yaxis()
+ax.set_xlabel("Smallest q value the target achieved (log scale)")
+ax.set_title("Fig 5b  How close each target came to surviving\nits own multiple-comparison correction",
+             fontsize=10.5)
+for i, (_, r) in enumerate(F2.iterrows()):
+    ax.text(r["minq"] * 1.15, i, f"{r['minq']:.3f}" + (f"   {r['s05']} cell(s) pass" if r["s05"] else ""),
+            va="center", fontsize=7.6)
+ax.legend(fontsize=8.2, frameon=False, loc="lower right")
+ax.grid(axis="x", alpha=0.22, lw=0.6, which="both")
+ax.set_axisbelow(True)
+ax.set_xlim(right=ax.get_xlim()[1] * 6)
+fig.tight_layout()
+fig.subplots_adjust(bottom=0.20)
+fig.text(0.012, 0.018,
+         "Family definition read off the data and confirmed against 44_univariate_screen.py: BH is applied within each target separately, m = 608 features, 20 families. "
+         "The q_fdr column\nwas recomputed here with an independent BH implementation and agrees to "
+         f"{dq.max():.0e}. A target's curve passes the correction only where it dips below the red line. "
+         f"The dashed line is the\nresolution limit of the permutation test: no p smaller than {floor:.0e} can be reported however strong the effect, so cells resting on it have an unresolved true p.",
+         fontsize=7.2, color="#444444", linespacing=1.5)
+fig.savefig(FIGDIR / "fig05_fdr_per_target.png", dpi=200)
+plt.close(fig)
+print(f"\n  wrote {FIGDIR / 'fig05_fdr_per_target.png'}")
+
+# ---------------------------------------------------------------------------
+# [6] FIGURE 06 -- in-sample effect size versus held-out prediction
+# ---------------------------------------------------------------------------
+head("[6] GENERALISATION -- leave-one-out R^2 against in-sample |rho| (continuous half)")
+print("  MODEL_MENU.md section 4 trap 1: rho is not generalisation evidence, because the")
+print("  leave-one-out prediction of a single-feature linear fit is a monotone transform of")
+print("  the feature. Generalisation is carried by loo_r2cv (closed-form PRESS) alone, and")
+print("  the binary half has no loo_r2cv at all, so this section covers the continuous half.")
+
+
+def loo_r2_null(x, y, nperm):
+    """Distribution of the closed-form leave-one-out R^2 when y is unrelated to x.
+    Vectorised over permutations of y; x, its leverage and the baseline are fixed."""
+    x = np.asarray(x, float)
+    n_ = len(x)
+    xm = x.mean()
+    xc = x - xm
+    Sxx = (xc ** 2).sum()
+    if Sxx <= 0:
+        return None
+    h = 1.0 / n_ + xc ** 2 / Sxx
+    if np.any(h >= 1 - 1e-12):
+        return None
+    ym = y.mean()
+    ss0 = (((y - ym) * n_ / (n_ - 1)) ** 2).sum()   # invariant under permutation of y
+    if ss0 <= 0:
+        return None
+    idx = np.argsort(rng.random((nperm, n_)), axis=1)
+    Y = np.asarray(y, float)[idx]
+    Yc = Y - Y.mean(axis=1, keepdims=True)
+    with np.errstate(all="ignore"):
+        b = (Yc @ xc) / Sxx
+        E = Yc - b[:, None] * xc
+        ss = ((E / (1.0 - h)) ** 2).sum(axis=1)
+    return 1.0 - ss / ss0
+
+
+NPERM_R2 = 2000
+NFEAT_R2 = 40
+print(f"\n  Null for loo_r2cv built by permuting the target against {NFEAT_R2} randomly chosen")
+print(f"  features per target, {NPERM_R2:,} permutations each. The leverage profile differs")
+print(f"  from feature to feature, so the null is sampled across features rather than one.")
+frng = np.random.default_rng(11)
+null_r2 = {}
+print(f"\n  {'target':24} {'null P(R2cv>0)':>15} {'null p95':>9} {'null p99':>9}")
+for t in CONT:
+    y = Yc[t].to_numpy(float)
+    picks = frng.choice(FEATS, NFEAT_R2, replace=False)
+    drawn = [v for f in picks if (v := loo_r2_null(X[f].to_numpy(), y, NPERM_R2)) is not None]
+    pool = np.concatenate(drawn)
+    null_r2[t] = pool
+    print(f"  {t:24} {float((pool > 0).mean()):15.4f} {np.quantile(pool, .95):9.3f}"
+          f" {np.quantile(pool, .99):9.3f}")
+pool_all = np.concatenate([null_r2[t] for t in CONT])
+r2_p95 = float(np.quantile(pool_all, .95))
+rate0 = float((pool_all > 0).mean())
+print(f"  {'POOLED':24} {rate0:15.4f} {r2_p95:9.3f} {np.quantile(pool_all, .99):9.3f}")
+
+cont = A[A["type"] == "cont"]
+n_pos = int((cont["loo_r2cv"] > 0).sum())
+n_p95 = int((cont["loo_r2cv"] > r2_p95).sum())
+print(f"\n  observed cells with loo_r2cv > 0            : {n_pos} of {len(cont)}"
+      f"   ({100 * n_pos / len(cont):.2f}%)")
+print(f"  expected under the null                     : {rate0 * len(cont):.0f}"
+      f"   ({100 * rate0:.2f}%)")
+print(f"  observed cells above the null 95th pct      : {n_p95}"
+      f"   (expected {0.05 * len(cont):.0f})")
+print(f"  largest loo_r2cv anywhere in the screen     : {cont['loo_r2cv'].max():.4f}")
+best = cont.loc[cont["loo_r2cv"].idxmax()]
+print(f"    attained by {best['feature']} on {best['target']}"
+      f"  (rho {best['rho']:+.3f}, perm_p {best['perm_p']:.1e}, q_fdr {best['q_fdr']:.3f})")
+print(f"  median loo_r2cv across the continuous half  : {cont['loo_r2cv'].median():.4f}")
+
+fig, (axA, axB) = plt.subplots(1, 2, figsize=(13.6, 5.6),
+                               gridspec_kw={"width_ratios": [1.35, 1], "wspace": 0.22})
+ax = axA
+ax.scatter(cont["rho"].abs(), cont["loo_r2cv"], s=2.2, alpha=0.22, color="#4878a8", linewidths=0)
+ax.axhline(0, color="#333333", lw=1.3)
+ax.axhline(r2_p95, color="#b2182b", lw=1.6, ls="--",
+           label=f"null 95th percentile of loo_r2cv = {r2_p95:.3f}")
+pos = cont[cont["loo_r2cv"] > 0]
+if len(pos):
+    ax.scatter(pos["rho"].abs(), pos["loo_r2cv"], s=6, color="#b2182b", linewidths=0,
+               label=f"loo_r2cv > 0  ({len(pos)} cells)")
+ax.set_ylim(max(-1.6, cont["loo_r2cv"].min() - 0.1), max(0.35, cont["loo_r2cv"].max() + 0.08))
+ax.set_xlabel("|Spearman rho|   (in-sample effect size)")
+ax.set_ylabel("loo_r2cv   (leave-one-out R²;  0 = no better than the mean)", fontsize=9.5)
+ax.set_title("Fig 6a  In-sample correlation vs held-out prediction, 6,080 continuous cells",
+             fontsize=10.5)
+ax.legend(fontsize=8.2, frameon=False, loc="lower right")
+ax.grid(alpha=0.22, lw=0.6)
+ax.set_axisbelow(True)
+
+ax = axB
+lo = max(-1.5, min(cont["loo_r2cv"].min(), np.quantile(pool_all, 0.001)))
+bins = np.linspace(lo, max(cont["loo_r2cv"].max(), np.quantile(pool_all, .999)) + 0.02, 70)
+ax.hist(np.clip(pool_all, lo, None), bins=bins, density=True, color="#b2182b", alpha=0.42,
+        label=f"null ({len(pool_all):,} draws)")
+ax.hist(np.clip(cont["loo_r2cv"], lo, None), bins=bins, density=True, color="#4878a8",
+        alpha=0.62, label=f"observed ({len(cont):,} cells)")
+ax.axvline(0, color="#333333", lw=1.3)
+ax.set_xlabel("loo_r2cv")
+ax.set_ylabel("Density")
+ax.set_title("Fig 6b  The same values against their null\n"
+             f"observed P(loo_r2cv > 0) = {n_pos / len(cont):.3f},  null = {rate0:.3f}",
+             fontsize=10.5)
+ax.legend(fontsize=8.2, frameon=False)
+ax.grid(alpha=0.22, lw=0.6)
+ax.set_axisbelow(True)
+fig.tight_layout()
+fig.subplots_adjust(bottom=0.185)
+fig.text(0.012, 0.018,
+         "loo_r2cv is the closed-form PRESS leave-one-out R² of a single-feature ordinary least squares fit, as computed by 44_univariate_screen.py; it is negative whenever the fitted\n"
+         f"feature predicts a held-out subject worse than the training mean does. Null built by permuting each target against {NFEAT_R2} randomly chosen features, {NPERM_R2:,} permutations each,\n"
+         "so that the varying leverage profile of different features is represented. Values are clipped at the left edge for display only. The binary half of the screen has no loo_r2cv column.",
+         fontsize=7.2, color="#444444", linespacing=1.5)
+fig.savefig(FIGDIR / "fig06_effect_vs_generalization.png", dpi=200)
+plt.close(fig)
+print(f"\n  wrote {FIGDIR / 'fig06_effect_vs_generalization.png'}")
+
+# ---------------------------------------------------------------------------
 # snapshot
 # ---------------------------------------------------------------------------
 try:
