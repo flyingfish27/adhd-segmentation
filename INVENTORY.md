@@ -70,8 +70,8 @@
 | `analysis/targets.csv` | 24 人 × 10 候选连续目标 | L3 产物 | 40 | 43/44/45 | 活跃〔实证〕 |
 | `analysis/target_labels.csv` | 分组标签 | L3 产物 | 43 | 44/45 | 活跃〔实证〕 |
 | `analysis/features.csv` | 24 人 × 351 特征（TASK-1 起；旧 275）〔**已订正**〔TASK-5 执行, 2026-07-28〕：**现为 608 特征**（24 行 × 609 列），由前置批 A 的 TASK-108/TASK-10/TASK-116 三条任务加列而来；旧的 351 特征版已归档为 `archive/features__351feat_pre_batchA.csv`〕 | L2 产物 | **42**（当前）/41（被覆盖）| 44/45〔**已订正**〔TASK-5 执行, 2026-07-28〕：读者实测 **7 处**——同行式 5 处（`44:27`/`45:80`/`52:124`/`54:94`/`58:66`）＋变量式 2 处（`53:226`/`57:68`，均有 `.exists()` 保护）〕 | 活跃**〔2026-07-28 起已入版本控制**，commit `b135aae`〕〔实证〕 |
-| `analysis/A_univariate.csv` | A 轨结果（5775 行）| L3 产物 | 44 | 无脚本读 | 最终产物〔实证〕 |
-| `analysis/B_multivariate.csv` | B 轨结果 | L3 产物 | 45 | 无脚本读 | 最终产物**〔2026-07-28 · 那一份 07-18 的旧结果已归档为 `archive/B_multivariate__275feat_pre_task1.csv`**（算自 275 列旧特征表，已作废）；`analysis/B_multivariate.csv` 这个路径**当前为空**，要等 TASK-106 重跑后由 `45` 重新生成〕〔实证〕 |
+| `analysis/A_univariate.csv` | A 轨结果（5775 行）〔**现为 12,160 数据行 × 11 列**，2026-07-30 实测订正；旧数产于 275 列特征表那版〕| L3 产物 | 44 | 无脚本读〔**不成立**，2026-07-28 查出：`analysis/53_stat_budget_probes.py` 读它（`A_PATH = ROOT / "analysis/A_univariate.csv"` 那行赋值、5 行后 `pd.read_csv(A_PATH)`），**只用 `perm_p` 一列**〕| 最终产物〔实证〕**〔2026-07-29 · TASK-106：已重跑并入版本控制**（608 列特征表 + 置换 100000 次），落点 commit `c0cc6ff`；**2026-07-30 · TASK-120：`rho` 列拆成 `rho`（连续行）+ `auc`（二分行）两列**，数值一格未变（逐格比对 17 项全通过），落点见该条〕 |
+| `analysis/B_multivariate.csv` | B 轨结果 | L3 产物 | 45 | 无脚本读 | 最终产物**〔2026-07-28 · 那一份 07-18 的旧结果已归档为 `archive/B_multivariate__275feat_pre_task1.csv`**（算自 275 列旧特征表，已作废）；`analysis/B_multivariate.csv` 这个路径**当前为空**，要等 TASK-106 重跑后由 `45` 重新生成〕〔实证〕**〔2026-07-30 订正：「当前为空、要等 TASK-106」已不成立——TASK-106 已于 2026-07-28~29 跑完（B 轨实测约 14.5 小时），`analysis/B_multivariate.csv` 现为 **576 数据行**、算自 608 列特征表，并已入版本控制，落点 commit `c0cc6ff`〕** |
 | `analysis/chinese_norms.md` | 中国 SNAP/SDQ 常模文献搜集（为后续分组决策服务）| DOC/结果 | 人工搜集 | **无脚本读**（仅供人决策参考，未接进任何 label）| 结果〔实证〕 |
 | `CODEBOOK.md`,`PAPER_DATA_USAGE.md`,`analysis/{FEATURE,MODEL,TARGET}_MENU.md`,`ref/SDQ_FINDINGS.md`,`literature/*.md` | 文档 | DOC | 人工 | 人看 | DOC〔实证〕 |
 

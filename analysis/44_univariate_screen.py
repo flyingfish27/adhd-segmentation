@@ -7,6 +7,27 @@
 #
 # 【TASK-106 新增】路径B的 45 列额外输出一列「控制 uaMag_median 后的偏相关」,
 #   列名 rho_partial_uamag;是什么、怎么判读见下方 PATHB 一节的注释。
+#
+# =============================================================================
+# 【TASK-120:rho 列拆成 rho + auc,2026-07-30 用户裁决】
+# =============================================================================
+# 【改动前的样子】输出表只有一列 rho,它【装两种不同的量】:
+#     type=cont 的行装 Spearman ρ    —— 无效应基准 = 0    ,范围 [-1, +1]
+#     type=bin  的行装 AUC           —— 无效应基准 = 0.5  ,范围 [ 0,  1]
+#   这一点原先只写在代码注释和 analysis/MODEL_MENU.md 的字段表里,【表本身不体现】。
+# 【为什么必须改,有实证】2026-07-29 管理窗口查「目前最好的结果是什么」,按 |rho| 排序取
+#   前 5 条,【排出来的是错的】:二分行 AUC=0.12(即 |AUC-0.5|=0.38,很强的【反向】关系)
+#   被排到末尾,而 AUC=0.55(几乎无效应)排在它前面。任何人用 Excel 打开这张表按 rho 排序
+#   都会重演这个错误。【文档保护不了文件】——这是选「改列名」而不是「加文档警告」的理由。
+# 【改动后】两列各管一种量,另一种留空(NaN):
+#     rho 只在 type=cont 有值;auc 只在 type=bin 有值。
+#   于是「按 rho 排序」这个动作在二分行上【拿不到数】,错误无法再发生。
+# 【不改变任何数值】:ρ、AUC、perm_p、q_fdr 的算法一行未动,rng 种子仍是 20260717。
+#   改完重跑,除列结构外应与改动前【逐格相同】——本次已逐格比对确认,结果见
+#   analysis/probe_outputs/task120_column_split.md。
+# 【一处仍未处理,知情保留】rho_partial_uamag 那一列【有同样的双含义问题】:
+#   cont 行装偏相关(基准 0)、bin 行装残差化后的 AUC(基准 0.5)。本次【未拆】,
+#   因 TASK-120 的登记范围只写了 rho 列。去向未定,见 working/task.md 的 TASK-120 条目。
 import os, numpy as np, pandas as pd, pathlib
 from scipy.stats import rankdata
 # ROOT 定位(2026-07-26 改,原为写死的主检出绝对路径 "/Users/shiyu/Projects/adhd-segmentation"):
@@ -15,12 +36,19 @@ from scipy.stats import rankdata
 #   且【不报错】——是静默出错,见 ENGINEERING_NOTES.md 第 14 节。
 #   例外:analysis/features.csv 未入版本控制、只存在于主检出;在 worktree 里跑请用环境变量
 #   指过去——  ADHD_ROOT=/Users/shiyu/Projects/adhd-segmentation .venv/bin/python analysis/44_univariate_screen.py
+#   〔【上面这个"例外"已不成立】,2026-07-30 TASK-120 改动时实测订正:analysis/features.csv
+#     【已于 2026-07-28 入版本控制】(TASK-5,commit b135aae),故它在每个 worktree 里都在位,
+#     跑本脚本【不再需要设 ADHD_ROOT】。本次在 worktree task-120-rho-auc 里未设该变量直接跑通,
+#     且桌上 features.csv 的 md5 与主检出一致(6d36ee888f6d73647609b91eb85025e5)。
+#     原文保留,因为 ADHD_ROOT 这个机制本身仍然存在、仍可用于"故意写回别处"的场合。〕
 #   同款写法的先例:analysis/40_targets.py:15、50_temporal_design_probes.py:64、52_scan_compute_cost.py:47。
 HERE=pathlib.Path(__file__).resolve().parent
 ROOT=pathlib.Path(os.environ.get("ADHD_ROOT", HERE.parent)).resolve()
 assert (ROOT/"analysis/features.csv").is_file(), (
-    f"找不到 {ROOT}/analysis/features.csv —— 该文件未入版本控制,只存在于跑过 "
-    f"42_features_full.py 的检出里;在 worktree 里跑请设 ADHD_ROOT 指过去。")
+    f"找不到 {ROOT}/analysis/features.csv —— 该文件【已入版本控制】(2026-07-28,commit b135aae),"
+    f"正常检出里都该在位;若这里报错,说明本次运行的 ROOT 指错了地方(现为 {ROOT}),"
+    f"或该文件被本地删除。〔原文写的是'该文件未入版本控制、只存在于跑过 42_features_full.py "
+    f"的检出里',2026-07-30 TASK-120 订正——入库后那句话不再成立。〕")
 rng=np.random.default_rng(20260717)
 # =============================================================================
 # 【NPERM 由 5000 提到 100000,2026-07-29 用户裁决】
@@ -155,7 +183,8 @@ for tcol in Ycont.columns:
         r2,rmse,mae=loo_simple_lr(X[f].to_numpy(),y)
         # 连续目标的偏相关 = 两个残差的相关,与同行 rho 同量纲、可直接比较"掉了多少"
         pr=spearman(XresidB[f],yresid) if f in PATHB else np.nan
-        rows.append(dict(target=tcol,type="cont",feature=f,rho=rho,perm_p=pval,
+        # TASK-120:rho 只在连续行有值,auc 留空 —— 两种量不再挤在同一列(见头部注释)
+        rows.append(dict(target=tcol,type="cont",feature=f,rho=rho,auc=np.nan,perm_p=pval,
                          loo_r2cv=r2,loo_rmse=rmse,loo_mae=mae,rho_partial_uamag=pr))
 
 # ---------- 二分目标 ----------
@@ -176,11 +205,14 @@ for tcol in BIN:
     for f in FEATS:
         a=auc(X[f].to_numpy(),lab)
         pval=1-np.searchsorted(null,abs(a-0.5),side="right")/NPERM; pval=max(pval,1.0/NPERM)
-        # 二分目标没有"偏相关"这个量(本行 rho 列装的是 AUC、不是 ρ),故改报
-        # 【残差化后的 AUC】:先把特征扣掉运动总量、再用残差算 AUC。它与同行的 rho(=AUC)
+        # 二分目标没有"偏相关"这个量(本行的效应量是 AUC、不是 ρ),故改报
+        # 【残差化后的 AUC】:先把特征扣掉运动总量、再用残差算 AUC。它与同行的 auc 列
         # 同量纲、可直接比较"掉了多少"(2026-07-26 用户裁决:连续+二分都做,二分走这条)。
+        # 〔原注释写「本行 rho 列装的是 AUC」,TASK-120 拆列后 AUC 已搬进独立的 auc 列,
+        #   rho 列在二分行为空;引用改为 auc 列。2026-07-30〕
         pr=auc(XresidB[f],lab) if f in PATHB else np.nan
-        rows.append(dict(target=tcol,type="bin",feature=f,rho=a,perm_p=pval,
+        # TASK-120:auc 只在二分行有值,rho 留空
+        rows.append(dict(target=tcol,type="bin",feature=f,rho=np.nan,auc=a,perm_p=pval,
                          loo_r2cv=np.nan,loo_rmse=np.nan,loo_mae=np.nan,rho_partial_uamag=pr))
 
 R=pd.DataFrame(rows)
@@ -223,7 +255,10 @@ if len(pos):
 print("\n========== FDR q<0.05 的组合(校正后仍显著) ==========")
 sig=R[R.q_fdr<0.05].sort_values("q_fdr")
 print(f"  连续+二分共 {len(sig)} 个 (总组合 {len(R)})")
-if len(sig): print(sig[["target","type","feature","rho","perm_p","q_fdr","loo_r2cv"]].head(20).to_string(index=False))
+# TASK-120:本节【混着连续行和二分行】,故 rho 与 auc 两列都要打——
+#   连续行只有 rho 有值(无效应基准 0)、二分行只有 auc 有值(无效应基准 0.5)。
+#   拆列前这里只打一列 rho,读者看到的是【两种基准的数混在一栏】,无从分辨。
+if len(sig): print(sig[["target","type","feature","rho","auc","perm_p","q_fdr","loo_r2cv"]].head(20).to_string(index=False))
 
 print("\n========== 负对照 uaMag_median(总运动量)对各连续目标 ==========")
 nc=cont[cont.feature=="uaMag_median"].sort_values("abs_rho",ascending=False)
@@ -235,7 +270,7 @@ print("  判读三种情形:|偏相关| 相对 |ρ| 大幅【缩小】⇒ 原相
 print("             【基本不变】⇒ 真结构信号;【反而变大】⇒ 抑制(suppression),")
 print("             即结构信号原先被运动总量盖住,扣掉才露出来——不是假象。")
 print("  注:本列无 p 值、无 q 值,是效应量,不进多重比较的账。二分目标那半报的是")
-print("      『残差化后的 AUC』(与该行 rho 列的 AUC 同量纲),见下方单独一节。")
+print("      『残差化后的 AUC』(与该行 auc 列同量纲),见下方单独一节。")
 pb=cont[cont.feature.isin(PATHB)].copy()
 if len(pb):
     pb["abs_partial"]=pb.rho_partial_uamag.abs()
@@ -264,9 +299,9 @@ else:
     print("  路径B列在本特征表里一个都没匹配上 —— 请核对 PATHB_STEMS 与 42_features_full.py 的列名。")
 
 print("\n========== 二分目标:各目标 top3(按 |AUC-0.5|) ==========")
-b=R[R.type=="bin"].copy(); b["absa"]=(b.rho-0.5).abs()
+b=R[R.type=="bin"].copy(); b["absa"]=(b.auc-0.5).abs()   # TASK-120:二分行的效应量在 auc 列
 for t in BIN:
     g=b[b.target==t].sort_values("absa",ascending=False).head(3)
     print(f"\n--- {t} (AUC) ---")
-    print(g[["feature","rho","perm_p","q_fdr"]].to_string(index=False,
-          formatters={"rho":"{:.3f}".format,"perm_p":"{:.4f}".format,"q_fdr":"{:.3f}".format}))
+    print(g[["feature","auc","perm_p","q_fdr"]].to_string(index=False,
+          formatters={"auc":"{:.3f}".format,"perm_p":"{:.4f}".format,"q_fdr":"{:.3f}".format}))
