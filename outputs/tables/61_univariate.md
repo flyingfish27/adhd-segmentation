@@ -1,0 +1,152 @@
+# 61_univariate.md -- verbatim stdout snapshot
+
+**Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
+
+- Producing script: `analysis/61_univariate_analysis.py`
+- Repository HEAD when this snapshot was generated: `6846b478161f7e0629d0317266d2bbb215b6e754`
+- Reproduce with: `.venv/bin/python analysis/61_univariate_analysis.py`
+- Permutation nulls rebuilt here use 100,000 draws per target, seed 20260730. The screen
+  itself used seed 20260717, so permutation p-values agree only to Monte-Carlo error.
+
+```text
+
+==============================================================================
+[1] REBUILDING THE PERMUTATION NULLS USED BY THE SCREEN
+==============================================================================
+  cohort n = 24;  permutations per null = 100,000;  seed = 20260730
+  One null per target. The null depends on the target only (through ties or
+  group sizes), never on the feature -- that is why 608 features share it.
+
+  target                   kind   null p95  null p99  null max  detail
+  sdq_cond                 cont      0.403     0.515     0.758  5 distinct values of 24, 19 tied
+  sdq_emo                  cont      0.406     0.522     0.820  6 distinct values of 24, 18 tied
+  sdq_hyper                cont      0.406     0.520     0.770  8 distinct values of 24, 16 tied
+  sdq_peer                 cont      0.405     0.516     0.755  4 distinct values of 24, 20 tied
+  sdq_pro                  cont      0.407     0.522     0.847  6 distinct values of 24, 18 tied
+  sdq_totdiff              cont      0.405     0.521     0.805  11 distinct values of 24, 13 tied
+  snap_adhd_total          cont      0.407     0.518     0.752  15 distinct values of 24, 9 tied
+  snap_hyper               cont      0.406     0.520     0.766  9 distinct values of 24, 15 tied
+  snap_inatt               cont      0.405     0.521     0.784  11 distinct values of 24, 13 tied
+  snap_odd                 cont      0.407     0.522     0.792  11 distinct values of 24, 13 tied
+  sdq_cond__qbin           bin       0.250     0.320     0.500  group sizes 16 / 8
+  sdq_emo__qbin            bin       0.236     0.306     0.486  group sizes 12 / 12
+  sdq_hyper__qbin          bin       0.236     0.307     0.471  group sizes 14 / 10
+  sdq_peer__qbin           bin       0.269     0.343     0.500  group sizes 18 / 6
+  sdq_pro__qbin            bin       0.241     0.315     0.463  group sizes 15 / 9
+  sdq_totdiff__qbin        bin       0.241     0.307     0.485  group sizes 15 / 9
+  snap_adhd_total__qbin    bin       0.236     0.306     0.479  group sizes 12 / 12
+  snap_hyper__qbin         bin       0.234     0.304     0.479  group sizes 13 / 11
+  snap_inatt__qbin         bin       0.236     0.299     0.486  group sizes 12 / 12
+  snap_odd__qbin           bin       0.241     0.315     0.463  group sizes 15 / 9
+
+==============================================================================
+[2] VERIFICATION -- recomputing published cells from features.csv and the targets
+==============================================================================
+  20 randomly chosen continuous cells and 20 binary cells are recomputed here
+  with an independent implementation of the same statistic.
+
+  target                 feature                         published  recomputed       diff
+  sdq_pro                uaZ_range                       -0.055441   -0.055441   6.94e-18
+  snap_adhd_total        stl_bout_cv_w0.5_p30             0.317559    0.317559   5.55e-17
+  sdq_cond               gyMag_bp_hf                     -0.235276   -0.235276   0.00e+00
+  sdq_hyper              act_bout_median_w5_p20          -0.233319   -0.233319   0.00e+00
+  snap_inatt             stl_bout_cv_w2_p80               0.126508    0.126508   8.33e-17
+  snap_adhd_total        gyMag_bp_lf                      0.209816    0.209816   2.78e-17
+  snap_hyper             act_bout_median_w10_p40         -0.026335   -0.026335   6.94e-18
+  snap_odd               act_bout_median_w5_p20          -0.237043   -0.237043   2.78e-17
+  snap_odd               act_bout_cv_w0.5_p20            -0.170767   -0.170767   2.78e-17
+  snap_odd               roll_min                         0.135025    0.135025   0.00e+00
+  sdq_peer               stl_bout_median_w0.5_p80         0.101567    0.101567   4.16e-17
+  sdq_cond               uaMag_max                       -0.508233   -0.508233   0.00e+00
+  snap_inatt             uaZ_entropy                      0.259581    0.259581   0.00e+00
+  sdq_totdiff            switch_per_min_w5_p60            0.005277    0.005277   8.67e-19
+  sdq_pro                frac_act_short_w1_p60           -0.050043   -0.050043   0.00e+00
+  sdq_pro                actfrac_p10                     -0.123053   -0.123053   5.55e-17
+  snap_odd               actbout_med_p70                 -0.111539   -0.111539   8.33e-17
+  sdq_pro                gyX_std                          0.119447    0.119447   0.00e+00
+  snap_odd               gyZ_madiff                      -0.318588   -0.318588   0.00e+00
+  sdq_cond               frac_act_short_w2_p20            0.196217    0.196217   0.00e+00
+  sdq_pro__qbin          uaZ_range                        0.466667    0.466667   0.00e+00
+  snap_adhd_total__qbin  stl_bout_cv_w0.5_p30             0.576389    0.576389   0.00e+00
+  sdq_cond__qbin         gyMag_bp_hf                      0.234375    0.234375   0.00e+00
+  sdq_hyper__qbin        act_bout_median_w5_p20           0.342857    0.342857   5.55e-17
+  snap_inatt__qbin       stl_bout_cv_w2_p80               0.541667    0.541667   0.00e+00
+  snap_adhd_total__qbin  gyMag_bp_lf                      0.618056    0.618056   0.00e+00
+  snap_hyper__qbin       act_bout_median_w10_p40          0.524476    0.524476   0.00e+00
+  snap_odd__qbin         act_bout_median_w5_p20           0.403704    0.403704   5.55e-17
+  snap_odd__qbin         act_bout_cv_w0.5_p20             0.274074    0.274074   0.00e+00
+  snap_odd__qbin         roll_min                         0.592593    0.592593   0.00e+00
+  sdq_peer__qbin         stl_bout_median_w0.5_p80         0.537037    0.537037   0.00e+00
+  sdq_cond__qbin         uaMag_max                        0.218750    0.218750   0.00e+00
+  snap_inatt__qbin       uaZ_entropy                      0.659722    0.659722   0.00e+00
+  sdq_totdiff__qbin      switch_per_min_w5_p60            0.474074    0.474074   0.00e+00
+  sdq_pro__qbin          frac_act_short_w1_p60            0.592593    0.592593   0.00e+00
+  sdq_pro__qbin          actfrac_p10                      0.562963    0.562963   0.00e+00
+  snap_odd__qbin         actbout_med_p70                  0.374074    0.374074   5.55e-17
+  sdq_pro__qbin          gyX_std                          0.555556    0.555556   0.00e+00
+  snap_odd__qbin         gyZ_madiff                       0.318519    0.318519   5.55e-17
+  sdq_cond__qbin         frac_act_short_w2_p20            0.554688    0.554688   0.00e+00
+
+  largest disagreement, Spearman rho cells : 8.33e-17
+  largest disagreement, AUC cells          : 5.55e-17
+  verdict: the published effect sizes reproduce from the committed inputs
+
+  The permutation p-values are also recomputed, from this script's own nulls.
+  Exact equality is not expected: perm_p is a Monte-Carlo quantity and this
+  script draws a fresh sample with a different seed. What is checked is that
+  the two agree to within Monte-Carlo error.
+    cells compared                     : 12160
+    identical                          : 23
+    differing by <= 0.002              : 8909
+    largest difference                 : 0.02786
+    Spearman correlation of the two    : 0.999934
+    cells on the same side of p < 0.05 : 12152 of 12160
+
+==============================================================================
+[3] CONTINUOUS TARGETS -- 6,080 observed |Spearman rho| against the null
+==============================================================================
+  target                   median |rho|  null med  max |rho|   >p95   exp  ratio   >p99   exp
+  sdq_cond                        0.148     0.143      0.668     57    30   1.87     19     6
+  sdq_emo                         0.158     0.144      0.772     23    30   0.76      5     6
+  sdq_hyper                       0.146     0.144      0.590     16    30   0.53      3     6
+  sdq_peer                        0.127     0.145      0.618     17    30   0.56      6     6
+  sdq_pro                         0.148     0.143      0.572     20    30   0.66      3     6
+  sdq_totdiff                     0.142     0.144      0.528     15    30   0.49      1     6
+  snap_adhd_total                 0.160     0.144      0.772     43    30   1.41      8     6
+  snap_hyper                      0.161     0.144      0.720     44    30   1.45      8     6
+  snap_inatt                      0.135     0.143      0.767     25    30   0.82      2     6
+  snap_odd                        0.125     0.144      0.538      7    30   0.23      1     6
+  TOTAL                           0.145     0.144      0.772    267   304   0.88     56    61
+
+  'exp' is the count expected if every cell were drawn from the null.
+  The 608 features are strongly correlated with one another (same channel,
+  adjacent percentile and window settings), so these counts are NOT 608
+  independent trials. The null curve is the correct reference for the shape and
+  location of the observed distribution, not for a count-based significance test.
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig03_effect_vs_null_continuous.png
+
+==============================================================================
+[4] BINARY TARGETS -- 6,080 observed |AUC - 0.5| against per-target nulls
+==============================================================================
+  Kept separate from the continuous half for two reasons:
+    1. the null depends on the group sizes, which differ from target to target
+       (12/12 up to 18/6), so one pooled reference line would be wrong;
+    2. |AUC - 0.5| lives in [0, 0.5] while |rho| lives in [0, 1] -- the two
+       axes are not interchangeable and are never drawn on a shared scale here.
+
+  target                     split  med |AUC-.5|  null med     max   >p95   exp  ratio   >p99
+  sdq_cond__qbin              16/8         0.104     0.086   0.414     84    30   2.76     21
+  sdq_emo__qbin              12/12         0.069     0.083   0.333     11    30   0.36      2
+  sdq_hyper__qbin            14/10         0.086     0.086   0.350     49    30   1.61      4
+  sdq_peer__qbin              18/6         0.074     0.093   0.389     26    30   0.86      6
+  sdq_pro__qbin               15/9         0.063     0.085   0.307     10    30   0.33      0
+  sdq_totdiff__qbin           15/9         0.081     0.085   0.396     33    30   1.09      6
+  snap_adhd_total__qbin      12/12         0.090     0.083   0.396     17    30   0.56      1
+  snap_hyper__qbin           13/11         0.108     0.080   0.318     26    30   0.86      2
+  snap_inatt__qbin           12/12         0.076     0.083   0.368     32    30   1.05      1
+  snap_odd__qbin              15/9         0.085     0.085   0.367     28    30   0.92      1
+  TOTAL                                                               316   304   1.04     44
+
+  wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig04_effect_vs_null_binary.png
+```
