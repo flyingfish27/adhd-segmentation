@@ -47,10 +47,14 @@
 # 【改动后】rho_partial_uamag 只在 cont 行有值,新列 auc_partial_uamag 只在 bin 行有值。
 # 【不改变任何数值】算法一行未动,rng 种子仍 20260717。逐格比对见
 #   analysis/probe_outputs/task121_partial_column_split.md。
-# 【顺带订正一处假引用】原第 273 行那句「二分目标那半报的是『残差化后的 AUC』,见下方单独一节」
-#   ——【那一节根本不存在】。全脚本 6 个小节标题里没有它,故这一列的 450 个 bin 行
-#   【从未被打印过任何一次】,只写进 csv。该句已改成实话;要不要补那一节,去向未定
-#   (见 working/task.md 的 TASK-121 条目)。
+# 【顺带订正一处假引用,并把缺的那一节补上】原来那句「二分目标那半报的是『残差化后的 AUC』,
+#   见下方单独一节」——【那一节根本不存在】。全脚本当时 6 个小节标题里没有它,故这一列的
+#   450 个 bin 行【从未被打印过任何一次】,只写进 csv。
+#   处置分两步(同日):①先把那句改成实话(「stdout 里不报」);②用户裁决=补上那一节,
+#   于是新增小节「TASK-121:路径B 45 列 扣掉运动总量后还剩多少(二分目标)」,与既有的
+#   连续目标那一节同构。【补的时候有一处不能照抄】:连续行效应量 |ρ| 住在 [0,1]、
+#   二分行效应量 |AUC-0.5| 住在 [0,0.5],【量程差一倍】,同一数值门槛在二分那节严一倍;
+#   故该节把两套门槛(同数值 0.1/0.3、量程折半 0.05/0.15)的计数都打出来,不替读者选。
 import os, numpy as np, pandas as pd, pathlib
 from scipy.stats import rankdata
 # ROOT 定位(2026-07-26 改,原为写死的主检出绝对路径 "/Users/shiyu/Projects/adhd-segmentation"):
@@ -297,10 +301,11 @@ print("  判读三种情形:|偏相关| 相对 |ρ| 大幅【缩小】⇒ 原相
 print("             【基本不变】⇒ 真结构信号;【反而变大】⇒ 抑制(suppression),")
 print("             即结构信号原先被运动总量盖住,扣掉才露出来——不是假象。")
 print("  注:本列无 p 值、无 q 值,是效应量,不进多重比较的账。")
-print("  【二分目标那半在本脚本的 stdout 里不报】:它写在 csv 的 auc_partial_uamag 列")
-print("      (TASK-121 由 rho_partial_uamag 拆出),是『残差化后的 AUC』、与该行 auc 列同量纲,")
-print("      无效应基准 0.5。〔原文这里写的是『见下方单独一节』,而【那一节根本不存在】——")
-print("       TASK-121 于 2026-07-30 查实并改成本句实话。要不要补上那一节,去向未定。〕")
+print("  二分目标那半报在【下一节】,用 csv 的 auc_partial_uamag 列(TASK-121 由本列拆出),")
+print("      是『残差化后的 AUC』、与该行 auc 列同量纲、无效应基准 0.5。")
+print("      〔本行的历史:原文写『见下方单独一节』而【那一节根本不存在】(TASK-121 于 2026-07-30")
+print("        查实:该列的 450 个二分格子从诞生起只写进 csv、从未被打印过);当日先改成")
+print("        『stdout 里不报』的实话,随后用户裁决=补上那一节,即下一节。〕")
 pb=cont[cont.feature.isin(PATHB)].copy()
 if len(pb):
     pb["abs_partial"]=pb.rho_partial_uamag.abs()
@@ -325,6 +330,55 @@ if len(pb):
     print(pb.sort_values("abs_partial",ascending=False).head(10)[
         ["target","feature","rho","rho_partial_uamag"]].to_string(index=False,
         formatters={"rho":"{:+.3f}".format,"rho_partial_uamag":"{:+.3f}".format}))
+else:
+    print("  路径B列在本特征表里一个都没匹配上 —— 请核对 PATHB_STEMS 与 42_features_full.py 的列名。")
+
+# =============================================================================
+# TASK-121:上一节的二分对应物。上一节只报连续目标,这一节报二分目标。
+#   〔为什么以前没有这一节:脚本原有一句「见下方单独一节」,而那一节从来不存在——
+#     该列的 450 个二分格子从诞生起只写进 csv、从未被打印过。2026-07-30 查实,
+#     当日用户裁决=补上。〕
+# 【口径与上一节同构,但有一处【不能照抄】,输出里明写】:
+#   连续行的效应量是 |ρ|,住在 [0,1],无效应=0;
+#   二分行的效应量是 |AUC-0.5|,住在 [0,0.5],无效应=0(即 AUC=0.5)。
+#   【量程差一倍】,所以同一个数值门槛(如 0.1 / 0.3)在这一节【严一倍】。
+#   本节故此把两套门槛的计数都打出来,不替读者选:
+#     ①与上一节【同数值】的 0.1 / 0.3;②按量程折半的 0.05 / 0.15。
+# =============================================================================
+print("\n========== TASK-121:路径B 45 列 扣掉运动总量后还剩多少(二分目标) ==========")
+print("  判读三种情形与上一节同构,只是效应量换成 |AUC-0.5|:")
+print("             大幅【缩小】⇒ 原关系是运动总量假象;【基本不变】⇒ 真结构信号;")
+print("             【反而变大】⇒ 抑制(suppression),结构信号原先被总量盖住。")
+print("  ⚠【量程与上一节差一倍,门槛不可直接套用】:|ρ| 住在 [0,1]、|AUC-0.5| 住在 [0,0.5]。")
+print("      故下面把两套门槛的计数都打出来:①与上一节同数值(0.1/0.3) ②按量程折半(0.05/0.15)。")
+print("  注:本列同样无 p 值、无 q 值,是效应量,不进多重比较的账。")
+pbb=R[(R.type=="bin")&(R.feature.isin(PATHB))].copy()
+if len(pbb):
+    pbb["eff"]        =(pbb.auc-0.5).abs()                 # 原始效应量
+    pbb["eff_partial"]=(pbb.auc_partial_uamag-0.5).abs()   # 扣掉总量后的效应量
+    pbb["shrink"]     =pbb.eff-pbb.eff_partial             # >0 缩小,<0 变大(与上一节同向)
+    COLS=["target","feature","auc","eff","auc_partial_uamag","eff_partial"]
+    FMT={"auc":"{:.3f}".format,"eff":"{:.3f}".format,
+         "auc_partial_uamag":"{:.3f}".format,"eff_partial":"{:.3f}".format}
+    print(f"\n  路径B二分组合共 {len(pbb)} 个({len(PATHB)} 列 × {pbb.target.nunique()} 二分目标)")
+    print(f"  |AUC-0.5| 中位 {pbb.eff.median():.3f} -> 扣掉总量后中位 {pbb.eff_partial.median():.3f}"
+          f"  (中位缩小 {pbb.shrink.median():+.3f})")
+    for band,strong in ((0.1,0.3),(0.05,0.15)):
+        tag="同上一节数值" if band==0.1 else "按量程折半"
+        print(f"  [门槛 {tag}:带宽 ±{band}、强 >{strong}]"
+              f"  强关系 {int((pbb.eff>strong).sum())} 个 -> 扣掉总量后仍强 {int((pbb.eff_partial>strong).sum())} 个"
+              f"  |  缩小>{band} 的 {int((pbb.shrink>band).sum())} 个"
+              f" / 基本不变(±{band}) 的 {int((pbb.shrink.abs()<=band).sum())} 个"
+              f" / 变大>{band} 的 {int((pbb.shrink< -band).sum())} 个")
+    print("\n  缩小最多的 10 个(最像总量假象):")
+    print(pbb.sort_values("shrink",ascending=False).head(10)[COLS].to_string(index=False,formatters=FMT))
+    print("\n  变大最多的 10 个(抑制:结构信号原先被总量盖住):")
+    print(pbb.sort_values("shrink").head(10)[COLS].to_string(index=False,formatters=FMT))
+    print("\n  扣掉总量后 |AUC-0.5| 仍最大的 10 个(最像真结构信号):")
+    print(pbb.sort_values("eff_partial",ascending=False).head(10)[COLS].to_string(index=False,formatters=FMT))
+    print("\n  提醒:上面 auc / auc_partial_uamag 两栏里【小于 0.5 是反向关系】,")
+    print("        强弱要看紧跟其后的 eff / eff_partial 两栏(=与 0.5 的距离)。")
+    print("        这正是 TASK-121 把这一列从 rho_partial_uamag 拆出来的原因。")
 else:
     print("  路径B列在本特征表里一个都没匹配上 —— 请核对 PATHB_STEMS 与 42_features_full.py 的列名。")
 
