@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/62_multivariate_analysis.py`
-- Repository HEAD when this snapshot was generated: `2f5bf0d69a2337659893a2e5c51794491ef49562`
+- Repository HEAD when this snapshot was generated: `b5c349a625cfcd280bee7c61ab30064a07a651cf`
 - Reproduce with: `.venv/bin/python analysis/62_multivariate_analysis.py`
 - No permutation null is rebuilt for this track: the B-track null requires permuting the
   whole cross-validation, which its producing script measures at about 14.7 hours.

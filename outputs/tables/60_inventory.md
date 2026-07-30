@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/60_results_inventory.py`
-- Repository HEAD when this snapshot was generated: `2ea6630f7cecf3eabe4368008d6eef022f1475d7`
+- Repository HEAD when this snapshot was generated: `b5c349a625cfcd280bee7c61ab30064a07a651cf`
 - Reproduce with: `.venv/bin/python analysis/60_results_inventory.py`
 - Figures written by the same run: `outputs/figures/fig01_label_group_sizes.png`, `outputs/figures/fig02_feature_families.png`
 
