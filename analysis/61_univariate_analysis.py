@@ -636,7 +636,10 @@ print("    snap_adhd_total is by construction the sum of the SNAP inattention an
 print("    hyperactivity items, so it contains snap_inatt; the two cells that share the")
 print("    feature frac_act_short_w10_p20 are one finding measured twice, not two.")
 
-fig, axes = plt.subplots(3, len(SURV), figsize=(4.6 * len(SURV), 12.2))
+# Every annotation on this figure is placed to the RIGHT of its axes, never on top of the
+# data. The figure is sized to make room for that rather than the other way round.
+fig, axes = plt.subplots(3, len(SURV), figsize=(7.0 * len(SURV), 12.8),
+                         gridspec_kw={"wspace": 0.92, "hspace": 0.40})
 for c, rec in enumerate(SURV):
     f, t = rec["feature"], rec["target"]
     xv = X[f].to_numpy(float)
@@ -663,21 +666,36 @@ for c, rec in enumerate(SURV):
     ax.set_xlabel(f, fontsize=8.5)
     ax.set_ylabel(t, fontsize=9)
     nzero = int((xv == xv.min()).sum())
-    ax.set_title(f"{t}  vs  {f}", fontsize=9.6)
-    ax.text(0.03, 0.97, f"{len(np.unique(xv))} distinct feature values of {n}\n"
-                        f"{nzero} subject(s) at the minimum",
-            transform=ax.transAxes, va="top", fontsize=7.6,
-            bbox=dict(boxstyle="round,pad=0.32", fc="white", ec="#cccccc"))
-    ax.text(0.97, 0.05,
-            f"y = w·x + b\n"
-            f"w = {w:+.3f}   b = {b:+.3f}\n"
-            f"─────────────────────\n"
-            f"Pearson r    {pear:+.3f}   (this line)\n"
-            f"Spearman ρ   {full:+.3f}   (the screen's)\n"
-            f"in-sample R²  {pear ** 2:.3f}\n"
-            f"leave-one-out R²  {rec['loo_r2cv']:+.3f}",
-            transform=ax.transAxes, ha="right", va="bottom", fontsize=7.4, family="monospace",
-            bbox=dict(boxstyle="round,pad=0.4", fc="#fffdf7", ec="#b2182b", lw=0.9))
+    ax.set_title(f"{t}  vs  {f}", fontsize=10.2)
+    ax.text(1.045, 0.99,
+            f"THE DATA\n"
+            f"  {n} points = {n} children\n"
+            f"  {len(np.unique(xv))} distinct x values\n"
+            f"  {nzero} child(ren) at the minimum\n"
+            f"\n"
+            f"THE RED LINE  y = w·x + b\n"
+            f"  w = {w:+9.3f}\n"
+            f"  b = {b:+9.3f}\n"
+            f"  grey = the {n} refits that\n"
+            f"  each leave one child out\n"
+            f"\n"
+            f"HOW WELL IT FITS\n"
+            f"  Pearson r    {pear:+7.3f}\n"
+            f"    belongs to the red line\n"
+            f"  Spearman rho {full:+7.3f}\n"
+            f"    the statistic the screen\n"
+            f"    tested; uses ranks only,\n"
+            f"    so it has no line\n"
+            f"\n"
+            f"PREDICTION\n"
+            f"  in-sample R²  {pear ** 2:7.3f}\n"
+            f"  leave-one-out {rec['loo_r2cv']:+7.3f}\n"
+            f"    the drop is what fitting\n"
+            f"    {n} points to 2 parameters\n"
+            f"    costs",
+            transform=ax.transAxes, ha="left", va="top", fontsize=7.6, family="monospace",
+            linespacing=1.35,
+            bbox=dict(boxstyle="round,pad=0.5", fc="#fffdf7", ec="#b2182b", lw=0.9))
     ax.grid(alpha=0.22, lw=0.6)
     ax.set_axisbelow(True)
     print(f"\n  {t} x {f}  -- least-squares line on the raw values")
@@ -703,9 +721,27 @@ for c, rec in enumerate(SURV):
     ax.set_xticklabels([X.index[i] for i in order], rotation=90, fontsize=6.2)
     ax.set_ylabel("Spearman rho with that subject removed", fontsize=8.5)
     ax.set_ylim(0, max(1.0, jk.max() * 1.08))
-    ax.set_title(f"Removing any one subject: rho spans {jk.min():+.3f} to {jk.max():+.3f}\n"
-                 f"(a drop of {full - jk.min():.3f} at worst)", fontsize=9.2)
-    ax.legend(fontsize=7.4, frameon=False, loc="lower right")
+    ax.set_title("Fragility check: recompute with each child left out", fontsize=10.2)
+    ax.legend(fontsize=8.0, frameon=False, loc="upper left", bbox_to_anchor=(1.045, 1.0))
+    ax.text(1.045, 0.74,
+            f"WHAT THIS ROW ASKS\n"
+            f"  is the correlation carried\n"
+            f"  by the whole cohort, or by\n"
+            f"  one or two children?\n"
+            f"\n"
+            f"  one bar per child; the bar\n"
+            f"  is the correlation computed\n"
+            f"  WITHOUT that child\n"
+            f"\n"
+            f"RESULT\n"
+            f"  rho spans {jk.min():+.3f} to {jk.max():+.3f}\n"
+            f"  worst single removal costs\n"
+            f"  {full - jk.min():.3f}\n"
+            f"  no removal reaches the\n"
+            f"  red chance line",
+            transform=ax.transAxes, ha="left", va="top", fontsize=7.6, family="monospace",
+            linespacing=1.35,
+            bbox=dict(boxstyle="round,pad=0.5", fc="#f7f9fc", ec="#4878a8", lw=0.9))
     ax.grid(axis="y", alpha=0.22, lw=0.6)
     ax.set_axisbelow(True)
     print(f"\n  {t} x {f}")
@@ -746,9 +782,9 @@ for c, rec in enumerate(SURV):
         ax.add_patch(plt.Rectangle((xi - 0.5, yi - 0.5), 1, 1, fill=False,
                                    edgecolor="#1a9850", lw=2.6))
         nb = piv.abs().to_numpy()
-        ax.set_title(f"|rho| for the whole {stem} grid on {t}\n"
-                     f"green box = the surviving cell;  grid median |rho| = {np.nanmedian(nb):.3f}",
-                     fontsize=9.2)
+        ax.set_title(f"|rho| across the whole {stem} grid on {t}", fontsize=10.2)
+        cb = fig.colorbar(im, ax=ax, pad=0.022, fraction=0.045)
+        cb.ax.tick_params(labelsize=7)
         print(f"    neighbourhood: the {stem} grid on {t} has {np.isfinite(nb).sum()} cells,"
               f" median |rho| {np.nanmedian(nb):.3f}, max {np.nanmax(nb):.3f};"
               f" cells above the null 95th pct: "
@@ -767,6 +803,34 @@ for c, rec in enumerate(SURV):
         cors = [(nbn, spearman(hv, rankdata(X[nbn].to_numpy())),
                  float(sub.loc[sub.feature == nbn, "rho"].abs().iloc[0]))
                 for nbn in nbnames if nbn in X.columns]
+        nbtxt = "\n".join(
+            f"  w{stem_grid(nbn)[1]}/p{stem_grid(nbn)[2]:<3} {cr:+.2f}  {ef:.2f}  {abs(cr) * abs(full):.2f}"
+            for nbn, cr, ef in cors)
+        ax.text(1.155, 0.99,
+                f"THE GRID\n"
+                f"  the same feature computed\n"
+                f"  at 5 window lengths x 9\n"
+                f"  activity thresholds\n"
+                f"  green box = surviving cell\n"
+                f"  grid median |rho| {np.nanmedian(nb):.3f}\n"
+                f"\n"
+                f"ITS NEIGHBOURS\n"
+                f"  cell      corr  |rho|  pred\n"
+                f"{nbtxt}\n"
+                f"\n"
+                f"  'corr' = how much that\n"
+                f"  neighbour shares with the\n"
+                f"  surviving cell; 'pred' =\n"
+                f"  corr x the cell's own rho\n"
+                f"\n"
+                f"  observed tracks predicted,\n"
+                f"  but that identity holds\n"
+                f"  whether the cell is real\n"
+                f"  or chance -- so this grid\n"
+                f"  settles nothing either way",
+                transform=ax.transAxes, ha="left", va="top", fontsize=7.2, family="monospace",
+                linespacing=1.32,
+                bbox=dict(boxstyle="round,pad=0.45", fc="#f7f9fc", ec="#777777", lw=0.9))
         print(f"    how much those neighbours share with the surviving column itself, and")
         print(f"    whether their own effect is what simple attenuation would predict:")
         print(f"      {'neighbour':34} {'corr w/ hit':>11} {'its |rho|':>10} {'predicted':>10}")
@@ -792,7 +856,7 @@ fig.suptitle("Fig 7  The three cells that survived BH-FDR, examined individually
              "row 1: the relationship and its least-squares line   row 2: sensitivity to removing any single subject   "
              "row 3: the same feature family at neighbouring settings",
              fontsize=11.5, y=0.995)
-fig.tight_layout(rect=[0, 0.098, 1, 0.968])
+fig.subplots_adjust(left=0.040, right=0.830, top=0.925, bottom=0.098, wspace=0.92, hspace=0.40)
 fig.text(0.012, 0.010,
          "Row 1: the red line is the ordinary least squares fit on the raw values, y = w·x + b; the grey lines are the 24 refits that each leave one subject out. That line is NOT the statistic the screen tested --\n"
          "the screen used Spearman rank correlation, which involves no line at all, and the two disagree here (Pearson r belongs to the line, Spearman rho to the test). The line is drawn because its leave-one-out\n"
