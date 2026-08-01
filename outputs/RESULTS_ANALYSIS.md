@@ -352,10 +352,24 @@ design as approximately 49%.
 - **Whether the two surviving cells replicate.** Nothing in a single 24-subject dataset can
   answer this. It requires either a held-out cohort or a pre-registered test of those two
   specific feature–target pairs.
-- **Whether recording duration confounds anything.** `rec_dur_min` is one of the 608 screened
-  features and can be selected into any multivariate model, while `MODEL_MENU.md` §5 lists
-  recording duration as an uncontrolled confound correlated with `sdq_totdiff` at rho = −0.46.
-  Both statements are true of the current tables; their interaction was not analysed here.
+- **Whether recording duration confounds the multivariate track.** `rec_dur_min` is one of the
+  608 screened features and can be selected into any multivariate model, while
+  `MODEL_MENU.md` §5 lists recording duration as an uncontrolled confound. Whether it entered
+  any fitted model cannot be recovered from the committed tables.
+
+  It does **not** explain the two surviving univariate findings, which was checked rather than
+  assumed. `act_bout_median_w0.5_p80` correlates with recording length at −0.468 — the
+  strongest association that feature has with anything measured here apart from bout
+  fragmentation — so the check was warranted. Controlling for it leaves the findings intact:
+
+  | Cell | rho | rho(feature, duration) | rho(duration, target) | partial rho |
+  |---|---|---|---|---|
+  | `sdq_emo` × `act_bout_median_w0.5_p80` | +0.772 | −0.468 | −0.283 | **+0.754** |
+  | `snap_inatt` × `frac_act_short_w10_p20` | +0.767 | −0.173 | −0.078 | **+0.767** |
+  | `snap_adhd_total` × `frac_act_short_w10_p20` | +0.772 | −0.173 | −0.050 | **+0.776** |
+
+  Recording length spans only 41.3 to 59.8 minutes with a median of 59.8, i.e. most children
+  sit at the ceiling, which limits how much damage it could do in this cohort regardless.
 - **Whether the classification half of track B leaks total movement.** It has no negative
   control, by an explicit decision recorded in `45_multivariate_cv.py`. Nothing in the
   committed tables lets that be checked after the fact.
