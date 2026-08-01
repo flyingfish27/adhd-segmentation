@@ -117,6 +117,24 @@ Each survivor rests exactly on the permutation floor of 1e-5, meaning 100,000 sh
 matched it and its true p is smaller than 1e-5 by an amount these permutations cannot
 resolve. Figures: `fig05`, `fig07`.
 
+`fig07` row 1 draws each relationship with its ordinary least squares line, `y = w·x + b`,
+plus the 24 refits that each leave one subject out. That line is **not** the statistic the
+screen tested — the screen used Spearman rank correlation, which involves no line — but it is
+the fit whose leave-one-out error becomes the `loo_r2cv` column, so it is the only thing on
+that figure that speaks to prediction rather than description. The two statistics disagree
+here, which is worth seeing rather than glossing:
+
+| Cell | `w` | `b` | Pearson r (the line) | Spearman rho (the test) | in-sample R² | leave-one-out R² |
+|---|---|---|---|---|---|---|
+| `snap_inatt` × `frac_act_short_w10_p20` | +53.20 | −2.50 | +0.663 | +0.767 | 0.440 | +0.376 |
+| `snap_adhd_total` × `frac_act_short_w10_p20` | +101.13 | −6.39 | +0.670 | +0.772 | 0.449 | +0.381 |
+| `sdq_emo` × `act_bout_median_w0.5_p80` | +7.34 | −3.64 | +0.790 | +0.772 | 0.624 | +0.611 |
+
+In physical terms the first line says: across the observed range of that feature (0.069 to
+0.296), the fit predicts a swing of +12.1 points on a SNAP inattention scale whose observed
+range is 1 to 19. The gap between the in-sample and leave-one-out R² columns — 0.440 → 0.376,
+0.449 → 0.381, 0.624 → 0.611 — is what fitting 24 points to a two-parameter line costs.
+
 Four properties of these three, measured rather than assumed:
 
 - **They are robust to any single child.** Removing any one of the 24 subjects moves rho by

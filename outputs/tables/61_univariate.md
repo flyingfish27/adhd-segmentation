@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/61_univariate_analysis.py`
-- Repository HEAD when this snapshot was generated: `bd710eed4c5cae448ad45b5ad83024694440b492`
+- Repository HEAD when this snapshot was generated: `0aa2c65f17bc8e7bb2302d1bfac34386994030cd`
 - Reproduce with: `.venv/bin/python analysis/61_univariate_analysis.py`
 - Permutation nulls rebuilt here use 100,000 draws per target, seed 20260730. The screen
   itself used seed 20260717, so permutation p-values agree only to Monte-Carlo error.
@@ -252,6 +252,14 @@
     hyperactivity items, so it contains snap_inatt; the two cells that share the
     feature frac_act_short_w10_p20 are one finding measured twice, not two.
 
+  snap_inatt x frac_act_short_w10_p20  -- least-squares line on the raw values
+    y = +53.2030 * x -2.4990
+    over the observed range of x (0.06897 to 0.2963) the line
+      predicts a change of +12.09 points on snap_inatt,
+      whose own observed range is 1 to 19
+    Pearson r +0.6634 (belongs to this line)  vs  Spearman rho +0.7666 (the statistic the screen tested)
+    in-sample R^2 0.4402  vs  leave-one-out R^2 +0.3760   -- the gap is what fitting 24 points to a 2-parameter line costs
+
   snap_inatt x frac_act_short_w10_p20
     full-sample rho +0.767;  drop-one range +0.739 .. +0.817
     subjects whose removal pushes rho below the null 95th percentile (0.405): none
@@ -276,6 +284,14 @@
         is evidence for NEITHER. The grid neighbourhood turns out to be
         uninformative about real-versus-chance in both directions.
 
+  snap_adhd_total x frac_act_short_w10_p20  -- least-squares line on the raw values
+    y = +101.1343 * x -6.3863
+    over the observed range of x (0.06897 to 0.2963) the line
+      predicts a change of +22.99 points on snap_adhd_total,
+      whose own observed range is 1 to 33
+    Pearson r +0.6698 (belongs to this line)  vs  Spearman rho +0.7718 (the statistic the screen tested)
+    in-sample R^2 0.4486  vs  leave-one-out R^2 +0.3811   -- the gap is what fitting 24 points to a 2-parameter line costs
+
   snap_adhd_total x frac_act_short_w10_p20
     full-sample rho +0.772;  drop-one range +0.747 .. +0.827
     subjects whose removal pushes rho below the null 95th percentile (0.407): none
@@ -299,6 +315,14 @@
         0.77 is a real association or a chance one, so the orderly drop-off
         is evidence for NEITHER. The grid neighbourhood turns out to be
         uninformative about real-versus-chance in both directions.
+
+  sdq_emo x act_bout_median_w0.5_p80  -- least-squares line on the raw values
+    y = +7.3441 * x -3.6399
+    over the observed range of x (0.5 to 1.25) the line
+      predicts a change of +5.51 points on sdq_emo,
+      whose own observed range is 0 to 5
+    Pearson r +0.7902 (belongs to this line)  vs  Spearman rho +0.7720 (the statistic the screen tested)
+    in-sample R^2 0.6244  vs  leave-one-out R^2 +0.6115   -- the gap is what fitting 24 points to a 2-parameter line costs
 
   sdq_emo x act_bout_median_w0.5_p80
     full-sample rho +0.772;  drop-one range +0.737 .. +0.807

@@ -636,7 +636,7 @@ print("    snap_adhd_total is by construction the sum of the SNAP inattention an
 print("    hyperactivity items, so it contains snap_inatt; the two cells that share the")
 print("    feature frac_act_short_w10_p20 are one finding measured twice, not two.")
 
-fig, axes = plt.subplots(3, len(SURV), figsize=(4.6 * len(SURV), 11.4))
+fig, axes = plt.subplots(3, len(SURV), figsize=(4.6 * len(SURV), 12.2))
 for c, rec in enumerate(SURV):
     f, t = rec["feature"], rec["target"]
     xv = X[f].to_numpy(float)
@@ -644,20 +644,51 @@ for c, rec in enumerate(SURV):
     xr, yr_ = rankdata(xv), rankdata(yv)
     full = spearman(xr, yr_)
 
-    # (a) the relationship itself
+    # (a) the relationship itself, with the least-squares line drawn.
+    # Note which statistic is which. The Spearman rho reported by the screen is a RANK
+    # correlation and involves no line at all. The line below is the ordinary least
+    # squares fit on the raw values -- the same fit whose leave-one-out error becomes the
+    # loo_r2cv column (loo_simple_lr() in 44_univariate_screen.py). Drawing it gives
+    # loo_r2cv a visual referent it otherwise lacks, and lets the in-sample fit and the
+    # held-out performance be compared on the same picture.
     ax = axes[0, c]
+    w, b = np.polyfit(xv, yv, 1)
+    pear = float(np.corrcoef(xv, yv)[0, 1])
+    xs = np.linspace(xv.min(), xv.max(), 50)
+    for i in range(n):                                   # the 24 leave-one-out refits
+        wi, bi = np.polyfit(np.delete(xv, i), np.delete(yv, i), 1)
+        ax.plot(xs, wi * xs + bi, color="#999999", lw=0.7, alpha=0.30, zorder=1)
+    ax.plot(xs, w * xs + b, color="#b2182b", lw=2.0, zorder=2)
     ax.scatter(xv, yv, s=44, color="#4878a8", edgecolor="white", linewidth=0.8, zorder=3)
     ax.set_xlabel(f, fontsize=8.5)
     ax.set_ylabel(t, fontsize=9)
     nzero = int((xv == xv.min()).sum())
-    ax.set_title(f"{t}\nvs {f}\nSpearman rho = {full:+.3f}   loo_r2cv = {rec['loo_r2cv']:.3f}",
-                 fontsize=9.2)
+    ax.set_title(f"{t}  vs  {f}", fontsize=9.6)
     ax.text(0.03, 0.97, f"{len(np.unique(xv))} distinct feature values of {n}\n"
                         f"{nzero} subject(s) at the minimum",
-            transform=ax.transAxes, va="top", fontsize=7.8,
+            transform=ax.transAxes, va="top", fontsize=7.6,
             bbox=dict(boxstyle="round,pad=0.32", fc="white", ec="#cccccc"))
+    ax.text(0.97, 0.05,
+            f"y = w·x + b\n"
+            f"w = {w:+.3f}   b = {b:+.3f}\n"
+            f"─────────────────────\n"
+            f"Pearson r    {pear:+.3f}   (this line)\n"
+            f"Spearman ρ   {full:+.3f}   (the screen's)\n"
+            f"in-sample R²  {pear ** 2:.3f}\n"
+            f"leave-one-out R²  {rec['loo_r2cv']:+.3f}",
+            transform=ax.transAxes, ha="right", va="bottom", fontsize=7.4, family="monospace",
+            bbox=dict(boxstyle="round,pad=0.4", fc="#fffdf7", ec="#b2182b", lw=0.9))
     ax.grid(alpha=0.22, lw=0.6)
     ax.set_axisbelow(True)
+    print(f"\n  {t} x {f}  -- least-squares line on the raw values")
+    print(f"    y = {w:+.4f} * x {b:+.4f}")
+    print(f"    over the observed range of x ({xv.min():.4g} to {xv.max():.4g}) the line")
+    print(f"      predicts a change of {w * (xv.max() - xv.min()):+.2f} points on {t},")
+    print(f"      whose own observed range is {yv.min():.0f} to {yv.max():.0f}")
+    print(f"    Pearson r {pear:+.4f} (belongs to this line)  vs  Spearman rho {full:+.4f}"
+          f" (the statistic the screen tested)")
+    print(f"    in-sample R^2 {pear ** 2:.4f}  vs  leave-one-out R^2 {rec['loo_r2cv']:+.4f}"
+          f"   -- the gap is what fitting 24 points to a 2-parameter line costs")
 
     # (b) drop-one-subject jackknife
     ax = axes[1, c]
@@ -758,14 +789,17 @@ for c, rec in enumerate(SURV):
         ax.axis("off")
 
 fig.suptitle("Fig 7  The three cells that survived BH-FDR, examined individually\n"
-             "row 1: the relationship   row 2: sensitivity to removing any single subject   "
-             "row 3: agreement of neighbouring settings of the same feature family",
+             "row 1: the relationship and its least-squares line   row 2: sensitivity to removing any single subject   "
+             "row 3: the same feature family at neighbouring settings",
              fontsize=11.5, y=0.995)
-fig.tight_layout(rect=[0, 0.032, 1, 0.965])
-fig.text(0.012, 0.008,
-         "Row 3 reads the same 608-feature screen, restricted to one feature family and one target: path-A time-structure features are computed on a grid of 5 window lengths x 9 activity-threshold\n"
-         "percentiles, so each family gives 45 highly overlapping views of the same recording. A signal that exists only in one cell of that grid, with neighbouring settings near the null, is the shape\n"
-         "that taking the maximum over many correlated noisy cells produces. Row 2 is the standard n = 24 fragility check: how far the correlation moves when any single child is left out.",
+fig.tight_layout(rect=[0, 0.098, 1, 0.968])
+fig.text(0.012, 0.010,
+         "Row 1: the red line is the ordinary least squares fit on the raw values, y = w·x + b; the grey lines are the 24 refits that each leave one subject out. That line is NOT the statistic the screen tested --\n"
+         "the screen used Spearman rank correlation, which involves no line at all, and the two disagree here (Pearson r belongs to the line, Spearman rho to the test). The line is drawn because its leave-one-out\n"
+         "error is what the loo_r2cv column reports, so it is the only quantity on this figure that speaks to prediction rather than description. Row 3: path-A features are computed on a grid of 5 window lengths x 9\n"
+         "activity-threshold percentiles. The neighbouring settings share only 0.13-0.72 rank correlation with the surviving cell, and their weaker effects match what simple attenuation predicts -- which holds whether\n"
+         "the surviving cell is real or a chance maximum, so this grid is uninformative in both directions rather than evidence against. Row 2 is the n = 24 fragility check: how far the correlation moves when any\n"
+         "single child is left out.",
          fontsize=7.2, color="#444444", linespacing=1.5)
 fig.savefig(FIGDIR / "fig07_surviving_cells.png", dpi=200)
 plt.close(fig)
