@@ -399,6 +399,7 @@ Options, with their consequences:
 .venv/bin/python analysis/60_results_inventory.py      # inventory and integrity audit
 .venv/bin/python analysis/61_univariate_analysis.py    # track A          (~15 s)
 .venv/bin/python analysis/62_multivariate_analysis.py  # track B          (~5 s)
+.venv/bin/python analysis/63_partial_vs_plain_diff.py  # partial shift    (~2 s)
 ```
 
 Each script derives all paths from its own location, reads only committed CSV files, touches
@@ -430,3 +431,4 @@ whose null requires permuting the entire cross-validation — measured by its ow
 | `fig13_full_model_vs_movement_total.png` | the 608-feature model against a model given only total movement |
 | `fig14_track_agreement.png` | whether the two tracks pick out the same targets, with their non-independence stated |
 | `fig15_bmi_arm.png` | whether BMI ever entered the model, and how that compares with dropping one child |
+| `fig16_partial_vs_plain_absdiff.png` | how far partialling out total movement shifts each of the 450 path-B statistics, ranked (`fig10` shows the same columns as before-and-after pairs; this one shows the size of the shift) |
