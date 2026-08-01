@@ -639,7 +639,7 @@ print("    feature frac_act_short_w10_p20 are one finding measured twice, not tw
 # Every annotation on this figure is placed to the RIGHT of its axes, never on top of the
 # data. The figure is sized to make room for that rather than the other way round.
 fig, axes = plt.subplots(3, len(SURV), figsize=(7.0 * len(SURV), 12.8),
-                         gridspec_kw={"wspace": 0.92, "hspace": 0.40})
+                         gridspec_kw={"wspace": 1.00, "hspace": 0.40})
 for c, rec in enumerate(SURV):
     f, t = rec["feature"], rec["target"]
     xv = X[f].to_numpy(float)
@@ -806,7 +806,7 @@ for c, rec in enumerate(SURV):
         nbtxt = "\n".join(
             f"  w{stem_grid(nbn)[1]}/p{stem_grid(nbn)[2]:<3} {cr:+.2f}  {ef:.2f}  {abs(cr) * abs(full):.2f}"
             for nbn, cr, ef in cors)
-        ax.text(1.155, 0.99,
+        ax.text(1.27, 0.99,
                 f"THE GRID\n"
                 f"  the same feature computed\n"
                 f"  at 5 window lengths x 9\n"
@@ -856,7 +856,7 @@ fig.suptitle("Fig 7  The three cells that survived BH-FDR, examined individually
              "row 1: the relationship and its least-squares line   row 2: sensitivity to removing any single subject   "
              "row 3: the same feature family at neighbouring settings",
              fontsize=11.5, y=0.995)
-fig.subplots_adjust(left=0.040, right=0.830, top=0.925, bottom=0.098, wspace=0.92, hspace=0.40)
+fig.subplots_adjust(left=0.040, right=0.830, top=0.925, bottom=0.098, wspace=1.00, hspace=0.40)
 fig.text(0.012, 0.010,
          "Row 1: the red line is the ordinary least squares fit on the raw values, y = w·x + b; the grey lines are the 24 refits that each leave one subject out. That line is NOT the statistic the screen tested --\n"
          "the screen used Spearman rank correlation, which involves no line at all, and the two disagree here (Pearson r belongs to the line, Spearman rho to the test). The line is drawn because its leave-one-out\n"
