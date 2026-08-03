@@ -1,0 +1,12 @@
+column,dtype,n_missing,pct_missing,n_unique
+subject,object,0,0.0,24
+snap_inatt,float64,0,0.0,11
+snap_hyper,float64,0,0.0,9
+snap_odd,float64,0,0.0,11
+snap_adhd_total,float64,0,0.0,15
+sdq_hyper,float64,0,0.0,8
+sdq_emo,float64,0,0.0,6
+sdq_cond,float64,0,0.0,5
+sdq_peer,float64,0,0.0,4
+sdq_pro,float64,0,0.0,6
+sdq_totdiff,float64,0,0.0,11

@@ -1,0 +1,6 @@
+analysis,required,status,detail
+结果表分析 (association / perm / FDR / LOOCV 指标的分布与排名),A_univariate.csv,可做,12160 行结果表齐备
+target distribution (24 人的分数分布 / ties / skewness),targets.csv,可做(待你确认纳入),"仓库内存在,24 行 x 10 个连续目标"
+feature-family analysis,FEATURE_MENU.md 或 feature-family mapping,待确认,"FEATURE_MENU.md 是散文式文档,不是机器可读 mapping;映射规则须先给你审后才能用"
+residual-level analysis (逐 participant 的 LOO 残差 / 预测),逐 participant prediction 或 residual 文件,不可做,仓库内不存在该文件;44 号脚本未落盘残差向量
+feature 与 target 的原始散点 / 重算 LOO 残差,features.csv + targets.csv,可做(需你授权重算),"两表齐备,可闭式重算单变量 LOO 残差;但这属于【重新计算】,不是读取已有结果"

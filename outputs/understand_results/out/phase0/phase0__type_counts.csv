@@ -1,0 +1,3 @@
+type,n_rows,n_targets,n_features
+bin,6080,10,608
+cont,6080,10,608
