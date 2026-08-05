@@ -414,6 +414,7 @@ Options, with their consequences:
 .venv/bin/python analysis/61_univariate_analysis.py    # track A          (~15 s)
 .venv/bin/python analysis/62_multivariate_analysis.py  # track B          (~5 s)
 .venv/bin/python analysis/63_partial_vs_plain_diff.py  # partial shift    (~2 s)
+.venv/bin/python analysis/64_fig05b_standalone.py      # fig 5b alone     (~2 s)
 ```
 
 Each script derives all paths from its own location, reads only committed CSV files, touches
@@ -446,3 +447,4 @@ whose null requires permuting the entire cross-validation — measured by its ow
 | `fig14_track_agreement.png` | whether the two tracks pick out the same targets, with their non-independence stated |
 | `fig15_bmi_arm.png` | whether BMI ever entered the model, and how that compares with dropping one child |
 | `fig16_partial_vs_plain_absdiff.png` | how far partialling out total movement shifts each of the 450 path-B statistics, ranked (`fig10` shows the same columns as before-and-after pairs; this one shows the size of the shift) |
+| `fig05b_standalone.png` | panel b of `fig05` on its own canvas, drawn from the same code and the same numbers; nothing is added and nothing is recomputed. The figure-level footnote of `fig05` is not carried over, because it describes panel a |
