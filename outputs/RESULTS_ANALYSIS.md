@@ -415,6 +415,7 @@ Options, with their consequences:
 .venv/bin/python analysis/62_multivariate_analysis.py  # track B          (~5 s)
 .venv/bin/python analysis/63_partial_vs_plain_diff.py  # partial shift    (~2 s)
 .venv/bin/python analysis/64_fig05b_standalone.py      # fig 5b alone     (~2 s)
+.venv/bin/python analysis/66_selection_stability.py    # fold selection   (~5 s)
 ```
 
 Each script derives all paths from its own location, reads only committed CSV files, touches
@@ -448,3 +449,5 @@ whose null requires permuting the entire cross-validation — measured by its ow
 | `fig15_bmi_arm.png` | whether BMI ever entered the model, and how that compares with dropping one child |
 | `fig16_partial_vs_plain_absdiff.png` | how far partialling out total movement shifts each of the 450 path-B statistics, ranked (`fig10` shows the same columns as before-and-after pairs; this one shows the size of the shift) |
 | `fig05b_standalone.png` | panel b of `fig05` on its own canvas, drawn from the same code and the same numbers; nothing is added and nothing is recomputed. The figure-level footnote of `fig05` is not carried over, because it describes panel a |
+| `fig17_selection_frequency_profile.png` | for every track-B target and both k, how many of the 24 folds selected each feature — the shape that separates "one stable set" from "a different set every fold" |
+| `fig18_selection_folds_sdq_emo_ridge.png` | the same question for one combination in full detail: which features each of the 24 folds picked for `sdq_emo` at k = 5 and k = 10 |
