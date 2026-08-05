@@ -128,7 +128,7 @@ def bh(p):
 
 
 qrec = bh(np.where(M["perm_p"].isna(), 1.0, M["perm_p"]).astype(float))
-chk("published q_fdr reproduces from perm_p with the documented m = 192 family",
+chk(f"published q_fdr reproduces from perm_p with the documented m = {len(M)} family",
     np.nanmax(np.abs(qrec - M["q_fdr"].to_numpy())) < 1e-12,
     f"max deviation {np.nanmax(np.abs(qrec - M['q_fdr'].to_numpy())):.2e}")
 chk("q_fdr is present only on the main arm",
@@ -141,8 +141,11 @@ print(f"\n  {sum(1 for _, ok, _ in checks if ok)} of {len(checks)} checks passed
 head("[2] EVERY MAIN-ARM COMBINATION AGAINST ITS BASELINE")
 print("  Regression baseline: skill = 0, i.e. the same RMSE as always predicting the")
 print("  training mean. Classification baseline: balanced accuracy = 1/k, where k is the")
-print("  number of classes -- 1/2 for the ten __qbin targets, 1/3 for the six __qter and")
-print("  1/4 for the six __qquar.")
+NTGT = {suf: M.loc[M["target"].str.endswith(suf), "target"].nunique()
+        for suf in ("__qbin", "__qter", "__qquar")}
+print(f"  number of classes -- 1/2 for the {NTGT['__qbin']} __qbin targets, "
+      f"1/3 for the {NTGT['__qter']} __qter and")
+print(f"  1/4 for the {NTGT['__qquar']} __qquar.")
 print(f"\n  {'track':6} {'combinations':>13} {'beat baseline':>14} {'share':>7} {'best':>8}  best combination")
 for tr, met in [("reg", "skill"), ("bin", "bacc"), ("multi", "bacc")]:
     g = M[M["track"] == tr]
@@ -152,17 +155,21 @@ for tr, met in [("reg", "skill"), ("bin", "bacc"), ("multi", "bacc")]:
           f" {g[met].max():8.3f}  {b['target']} / {b['model']} / k{int(b['k'])}")
 
 print("\n  the permutation gate, as written in 45_multivariate_cv.py:")
-print("    regression      skill > 0        -- this is exactly the dummy baseline")
-print("    classification  bacc > 0.5       -- this is the dummy baseline for BINARY targets only")
+print("    regression      skill > 0             -- this is exactly the dummy baseline")
+print("    classification  bacc > 1 / n_classes  -- each target against its own chance level")
 mult = M[M["track"] == "multi"]
 above_chance = mult[mult["bacc"] > mult["chance"]]
-gated_out = above_chance[above_chance["bacc"] <= 0.5]
+would_pass_half = mult[mult["bacc"] > 0.5]
 print(f"  For the {len(mult)} multiclass combinations, chance is 1/3 or 1/4, not 1/2.")
-print(f"    above their own chance level      : {len(above_chance)}")
-print(f"    of those, gated out by the 0.5 rule: {len(gated_out)}")
-print(f"    so they enter the FDR family with p = 1 without having been tested.")
-print(f"    their balanced accuracies range {gated_out['bacc'].min():.3f} to {gated_out['bacc'].max():.3f}"
-      if len(gated_out) else "")
+print(f"    above their own chance level       : {len(above_chance)}")
+print(f"    of those, permutation-tested       : {int(above_chance['perm_p'].notna().sum())}")
+print(f"    a flat bacc > 0.5 rule would test  : {len(would_pass_half)}")
+print("  Until commit 58b7bbf the gate WAS that flat bacc > 0.5, which is the chance")
+print("  level of a 2-class target only. Multiclass combinations that beat 1/3 or 1/4")
+print("  but not 1/2 therefore entered the FDR family at p = 1 without ever being")
+print("  tested. That is no longer the case: the gate now reads each target's own")
+print("  class count, so this figure's 'beat their baseline' and 'permutation tested'")
+print("  counts are produced by the same rule.")
 
 fig, axes = plt.subplots(1, 3, figsize=(16.4, 6.2),
                          gridspec_kw={"width_ratios": [1, 1, 1.18], "wspace": 0.42})
@@ -190,9 +197,9 @@ for ax, tr, met, xlab in [
     ax.set_yticklabels([t if tr == "reg" else f"{t}  [{KCLASS[t]}cl]" for t in tgts], fontsize=8)
     ax.invert_yaxis()
     ax.set_xlabel(xlab, fontsize=9)
-    ax.set_title({"reg": "Fig 11a  Regression, 60 combinations",
-                  "bin": "Fig 11b  Binary classification, 60",
-                  "multi": "Fig 11c  Multiclass, 72"}[tr], fontsize=10.5)
+    ax.set_title({"reg": f"Fig 11a  Regression, {len(g)} combinations",
+                  "bin": f"Fig 11b  Binary classification, {len(g)}",
+                  "multi": f"Fig 11c  Multiclass, {len(g)}"}[tr], fontsize=10.5)
     ax.grid(axis="x", alpha=0.22, lw=0.6)
     ax.set_axisbelow(True)
 h = [plt.Line2D([], [], marker="o", ls="", color=CM[m], label=m) for m in
@@ -201,14 +208,15 @@ h += [plt.Line2D([], [], marker=MK[k], ls="", color="#555555", label=f"k = {k} f
       for k in (5, 10)]
 h += [plt.Line2D([], [], color="#b2182b", lw=2.0, label="baseline / chance")]
 axes[2].legend(handles=h, fontsize=8, frameon=False, loc="center left", bbox_to_anchor=(1.02, 0.5))
-fig.suptitle("Fig 11  All 192 main-arm cross-validated results against the baseline each one has to beat\n"
-             "leave-one-out over 24 subjects; feature selection and scaling refitted inside every fold",
+fig.suptitle(f"Fig 11  All {len(M)} main-arm cross-validated results against the baseline each one has to beat\n"
+             f"leave-one-out over {int(M['n'].max())} subjects; feature selection and scaling refitted inside every fold",
              fontsize=11.5)
 fig.subplots_adjust(left=0.085, right=0.885, top=0.855, bottom=0.235, wspace=0.42)
 fig.text(0.012, 0.020,
          "'rf' appears in both the regression and the classification panels and is a different estimator in each (RandomForestRegressor / RandomForestClassifier). Hyperparameters are fixed, not tuned:\n"
          "alpha = 10, C = 1, 200 trees, k in {5, 10} (MODEL_MENU.md section 4 trap 3), so these are one reasonable default configuration rather than a best attainable model. The multiclass panel is drawn with\n"
-         "a per-row chance line because chance depends on the number of classes; using 0.5 there, as the permutation gate does, would compare a 4-class result against a 2-class standard.",
+         "a per-row chance line because chance depends on the number of classes; using 0.5 there would compare a 4-class result against a 2-class standard. The permutation gate in 45_multivariate_cv.py did\n"
+         "exactly that until commit 58b7bbf and now reads each target's own class count instead.",
          fontsize=7.2, color="#444444", linespacing=1.5)
 fig.savefig(FIGDIR / "fig11_cv_results_vs_baseline.png", dpi=200)
 plt.close(fig)
@@ -230,7 +238,7 @@ print(f"  smallest perm_p anywhere in the table      : {M['perm_p'].min():.4f}")
 print(f"    -- no combination came within a factor of {M['perm_p'].min() / (1 / 5001):.0f} of the resolution limit,")
 print(f"       so unlike the A track nothing here is pinned to the floor.")
 print(f"  perm_p < 0.05                              : {int((M['perm_p'] < 0.05).sum())}"
-      f"   (of {len(tested)} tested; if all 43 were null, {0.05 * len(tested):.1f} would be expected)")
+      f"   (of {len(tested)} tested; if all {len(tested)} were null, {0.05 * len(tested):.1f} would be expected)")
 print(f"  q_fdr < 0.05                               : {int((M['q_fdr'] < 0.05).sum())}")
 print(f"  q_fdr < 0.10                               : {int((M['q_fdr'] < 0.10).sum())}")
 print(f"  smallest q_fdr in the table                : {M['q_fdr'].min():.4f}")
@@ -258,7 +266,7 @@ ax.plot(ranks, 0.05 * ranks / len(M), color="#b2182b", lw=2.2,
 ax.axhline(1 / 5001, color="#555555", ls="--", lw=1.2,
            label="permutation resolution 1/(5000+1)")
 ax.set_yscale("log")
-ax.set_xlabel("Rank within the family of 192 combinations")
+ax.set_xlabel(f"Rank within the family of {len(M)} combinations")
 ax.set_ylabel("Permutation p (log scale)")
 ax.set_title("Fig 12a  The whole FDR family, including the part that was never tested",
              fontsize=10.5)
@@ -267,7 +275,7 @@ ax.grid(alpha=0.22, lw=0.6, which="both")
 ax.set_axisbelow(True)
 
 ax = axB
-lab = ["all 192\ncombinations", "beat their\nbaseline", "permutation\ntested",
+lab = [f"all {len(M)}\ncombinations", "beat their\nbaseline", "permutation\ntested",
        "perm_p\n< 0.05", "q_fdr\n< 0.05"]
 beat = int((M[M.track == "reg"]["skill"] > 0).sum() +
            (M[M.track != "reg"]["bacc"] > M[M.track != "reg"]["chance"]).sum())
@@ -280,22 +288,23 @@ ax.set_xticks(range(5))
 ax.set_xticklabels(lab, fontsize=8.4)
 ax.set_ylabel("Number of combinations")
 ax.set_ylim(0, len(M) * 1.14)
-ax.set_title("Fig 12b  The funnel from 192 combinations to what survives",
+ax.set_title(f"Fig 12b  The funnel from {len(M)} combinations to what survives",
              fontsize=10.5)
 ax.grid(axis="y", alpha=0.22, lw=0.6)
 ax.set_axisbelow(True)
-ax.text(0.5, 0.62, "'beat their baseline' counts every track against its own\n"
-                   "chance level; the permutation gate in 45_multivariate_cv.py\n"
-                   "uses 0.5 for multiclass too, which is why fewer combinations\n"
-                   "were tested than beat their baseline.",
+ax.text(0.5, 0.62, "'beat their baseline' and 'permutation tested' are now the\n"
+                   "same rule: every track against its own chance level, 1/2 for\n"
+                   "2-class targets and 1/3 or 1/4 for multiclass. Until commit\n"
+                   "58b7bbf the gate was a flat bacc > 0.5, so fewer combinations\n"
+                   "were tested than beat their baseline and the two bars differed.",
         transform=ax.transAxes, ha="center", fontsize=7.8,
         bbox=dict(boxstyle="round,pad=0.4", fc="white", ec="#cccccc"))
 fig.tight_layout()
 fig.subplots_adjust(bottom=0.185)
 fig.text(0.012, 0.018,
-         "MODEL_MENU.md section 4 trap 2: an absent perm_p means the combination never beat the dummy baseline and so was never permutation-tested; it does not mean tested and found not significant. Those\n"
-         "149 combinations still enter the BH denominator at p = 1, which 45_multivariate_cv.py records as a deliberate conservative choice -- it can only hide a real finding, never manufacture one. Panel a\n"
-         "shows them so that the family size m = 192 is visible rather than being a number in the caption.",
+         f"MODEL_MENU.md section 4 trap 2: an absent perm_p means the combination never beat the dummy baseline and so was never permutation-tested; it does not mean tested and found not significant. Those\n"
+         f"{int(M['perm_p'].isna().sum())} combinations still enter the BH denominator at p = 1, which 45_multivariate_cv.py records as a deliberate conservative choice -- it can only hide a real finding, never manufacture one. Panel a\n"
+         f"shows them so that the family size m = {len(M)} is visible rather than being a number in the caption.",
          fontsize=7.2, color="#444444", linespacing=1.5)
 fig.savefig(FIGDIR / "fig12_permutation_and_fdr.png", dpi=200)
 plt.close(fig)
@@ -309,7 +318,8 @@ print("  nc_skill is the skill of a model given a single feature, uaMag_median, 
 print("  same leave-one-out procedure. skill_over_nc = skill - nc_skill, on a shared")
 print("  denominator, so it answers: how much does the 608-feature model add over knowing")
 print("  only how much the child moved.")
-print("  This control exists for the 60 regression rows. The 132 classification rows have")
+print(f"  This control exists for the {int((M['track'] == 'reg').sum())} regression rows. "
+      f"The {int((M['track'] != 'reg').sum())} classification rows have")
 print("  no negative control at all -- a decision recorded in 45_multivariate_cv.py and")
 print("  required to be declared with the results.")
 print(f"\n  {'target':20} {'nc_skill':>9} {'best skill':>11} {'best skill_over_nc':>19} {'models beating nc':>18}")
@@ -323,7 +333,7 @@ print(f"  regression combinations with skill_over_nc > 0 (beat movement total): 
       f"{int((reg['skill_over_nc'] > 0).sum())} of {len(reg)}")
 print(f"  targets where the movement-total model alone has skill > 0   : "
       f"{sorted(reg.loc[reg['nc_skill'] > 0, 'target'].unique().tolist()) or 'none'}")
-print(f"  median skill across the 60 regression combinations           : {reg['skill'].median():.3f}")
+print(f"  median skill across the {len(reg)} regression combinations           : {reg['skill'].median():.3f}")
 print(f"  median nc_skill                                              : {reg['nc_skill'].median():.3f}")
 print("\n  A qualification that changes how skill_over_nc should be read here: nc_skill is")
 print(f"  negative for all 10 targets (range {reg['nc_skill'].min():.3f} to {reg['nc_skill'].max():.3f}).")
@@ -380,7 +390,8 @@ ax.set_title("Fig 13b  How much the full model adds over movement total\n"
              fontsize=10.2)
 ax.grid(axis="x", alpha=0.22, lw=0.6)
 ax.set_axisbelow(True)
-ax.text(0.03, 0.96, "The 132 classification combinations\nhave no equivalent control:\n"
+ax.text(0.03, 0.96, f"The {int((M['track'] != 'reg').sum())} classification combinations\n"
+                    "have no equivalent control:\n"
                     "the B track's movement-total comparison\nexists only on the regression half.",
         transform=ax.transAxes, fontsize=8.2, va="top",
         bbox=dict(boxstyle="round,pad=0.45", fc="#fff6f4", ec="#b2182b", lw=0.9))

@@ -39,7 +39,7 @@ time-domain statistics, 84 frequency-domain statistics, 45 time-structure "path 
 channels, and `rec_dur_min`, the recording duration. Nothing is left undecoded.
 
 **12,160 statistical tests were run in the univariate track alone**: 608 features × (10
-continuous targets + 10 median-split binary targets). The multivariate track adds 192
+continuous targets + 10 median-split binary targets). The multivariate track adds 204
 cross-validated model fits in its confirmatory arm.
 
 Figures: `fig01_label_group_sizes.png`, `fig02_feature_families.png`.
@@ -60,7 +60,7 @@ features enter a pipeline of variance filtering → `SelectKBest` (univariate F 
 {5, 10}) → standardisation → model, refitted inside every fold of a 24-fold leave-one-out
 loop. Regression uses Ridge, SVR and random forest; classification uses logistic regression,
 linear SVM and random forest. Combinations that beat a dummy baseline are permutation-tested
-5,000 times, and BH correction is applied over all 192 combinations of the confirmatory arm.
+5,000 times, and BH correction is applied over all 204 combinations of the confirmatory arm.
 
 The two are **not independent**. The B pipeline's `SelectKBest` step is itself a univariate
 screen, refitted per fold. It differs from track A in the statistic (an F score on raw values
@@ -196,11 +196,13 @@ to 0.086. Cells above their target's null 95th percentile actually *increase*, 4
 
 ### 4.1 Nothing survives
 
-**The smallest q-value in the entire table is 1.0000.** The smallest permutation p is 0.0082,
-and with a family of 192 that alone yields q = 1.57, capped at 1.
+**The smallest q-value in the entire table is 0.5303.** The smallest permutation p is 0.0082;
+on its own, against a family of 204, that rank-1 value would give q = 1.67, capped at 1. The
+published 0.5303 is lower than that because the BH step-up carries down the running minimum
+from a higher rank — here rank 8, where p = 0.0208 gives 0.0208 × 204 / 8 = 0.5303.
 
-Of the 192 confirmatory combinations, 43 were permutation-tested and 6 reach p < 0.05 against
-2.1 expected if all 43 were null. The other 149 never beat their dummy baseline, were never
+Of the 204 confirmatory combinations, 70 were permutation-tested and 13 reach p < 0.05 against
+3.5 expected if all 70 were null. The other 134 never beat their dummy baseline, were never
 tested, and enter the correction at p = 1 — which is a conservative convention that can hide
 a real finding but cannot manufacture one. Figures: `fig11`, `fig12`.
 
@@ -209,8 +211,14 @@ The strongest results:
 | Track | Target | Model | k | Metric | perm_p |
 |---|---|---|---|---|---|
 | multiclass | `snap_inatt__qquar` | random forest | 5 | balanced accuracy 0.521 | 0.0082 |
+| multiclass | `snap_inatt__qquar` | random forest | 10 | balanced accuracy 0.479 | 0.0108 |
+| multiclass | `sdq_emo__qter` | linear SVM | 5 | balanced accuracy 0.627 | 0.0120 |
 | binary | `sdq_totdiff__qbin` | random forest | 5 | balanced accuracy 0.822 | 0.0130 |
 | regression | `sdq_emo` | ridge | 10 | skill 0.155 | 0.0206 |
+
+All five rows above carry the same `q_fdr`, 0.5303 — the running minimum the BH step-up
+carries down. The first combination whose q rises above it is `sdq_emo` / ridge / k = 5, at
+0.5666.
 
 Median skill across the 60 regression combinations is **−0.069**: the typical fitted model
 predicts a held-out child worse than the training mean.
@@ -221,13 +229,13 @@ predicts a held-out child worse than the training mean.
 30 of 60 regression combinations are positive. But `nc_skill` is itself negative for all ten
 targets (−0.086 to −0.034), so "beats the movement-total model" means "less bad than a model
 that is already worse than predicting the mean". Only 14 of those 30 also beat the dummy
-baseline. The 132 classification combinations have **no movement-total control at all**.
+baseline. The 144 classification combinations have **no movement-total control at all**.
 Figure: `fig13`.
 
 ### 4.3 The BMI arms cannot answer the question they were built for
 
-BMI was never selected into the model in **189 of 192** combinations (`bmi_sel_frac` mean
-0.0007, maximum 0.0435). Adding BMI changes the metric by exactly zero in 191 of 192
+BMI was never selected into the model in **201 of 204** combinations (`bmi_sel_frac` mean
+0.0006, maximum 0.0435). Adding BMI changes the metric by exactly zero in 203 of 204
 combinations, while dropping the single child who has no BMI recorded moves metrics by a
 median of about 0.03 and by up to 0.35. "Adding BMI made no difference" here means BMI never
 entered the model — a different statement from "BMI is unrelated to symptoms". Figure: `fig15`.
@@ -244,7 +252,7 @@ snapshots under `outputs/tables/`.
 | 40 published effect sizes recomputed from `features.csv` + targets with an independent implementation | Largest disagreement 8.3e-17 (rho) and 5.6e-17 (AUC) — float rounding only |
 | All 12,160 published `perm_p` re-derived against independently drawn nulls | Rank correlation 0.999934; 12,152 of 12,160 on the same side of p < 0.05 |
 | Published `q_fdr` in `A_univariate.csv` recomputed with an independent BH implementation | Largest deviation 5.5e-14 |
-| Published `q_fdr` in `B_multivariate.csv` recomputed under the documented m = 192 family | Deviation 0.0 |
+| Published `q_fdr` in `B_multivariate.csv` recomputed under the documented m = 204 family | Deviation 1.2e-15 |
 | Label group sizes recomputed from `target_labels.csv` against `target_labels_meta.csv` | 0 mismatches across all 39 emitted columns |
 | Screened feature set vs the columns of `features.csv` | Identical; 0 features either way |
 | 11 internal-consistency assertions on `B_multivariate.csv` (metric ranges, `skill_over_nc` identity, per-track column presence, n per arm) | 11 of 11 pass |
@@ -260,13 +268,36 @@ between what the two scripts report and what their inputs support.
 These concern how the results were computed, not what they show. Both were found while
 checking the survivors and are stated here because they bear on how the numbers should be read.
 
-**(a) The permutation gate on the multivariate track uses 0.5 for every classification target.**
-`45_multivariate_cv.py` sends a combination to permutation testing when balanced accuracy
-exceeds 0.5. That is the chance level for the ten 2-class targets, but the multiclass targets
-have 3 or 4 classes and chance levels of 1/3 or 1/4. Of the 72 multiclass combinations, 21
-beat their own chance level; 20 of those were gated out and entered the correction at p = 1
-without ever being tested. Their balanced accuracies run from 0.313 to 0.479. The consequence
-is one-directional: those combinations can only have been under-credited, never over-credited.
+**(a) The permutation gate on the multivariate track used 0.5 for every classification target.
+This has since been changed; the paragraph is kept because it explains why the earlier figures
+differ from the current ones.**
+
+*As observed:* `45_multivariate_cv.py` sent a combination to permutation testing when balanced
+accuracy exceeded 0.5. That is the chance level for the ten 2-class targets, but the multiclass
+targets have 3 or 4 classes and chance levels of 1/3 or 1/4. Of the 72 multiclass combinations,
+21 beat their own chance level; 20 of those were gated out and entered the correction at p = 1
+without ever being tested. Their balanced accuracies ran from 0.313 to 0.479. The consequence
+was one-directional: those combinations could only have been under-credited, never
+over-credited.
+
+*As resolved,* in commit `58b7bbf` — the same commit removed a hardcoded whitelist of six
+multiclass base names, so the multiclass target list grew as well. The gate now reads each
+target's own class count, `bacc > 1 / n_classes`. What changed in the numbers:
+
+| | before `58b7bbf` | now |
+|---|---|---|
+| combinations in the family, m | 192 | 204 |
+| multiclass combinations | 72 | 84 |
+| permutation-tested | 43 (reg 14, bin 28, multi 1) | 70 (reg 14, bin 28, multi 28) |
+| never tested, entered at p = 1 | 149 | 134 |
+| `perm_p` < 0.05 | 6 | 13 |
+| smallest `q_fdr` | 1.0000 | 0.5303 |
+| `q_fdr` < 0.05 | 0 | 0 |
+
+A flat `bacc > 0.5` rule would today test 5 of the 84 multiclass combinations; the own-chance
+rule tests 28. In `fig12b` the "beat their baseline" and "permutation tested" bars are now
+produced by the same rule and are therefore equal at 70; in the earlier version of that figure
+they differed, and the gap was this gate.
 
 **(b) The two tracks use different permutation tail conventions, and one of them is only safe
 because of an unrelated approximation.** `44_univariate_screen.py` reports
@@ -313,8 +344,8 @@ The grounds, in order of weight:
    predicting the group average.
 
 3. **The multivariate track yields nothing at all.** Its smallest false-discovery q-value is
-   1.0000. Its best single result, balanced accuracy 0.822 on `sdq_totdiff__qbin`, has a
-   permutation p of 0.013, which does not survive a family of 192.
+   0.5303. Its best single result, balanced accuracy 0.822 on `sdq_totdiff__qbin`, has a
+   permutation p of 0.013, which does not survive a family of 204.
 
 4. **Three cells of 12,160 do survive correction on the univariate track, and they survive a
    correctly specified test.** They are not artefacts of the tie/tail issue in §6, they are not
@@ -442,8 +473,8 @@ whose null requires permuting the entire cross-validation — measured by its ow
 | `fig08_tie_corrected_pvalues.png` | how tied the features are, the effect of correctly specifying the null, and why the tail convention cannot be changed alone |
 | `fig09_negative_control_rank.png` | where the movement-total control ranks among the 608 features of each target |
 | `fig10_partial_control_pathB.png` | the 45 path-B columns before and after removing total movement |
-| `fig11_cv_results_vs_baseline.png` | all 192 cross-validated results against the baseline each has to beat |
-| `fig12_permutation_and_fdr.png` | the whole FDR family including the 149 never tested, and the funnel down to zero survivors |
+| `fig11_cv_results_vs_baseline.png` | all 204 cross-validated results against the baseline each has to beat |
+| `fig12_permutation_and_fdr.png` | the whole FDR family including the 134 never tested, and the funnel down to zero survivors |
 | `fig13_full_model_vs_movement_total.png` | the 608-feature model against a model given only total movement |
 | `fig14_track_agreement.png` | whether the two tracks pick out the same targets, with their non-independence stated |
 | `fig15_bmi_arm.png` | whether BMI ever entered the model, and how that compares with dropping one child |

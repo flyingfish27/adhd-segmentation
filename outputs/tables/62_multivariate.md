@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/62_multivariate_analysis.py`
-- Repository HEAD when this snapshot was generated: `b5c349a625cfcd280bee7c61ab30064a07a651cf`
+- Repository HEAD when this snapshot was generated: `6fbaaa643c269e44964efd4f1eb8e758a427bcb5`
 - Reproduce with: `.venv/bin/python analysis/62_multivariate_analysis.py`
 - No permutation null is rebuilt for this track: the B-track null requires permuting the
   whole cross-validation, which its producing script measures at about 14.7 hours.
@@ -13,9 +13,9 @@
 ==============================================================================
 [1] INTERNAL CONSISTENCY OF B_multivariate.csv
 ==============================================================================
-  rows: 576   arms: {'main': np.int64(192), 'nobmi_n23': np.int64(192), 'bmi_n23': np.int64(192)}
+  rows: 612   arms: {'main': np.int64(204), 'nobmi_n23': np.int64(204), 'bmi_n23': np.int64(204)}
   MODEL_MENU.md section 4 trap 7: any count over this table must first be
-  restricted to variant == 'main', or it is inflated threefold. Main arm: 192 rows.
+  restricted to variant == 'main', or it is inflated threefold. Main arm: 204 rows.
   [ok ] every main-arm row used all 24 subjects   n values [np.int64(24)]
   [ok ] the two exploratory arms used 23 subjects
   [ok ] balanced accuracy within [0, 1]   range 0.000 .. 0.822
@@ -25,7 +25,7 @@
   [ok ] skill_over_nc equals skill - nc_skill   max deviation 1.11e-16
   [ok ] regression metrics absent on classification rows and vice versa
   [ok ] nc_skill is a property of the target alone, identical across model and k
-  [ok ] published q_fdr reproduces from perm_p with the documented m = 192 family   max deviation 0.00e+00
+  [ok ] published q_fdr reproduces from perm_p with the documented m = 204 family   max deviation 1.22e-15
   [ok ] q_fdr is present only on the main arm
 
   11 of 11 checks passed
@@ -35,52 +35,57 @@
 ==============================================================================
   Regression baseline: skill = 0, i.e. the same RMSE as always predicting the
   training mean. Classification baseline: balanced accuracy = 1/k, where k is the
-  number of classes -- 1/2 for the ten __qbin targets, 1/3 for the six __qter and
-  1/4 for the six __qquar.
+  number of classes -- 1/2 for the 10 __qbin targets, 1/3 for the 7 __qter and
+  1/4 for the 7 __qquar.
 
   track   combinations  beat baseline   share     best  best combination
   reg               60             14   23.3%    0.163  sdq_emo / ridge / k5
   bin               60             28   46.7%    0.822  sdq_totdiff__qbin / rf / k5
-  multi             72             21   29.2%    0.521  snap_inatt__qquar / rf / k5
+  multi             84             28   33.3%    0.627  sdq_emo__qter / logit / k5
 
   the permutation gate, as written in 45_multivariate_cv.py:
-    regression      skill > 0        -- this is exactly the dummy baseline
-    classification  bacc > 0.5       -- this is the dummy baseline for BINARY targets only
-  For the 72 multiclass combinations, chance is 1/3 or 1/4, not 1/2.
-    above their own chance level      : 21
-    of those, gated out by the 0.5 rule: 20
-    so they enter the FDR family with p = 1 without having been tested.
-    their balanced accuracies range 0.313 to 0.479
+    regression      skill > 0             -- this is exactly the dummy baseline
+    classification  bacc > 1 / n_classes  -- each target against its own chance level
+  For the 84 multiclass combinations, chance is 1/3 or 1/4, not 1/2.
+    above their own chance level       : 28
+    of those, permutation-tested       : 28
+    a flat bacc > 0.5 rule would test  : 5
+  Until commit 58b7bbf the gate WAS that flat bacc > 0.5, which is the chance
+  level of a 2-class target only. Multiclass combinations that beat 1/3 or 1/4
+  but not 1/2 therefore entered the FDR family at p = 1 without ever being
+  tested. That is no longer the case: the gate now reads each target's own
+  class count, so this figure's 'beat their baseline' and 'permutation tested'
+  counts are produced by the same rule.
 
   wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig11_cv_results_vs_baseline.png
 
 ==============================================================================
 [3] PERMUTATION AND FDR ON THE B TRACK
 ==============================================================================
-  combinations in the family                 : 192
-  actually permutation-tested                : 43   (reg 14, bin 28, multi 1)
-  never tested, entered the family as p = 1  : 149
+  combinations in the family                 : 204
+  actually permutation-tested                : 70   (reg 14, bin 28, multi 28)
+  never tested, entered the family as p = 1  : 134
   permutation resolution 1/(NPERM+1)         : 2.00e-04
   smallest perm_p anywhere in the table      : 0.0082
     -- no combination came within a factor of 41 of the resolution limit,
        so unlike the A track nothing here is pinned to the floor.
-  perm_p < 0.05                              : 6   (of 43 tested; if all 43 were null, 2.1 would be expected)
+  perm_p < 0.05                              : 13   (of 70 tested; if all 70 were null, 3.5 would be expected)
   q_fdr < 0.05                               : 0
   q_fdr < 0.10                               : 0
-  smallest q_fdr in the table                : 1.0000
+  smallest q_fdr in the table                : 0.5303
 
   the ten smallest permutation p-values:
   track  target                   model    k   metric   perm_p    q_fdr
-  multi  snap_inatt__qquar        rf       5    0.521   0.0082   1.0000
-  bin    sdq_totdiff__qbin        rf       5    0.822   0.0130   1.0000
-  reg    sdq_emo                  ridge   10    0.155   0.0206   1.0000
-  reg    sdq_emo                  ridge    5    0.163   0.0250   1.0000
-  reg    sdq_emo                  svr     10    0.085   0.0336   1.0000
-  bin    sdq_totdiff__qbin        svm      5    0.767   0.0426   1.0000
-  reg    snap_hyper               ridge   10    0.055   0.0700   1.0000
-  reg    snap_inatt               rf      10    0.049   0.0712   1.0000
-  reg    snap_adhd_total          rf      10    0.051   0.0734   1.0000
-  reg    snap_inatt               svr     10    0.015   0.0758   1.0000
+  multi  snap_inatt__qquar        rf       5    0.521   0.0082   0.5303
+  multi  snap_inatt__qquar        rf      10    0.479   0.0108   0.5303
+  multi  sdq_emo__qter            svm      5    0.627   0.0120   0.5303
+  bin    sdq_totdiff__qbin        rf       5    0.822   0.0130   0.5303
+  multi  sdq_emo__qter            logit    5    0.627   0.0156   0.5303
+  multi  snap_inatt__qquar        svm     10    0.469   0.0190   0.5303
+  reg    sdq_emo                  ridge   10    0.155   0.0206   0.5303
+  multi  sdq_emo__qter            rf       5    0.607   0.0208   0.5303
+  reg    sdq_emo                  ridge    5    0.163   0.0250   0.5666
+  reg    sdq_emo                  svr     10    0.085   0.0336   0.6853
 
   wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig12_permutation_and_fdr.png
 
@@ -91,7 +96,7 @@
   same leave-one-out procedure. skill_over_nc = skill - nc_skill, on a shared
   denominator, so it answers: how much does the 608-feature model add over knowing
   only how much the child moved.
-  This control exists for the 60 regression rows. The 132 classification rows have
+  This control exists for the 60 regression rows. The 144 classification rows have
   no negative control at all -- a decision recorded in 45_multivariate_cv.py and
   required to be declared with the results.
 
@@ -181,11 +186,11 @@
   chose BMI into the top-k. MODEL_MENU.md marks this as required reading, because
   if it is near zero then 'adding BMI changed nothing' means BMI never entered the
   model, which is a different statement from 'BMI is unrelated to symptoms'.
-    combinations in the arm  : 192
-    mean                     : 0.0007
+    combinations in the arm  : 204
+    mean                     : 0.0006
     max                      : 0.0435
-    never selected (== 0)    : 189 of 192
-    selected in every fold   : 0 of 192
+    never selected (== 0)    : 201 of 204
+    selected in every fold   : 0 of 204
 
   [reg] skill
     adding BMI      (bmi_n23 - nobmi_n23): median +0.0000  max |diff| 0.0000  nonzero 0/60
@@ -198,8 +203,8 @@
     ratio of the two typical magnitudes  : 0.00
 
   [multi] bacc
-    adding BMI      (bmi_n23 - nobmi_n23): median +0.0000  max |diff| 0.0312  nonzero 1/72
-    dropping 1 subj (nobmi_n23 - main)   : median +0.0301  max |diff| 0.2565  nonzero 71/72
+    adding BMI      (bmi_n23 - nobmi_n23): median +0.0000  max |diff| 0.0312  nonzero 1/84
+    dropping 1 subj (nobmi_n23 - main)   : median +0.0232  max |diff| 0.2565  nonzero 81/84
     ratio of the two typical magnitudes  : 0.00
 
   wrote /Users/shiyu/Projects/adhd-segmentation/outputs/figures/fig15_bmi_arm.png
