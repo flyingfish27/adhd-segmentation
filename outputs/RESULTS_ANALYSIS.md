@@ -436,6 +436,11 @@ Options, with their consequences:
 - Record them as ledger entries in `working/` — this analysis did not read or write the
   `working/` triple, by instruction, so that has not been done.
 
+〔2026-08-11〕 Resolved in part: the four `FEATURE_MENU.md` rows above were settled by the
+second option — the inline corrections dated 2026-08-03, which had been sitting uncommitted
+in the working tree, are committed in the same commit as this note (user decision,
+2026-08-11). The two `TARGET_MENU.md` rows remain as measured.
+
 ---
 
 ## Reproducing this
