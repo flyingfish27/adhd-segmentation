@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/70_feature_inventory.py`
-- Repository HEAD when this snapshot was generated: `b38d9a13537df86cfb35f41bbcdd2f5f1b03d152`
+- Repository HEAD when this snapshot was generated: `5a89d4bcf21e8e08357f269b33230d09752f3bd4`
 - Reproduce with: `.venv/bin/python analysis/70_feature_inventory.py`
 
 ```text
@@ -77,6 +77,69 @@
     act_bout_median_w2_p40       4 unique   family=pathA_tstruct
     stl_bout_median_w2_p50       4 unique   family=pathA_tstruct
     act_bout_median_w5_p80       4 unique   family=pathA_tstruct
+
+==============================================================================
+[4b] NEAR-CONSTANT: MODE DOMINANCE (exact ties among the 24 values)
+==============================================================================
+  'mode_n' = subjects sharing the single most frequent value (of 24).
+  a constant column would be mode_n = 24; measured max is 22.
+
+  distribution:
+    columns with mode_n >= 24:   0
+    columns with mode_n >= 23:   0
+    columns with mode_n >= 22:   1
+    columns with mode_n >= 20:   4
+    columns with mode_n >= 18:   9
+    columns with mode_n >= 16:  20
+    columns with mode_n >= 14:  32
+    columns with mode_n >= 12:  44
+
+  full list of the 44 columns with mode_n >= 12 (most frequent value shared by half the sample or more):
+    column                       mode_n  nunique   mode value  family
+    act_bout_median_w2_p90         22/24        3            2  pathA_tstruct
+    act_bout_median_w1_p90         20/24        3            1  pathA_tstruct
+    stl_bout_median_w5_p10         20/24        3            5  pathA_tstruct
+    act_bout_median_w5_p80         20/24        4            5  pathA_tstruct
+    stl_bout_median_w10_p30        19/24        4           10  pathA_tstruct
+    act_bout_median_w0.5_p90       19/24        2          0.5  pathA_tstruct
+    act_bout_median_w10_p70        18/24        4           10  pathA_tstruct
+    stl_bout_median_w10_p20        18/24        5           10  pathA_tstruct
+    act_bout_median_w2_p70         18/24        4            3  pathA_tstruct
+    stl_bout_median_w0.5_p10       17/24        5         0.75  pathA_tstruct
+    stl_bout_median_w2_p40         17/24        3            3  pathA_tstruct
+    stl_bout_median_w5_p20         17/24        5            5  pathA_tstruct
+    stl_bout_median_w5_p40         17/24        3          7.5  pathA_tstruct
+    act_bout_median_w2_p80         17/24        3            2  pathA_tstruct
+    stl_bout_median_w5_p50         16/24        4          7.5  pathA_tstruct
+    act_bout_median_w5_p70         16/24        4            5  pathA_tstruct
+    act_bout_median_w5_p90         16/24        6            5  pathA_tstruct
+    frac_act_short_w0.5_p90        16/24        9            1  pathA_tstruct
+    act_bout_median_w10_p80        16/24        5           10  pathA_tstruct
+    stl_bout_median_w1_p40         16/24        4          1.5  pathA_tstruct
+    stl_bout_median_w5_p30         15/24        3            5  pathA_tstruct
+    stl_bout_median_w10_p10        15/24        5           10  pathA_tstruct
+    act_bout_median_w10_p90        15/24        5           10  pathA_tstruct
+    stl_bout_median_w0.5_p30       15/24        4         0.75  pathA_tstruct
+    stl_bout_median_w0.5_p40       15/24        3         0.75  pathA_tstruct
+    stl_bout_median_w1_p10         15/24        4          1.5  pathA_tstruct
+    act_bout_median_w1_p70         14/24        5          1.5  pathA_tstruct
+    stl_bout_median_w2_p30         14/24        5            3  pathA_tstruct
+    stl_bout_median_w2_p20         14/24        3            3  pathA_tstruct
+    stl_bout_median_w2_p10         14/24        2            2  pathA_tstruct
+    act_bout_median_w5_p40         14/24        7           10  pathA_tstruct
+    act_bout_median_w0.5_p80       14/24        4         0.75  pathA_tstruct
+    stl_bout_median_w10_p70        13/24        5           20  pathA_tstruct
+    act_bout_median_w0.5_p70       13/24        5         0.75  pathA_tstruct
+    act_bout_median_w5_p60         13/24        6          7.5  pathA_tstruct
+    frac_act_short_w1_p90          13/24       12            1  pathA_tstruct
+    act_bout_median_w2_p50         13/24        4            4  pathA_tstruct
+    stl_bout_median_w1_p20         12/24        4          1.5  pathA_tstruct
+    stl_bout_median_w2_p50         12/24        4            3  pathA_tstruct
+    act_bout_median_w1_p80         12/24        4          1.5  pathA_tstruct
+    act_bout_median_w5_p50         12/24        6          7.5  pathA_tstruct
+    stl_bout_median_w0.5_p60       12/24        6            1  pathA_tstruct
+    act_bout_median_w0.5_p60       12/24        3         0.75  pathA_tstruct
+    act_bout_median_w2_p60         12/24        4            3  pathA_tstruct
 
 ==============================================================================
 [5] REDUNDANCY -- pairwise |Spearman| on the 24 subjects

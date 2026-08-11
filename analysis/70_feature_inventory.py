@@ -10,6 +10,9 @@
 #       total-count assertion (608)
 #   [3] missing values, per column
 #   [4] degenerate columns: constants and low-unique-count columns
+#   [4b] near-constant columns: mode dominance -- how many of the 24 subjects
+#        share the single most frequent value (exact ties; user-directed step
+#        2026-08-11: "常数特征、几乎全是同一个值的特征，找出来")
 #   [5] redundancy: pairwise |Spearman| among all 608 features on the 24
 #       subjects, plus connected components at two thresholds
 #
@@ -126,6 +129,22 @@ for k, v in lowfam.items():
 print("\n  worst 15 (fewest unique values):")
 for c in low.index[:15]:
     print(f"    {c:<28} {nuni[c]} unique   family={fam[c]}")
+
+section("4b] NEAR-CONSTANT: MODE DOMINANCE (exact ties among the 24 values)")
+mode_n = feat.apply(lambda s: int(s.value_counts(dropna=True).iloc[0]))
+mode_v = feat.apply(lambda s: s.value_counts(dropna=True).index[0])
+print("  'mode_n' = subjects sharing the single most frequent value (of 24).")
+print("  a constant column would be mode_n = 24; measured max is "
+      f"{mode_n.max()}.\n")
+print("  distribution:")
+for thr in (24, 23, 22, 20, 18, 16, 14, 12):
+    print(f"    columns with mode_n >= {thr:>2}: {(mode_n >= thr).sum():>3}")
+dom = mode_n[mode_n >= 12].sort_values(ascending=False)
+print(f"\n  full list of the {len(dom)} columns with mode_n >= 12 "
+      f"(most frequent value shared by half the sample or more):")
+print(f"    {'column':<28} {'mode_n':>6} {'nunique':>8} {'mode value':>12}  family")
+for c in dom.index:
+    print(f"    {c:<28} {dom[c]:>4}/24 {nuni[c]:>8} {mode_v[c]:>12.6g}  {fam[c]}")
 
 section("5] REDUNDANCY -- pairwise |Spearman| on the 24 subjects")
 # rank once per column (NaN-aware: rank only non-NaN, pairwise complete obs
