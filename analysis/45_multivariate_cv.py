@@ -107,8 +107,15 @@ DEGEN=set(Ylm.loc[Ylm["degenerate"]==True,"label_name"])
 # (snap_total__wang2025T55),已连同其上游列 snap_total 一并删除,故不再拼接。
 BIN=[c for c in Yl.columns if c.endswith("__qbin")]
 BIN=[c for c in BIN if c not in DEGEN]
-MULTI=[f"{b}__{s}" for b in ["snap_inatt","snap_hyper","snap_odd","snap_adhd_total","sdq_hyper","sdq_totdiff"]
-       for s in ["qter","qquar"] if Yl[f"{b}__{s}"].nunique()==(3 if s=="qter" else 4)]
+# 【2026-08-02 用户裁决:去掉写死的 6 个目标名单,只让数据自然退化】
+#   原写法在 DEGEN 之外另加两道:①目标必须在 ["snap_inatt","snap_hyper","snap_odd",
+#   "snap_adhd_total","sdq_hyper","sdq_totdiff"] 这份写死的名单里;②nunique()==声明组数。
+#   实测(2026-08-02):第②道与 DEGEN 挡掉的是【完全相同的 6 列】(sdq_cond__qter /
+#   sdq_emo__qquar / sdq_peer__qter / sdq_peer__qquar / sdq_pro__qter / sdq_pro__qquar),
+#   两者冗余;而第①道是唯一真正起作用的筛选,它额外挡掉了 8 列,其中 2 列并不退化——
+#   sdq_emo__qter(分组 8/9/7)与 sdq_cond__qquar(分组 6/10/7/1)。
+#   故现在只留 DEGEN 这一道,写法与紧邻上方的 BIN 两行完全一致。
+MULTI=[c for c in Yl.columns if c.endswith(("__qter","__qquar"))]
 MULTI=[c for c in MULTI if c not in DEGEN]
 
 # =============================================================================
@@ -286,9 +293,18 @@ def perm_clf(target,model,k,obs):
 
 # 置换【只跑 main 臂】:两个 n=23 的 BMI 探索臂不进 FDR 家族、也不跑置换(见上方 TASK-105 注释)。
 regw=R[(R.variant=="main")&(R.track=="reg")&(R.skill>0)]
-clfw=R[(R.variant=="main")&(R.track.isin(["bin","multi"]))&(R.bacc>0.5)]
+# 【2026-08-02 用户裁决:分类门槛改用每个目标【自己的】随机水平】
+#   原写法对所有分类目标一律卡 bacc>0.5。0.5 只是【二分类】的随机水平;
+#   多分类目标有 3 类或 4 类,随机水平是 1/3 或 1/4。
+#   balanced accuracy = 各类 recall 的平均,均匀随机猜或恒猜多数类都给出 1/类数。
+#   改动前的后果(实测,记于 outputs/RESULTS_ANALYSIS.md §6a):72 个多分类组合里 21 个
+#   赢过了自己的随机水平,其中 20 个被 0.5 这条二分类门槛挡掉、以 p=1 进入 FDR 分母,
+#   bacc 范围 0.313–0.479。
+#   本改动对【二分目标行为零改变】:它们 nunique()==2,1/2 恰为 0.5。
+_CHANCE=R.target.map(lambda t: 1.0/Yl[t].nunique() if t in Yl.columns else np.nan)
+clfw=R[(R.variant=="main")&(R.track.isin(["bin","multi"]))&(R.bacc>_CHANCE)]
 say(f"\n=== 置换阶段(仅 main 臂,NPERM={NPERM}):回归 {len(regw)} 个(skill>0)"
-    f"+ 分类 {len(clfw)} 个(bacc>0.5) 待检 ===")
+    f"+ 分类 {len(clfw)} 个(bacc>各自随机水平 1/类数) 待检 ===")
 # 重启时把上次已算完的 perm_p 读回来(主指标部分是确定性的,重算不变,故只需接管 perm_p 列)
 if PARTIAL.is_file():
     _prev=pd.read_csv(PARTIAL)

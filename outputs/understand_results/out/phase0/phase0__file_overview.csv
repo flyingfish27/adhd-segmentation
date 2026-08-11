@@ -1,0 +1,7 @@
+file,kind,exists,bytes,last_commit,uncommitted_changes,note
+A_univariate.csv,table,True,1435280,fe30c9b 2026-07-30,False,A 轨结果表(用户上一轮明确指定)
+features.csv,table,True,252738,b135aae 2026-07-28,False,"feature matrix(仓库内找到,待用户确认是否纳入)"
+targets.csv,table,True,1209,a13dc7d 2026-07-25,False,"连续 target 表(仓库内找到,待用户确认是否纳入)"
+FEATURE_MENU.md,doc,True,16478,a76f669 2026-07-25,True,"feature 说明文档(仓库内找到,待用户确认)"
+44_univariate_screen.py,code,True,28683,7f71ac1 2026-07-30,False,产出 A 轨结果表的脚本
+42_features_full.py,code,True,30506,622c5ed 2026-07-26,False,产出 feature matrix 的脚本

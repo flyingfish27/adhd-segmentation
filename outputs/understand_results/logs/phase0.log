@@ -1,0 +1,262 @@
+
+==============================================================================
+PHASE 0 · STEP 0 — 运行环境与观测基线
+==============================================================================
+repo root      : /Users/shiyu/Projects/adhd-segmentation
+branch         : results-analysis
+HEAD           : b3bddc9
+main           : beae3b0
+pandas / numpy : 2.3.3 / 2.0.2
+seed (unused in phase 0): 20260804
+
+==============================================================================
+PHASE 0 · STEP 1 — 文件清点(存在性 + 出处)
+==============================================================================
+                   file  kind  exists   bytes        last_commit  uncommitted_changes                            note
+       A_univariate.csv table    True 1435280 fe30c9b 2026-07-30                False               A 轨结果表(用户上一轮明确指定)
+           features.csv table    True  252738 b135aae 2026-07-28                False feature matrix(仓库内找到,待用户确认是否纳入)
+            targets.csv table    True    1209 a13dc7d 2026-07-25                False    连续 target 表(仓库内找到,待用户确认是否纳入)
+        FEATURE_MENU.md   doc    True   16478 a76f669 2026-07-25                 True       feature 说明文档(仓库内找到,待用户确认)
+44_univariate_screen.py  code    True   28683 7f71ac1 2026-07-30                False                    产出 A 轨结果表的脚本
+    42_features_full.py  code    True   30506 622c5ed 2026-07-26                False           产出 feature matrix 的脚本
+
+>> 保存: outputs/understand_results/out/phase0/phase0__file_overview.csv
+
+[缺失文件的显式声明]
+  用户规格第二节第 6 项列出的『LOOCV 逐个 participant prediction 或 residual 文件』:
+  仓库内【不存在】。已用 find 在 .venv 之外全仓库搜 *resid* / *oof* / *pred* / *loo*,无命中。
+  代码层佐证:44_univariate_screen.py 的 loo_simple_lr() 只 return (r2, rmse, mae) 三个标量,
+  留一残差向量 loo 是函数内的局部变量,从未落盘。
+
+==============================================================================
+PHASE 0 · STEP 2 — 每个表的行列数 / 列名 / dtype / 前5行 / 缺失计数
+==============================================================================
+
+---------- A_univariate.csv ----------
+path   : analysis/A_univariate.csv
+shape  : 12160 rows x 12 cols
+
+[schema · 全部列]
+           column   dtype  n_missing  pct_missing  n_unique
+           target  object          0          0.0        20
+             type  object          0          0.0         2
+          feature  object          0          0.0       608
+              rho float64       6080         50.0      5309
+              auc float64       6080         50.0       685
+           perm_p float64          0          0.0      4730
+         loo_r2cv float64       6080         50.0      6080
+         loo_rmse float64       6080         50.0      6080
+          loo_mae float64       6080         50.0      6080
+rho_partial_uamag float64      11710         96.3       450
+auc_partial_uamag float64      11710         96.3       214
+            q_fdr float64          0          0.0       604
+
+[前 5 行]
+    target type  feature       rho  auc  perm_p  loo_r2cv  loo_rmse  loo_mae  rho_partial_uamag  auc_partial_uamag    q_fdr
+snap_inatt cont uaX_mean  0.007879  NaN 0.97035 -0.132039  4.985543 3.899893                NaN                NaN 0.997380
+snap_inatt cont  uaX_std -0.473200  NaN 0.01979  0.088155  4.474476 3.226350                NaN                NaN 0.835673
+snap_inatt cont  uaX_var -0.473200  NaN 0.01979  0.085040  4.482113 3.262292                NaN                NaN 0.835673
+snap_inatt cont  uaX_rms -0.442996  NaN 0.03109  0.085074  4.482030 3.230585                NaN                NaN 0.835673
+snap_inatt cont  uaX_min  0.205739  NaN 0.32957  0.003304  4.678032 3.651025                NaN                NaN 0.972500
+
+>> 保存: outputs/understand_results/out/phase0/phase0__schema_A_univariate.csv
+>> 保存: outputs/understand_results/out/phase0/phase0__head5_A_univariate.csv
+
+---------- features.csv ----------
+path   : analysis/features.csv
+shape  : 24 rows x 609 cols
+
+[schema · 共 609 列,屏幕上只显示前 8 与后 4 列;完整表已存 CSV]
+         column   dtype  n_missing  pct_missing  n_unique
+        subject  object          0          0.0        24
+       uaX_mean float64          0          0.0        24
+        uaX_std float64          0          0.0        24
+        uaX_var float64          0          0.0        24
+        uaX_rms float64          0          0.0        24
+        uaX_min float64          0          0.0        24
+        uaX_max float64          0          0.0        24
+      uaX_range float64          0          0.0        24
+  switchmin_p90 float64          0          0.0        24
+actbout_med_p90 float64          0          0.0        22
+ actbout_cv_p90 float64          0          0.0        24
+   actshort_p90 float64          0          0.0        22
+
+[dtype 汇总]
+dtype
+float64    608
+object       1
+
+[缺失汇总]  含缺失的列数: 0  / 总列数: 609
+
+[前 5 行](共 609 列,屏幕上只显示指定的少数列;完整前 5 行已存 CSV)
+subject  uaX_mean  uaX_std  uaX_var  uaX_rms
+    C43  0.059703 0.507503 0.257559 0.510999
+    F55  0.035865 0.306244 0.093786 0.308335
+     H2  0.009420 0.365790 0.133802 0.365909
+    H45  0.013261 0.339509 0.115266 0.339766
+    H46  0.096076 0.557044 0.310298 0.565265
+
+>> 保存: outputs/understand_results/out/phase0/phase0__schema_features.csv
+>> 保存: outputs/understand_results/out/phase0/phase0__head5_features.csv
+
+---------- targets.csv ----------
+path   : analysis/targets.csv
+shape  : 24 rows x 11 cols
+
+[schema · 全部列]
+         column   dtype  n_missing  pct_missing  n_unique
+        subject  object          0          0.0        24
+     snap_inatt float64          0          0.0        11
+     snap_hyper float64          0          0.0         9
+       snap_odd float64          0          0.0        11
+snap_adhd_total float64          0          0.0        15
+      sdq_hyper float64          0          0.0         8
+        sdq_emo float64          0          0.0         6
+       sdq_cond float64          0          0.0         5
+       sdq_peer float64          0          0.0         4
+        sdq_pro float64          0          0.0         6
+    sdq_totdiff float64          0          0.0        11
+
+[前 5 行]
+subject  snap_inatt  snap_hyper  snap_odd  snap_adhd_total  sdq_hyper  sdq_emo  sdq_cond  sdq_peer  sdq_pro  sdq_totdiff
+    C43         4.0         2.0       3.0              6.0        2.0      0.0       2.0       2.0     10.0          6.0
+    F55        11.0         6.0       9.0             17.0        4.0      1.0       2.0       3.0      9.0         10.0
+     H2        19.0        14.0      15.0             33.0        4.0      4.0       2.0       2.0      7.0         12.0
+    H45         7.0         4.0       1.0             11.0        5.0      0.0       1.0       0.0     10.0          6.0
+    H46        18.0        13.0       8.0             31.0        5.0      1.0       2.0       3.0      5.0         11.0
+
+>> 保存: outputs/understand_results/out/phase0/phase0__schema_targets.csv
+>> 保存: outputs/understand_results/out/phase0/phase0__head5_targets.csv
+
+==============================================================================
+PHASE 0 · STEP 3 — A_univariate.csv 的 type:唯一值与行数
+==============================================================================
+type  n_rows  n_targets  n_features
+ bin    6080         10         608
+cont    6080         10         608
+
+【注意】用户规格要求:若 type 的实际标签不是 'regression' 或 'continuous',
+       须展示唯一值并由用户确认筛选规则,不得自行猜测。实际唯一值如上。
+       本脚本【没有】使用任何 type 筛选,config.CONT_TYPE_LABEL 目前为 None
+
+>> 保存: outputs/understand_results/out/phase0/phase0__type_counts.csv
+
+==============================================================================
+PHASE 0 · STEP 4 — A_univariate.csv 的 target:唯一值与行数
+==============================================================================
+               target type  n_rows  n_unique_features  rho  perm_p  loo_r2cv  loo_rmse  loo_mae  rho_partial_uamag  q_fdr
+       sdq_cond__qbin  bin     608                608    0     608         0         0        0                  0    608
+        sdq_emo__qbin  bin     608                608    0     608         0         0        0                  0    608
+      sdq_hyper__qbin  bin     608                608    0     608         0         0        0                  0    608
+       sdq_peer__qbin  bin     608                608    0     608         0         0        0                  0    608
+        sdq_pro__qbin  bin     608                608    0     608         0         0        0                  0    608
+    sdq_totdiff__qbin  bin     608                608    0     608         0         0        0                  0    608
+snap_adhd_total__qbin  bin     608                608    0     608         0         0        0                  0    608
+     snap_hyper__qbin  bin     608                608    0     608         0         0        0                  0    608
+     snap_inatt__qbin  bin     608                608    0     608         0         0        0                  0    608
+       snap_odd__qbin  bin     608                608    0     608         0         0        0                  0    608
+             sdq_cond cont     608                608  608     608       608       608      608                 45    608
+              sdq_emo cont     608                608  608     608       608       608      608                 45    608
+            sdq_hyper cont     608                608  608     608       608       608      608                 45    608
+             sdq_peer cont     608                608  608     608       608       608      608                 45    608
+              sdq_pro cont     608                608  608     608       608       608      608                 45    608
+          sdq_totdiff cont     608                608  608     608       608       608      608                 45    608
+      snap_adhd_total cont     608                608  608     608       608       608      608                 45    608
+           snap_hyper cont     608                608  608     608       608       608      608                 45    608
+           snap_inatt cont     608                608  608     608       608       608      608                 45    608
+             snap_odd cont     608                608  608     608       608       608      608                 45    608
+
+target 唯一值个数: 20
+
+>> 保存: outputs/understand_results/out/phase0/phase0__target_counts.csv
+
+==============================================================================
+PHASE 0 · STEP 5 — feature 计数
+==============================================================================
+A_univariate.csv 的 feature 列:总行数 12160,唯一 feature 数 608
+每个 target 的唯一 feature 数: min=608  max=608
+所有 target 是否共用同一 feature 集合(阶段 1 会正式校验,此处仅计数): 计数一致
+
+features.csv 的特征列数(去掉 subject): 608
+features.csv 特征名 与 A 表 feature 名的交集大小: 608
+  只在 features.csv 里出现: []
+  只在 A 表里出现          : []
+
+targets.csv 的目标列数(去掉 subject): 10
+targets.csv 列名: ['snap_inatt', 'snap_hyper', 'snap_odd', 'snap_adhd_total', 'sdq_hyper', 'sdq_emo', 'sdq_cond', 'sdq_peer', 'sdq_pro', 'sdq_totdiff']
+
+==============================================================================
+PHASE 0 · STEP 6 — 哪些文件能支持哪类分析
+==============================================================================
+                                             analysis                                 required     status                                              detail
+    结果表分析 (association / perm / FDR / LOOCV 指标的分布与排名)                         A_univariate.csv         可做                                        12160 行结果表齐备
+    target distribution (24 人的分数分布 / ties / skewness)                              targets.csv 可做(待你确认纳入)                               仓库内存在,24 行 x 10 个连续目标
+                              feature-family analysis FEATURE_MENU.md 或 feature-family mapping        待确认 FEATURE_MENU.md 是散文式文档,不是机器可读 mapping;映射规则须先给你审后才能用
+residual-level analysis (逐 participant 的 LOO 残差 / 预测)   逐 participant prediction 或 residual 文件        不可做                             仓库内不存在该文件;44 号脚本未落盘残差向量
+                   feature 与 target 的原始散点 / 重算 LOO 残差               features.csv + targets.csv 可做(需你授权重算)            两表齐备,可闭式重算单变量 LOO 残差;但这属于【重新计算】,不是读取已有结果
+
+>> 保存: outputs/understand_results/out/phase0/phase0__capability_matrix.csv
+
+==============================================================================
+PHASE 0 · STEP 7 — 数据字典(仅本次使用的字段)
+==============================================================================
+
+  [target]  证据层级: 标识列   取值范围: 字符串
+      含义   : 本行结果对应的症状量表分数(结果表的分组键之一)
+      产生自 : 10 个连续目标 + 10 个 __qbin 二分目标
+      口径   : 连续与二分是不同的 target 名,故互不混行
+
+  [type]  证据层级: 标识列   取值范围: 字符串
+      含义   : 本行属于连续目标还是二分目标
+      产生自 : 见 STEP 3 的唯一值
+      口径   : 决定哪些指标列有值:cont 行有 rho/loo_*,bin 行有 auc
+
+  [feature]  证据层级: 标识列   取值范围: 字符串
+      含义   : 本行结果对应的腕部信号特征(结果表的分组键之一)
+      产生自 : 608 个
+      口径   : 与 features.csv 的列名一一对应
+
+  [rho]  证据层级: 效应量   取值范围: [-1, 1]
+      含义   : 特征与目标的 Spearman 秩相关系数 = association effect size
+      产生自 : spearman(rank(x), rank(y)),44 号脚本 spearman() 函数
+      口径   : 秩相关,只刻画【单调】关系;不是线性拟合优度,也不含任何预测含义
+
+  [perm_p]  证据层级: 统计检验结果   取值范围: [1e-5, 1]
+      含义   : 置换检验 p 值:把目标分数随机打乱 100000 次后,|rho| 达到或超过实测值的比例
+      产生自 : NPERM=100000,零分布收集 |spearman|;pval 下限被 clip 到 1/NPERM
+      口径   : 【与 rho 不是两项独立证据】:它就是同一个 rho 在零分布里的极端程度。下限 1e-5 意味着更小的真实 p 无法分辨
+
+  [q_fdr]  证据层级: 统计检验结果   取值范围: [0, 1]
+      含义   : 对 perm_p 做 Benjamini-Hochberg 多重比较校正后的 FDR q 值
+      产生自 : 44 号脚本 bh() 函数,按 R.groupby('target') 分族计算
+      口径   : 族的定义 = 每个 target 各自一族(m=该 target 的行数)。同样【不是】独立于 perm_p 的第三项证据,是 perm_p 的单调变换
+
+  [loo_r2cv]  证据层级: 模型表现   取值范围: (-inf, 1]
+      含义   : 留一交叉验证的 R²_cv = 1 - PRESS_model / PRESS_baseline
+      产生自 : loo_simple_lr();baseline = 留一均值预测
+      口径   : 【可为负】,负值代表该单特征线性模型的留一误差比『只用均值』还大。这是内部重抽样,【不是】独立 test set;> 0 【不等于】统计显著
+
+  [loo_rmse]  证据层级: 模型表现   取值范围: [0, +inf)
+      含义   : 留一预测的均方根误差 = sqrt(PRESS/n)
+      产生自 : loo_simple_lr(),n=24
+      口径   : 单位 = 该量表分数的单位,故【不可跨 target 直接比较】
+
+  [loo_mae]  证据层级: 模型表现   取值范围: [0, +inf)
+      含义   : 留一预测的平均绝对误差 = mean(|loo residual|)
+      产生自 : loo_simple_lr(),n=24
+      口径   : 同上,不可跨 target 直接比较
+
+  [rho_partial_uamag]  证据层级: 效应量(敏感性分析)   取值范围: [-1, 1]
+      含义   : 扣掉『运动总量』(uaMag_median)之后,特征与目标还剩多少秩相关 = 效应量的敏感性分析
+      产生自 : 对特征秩与目标秩各自对 rank(uaMag_median) 回归取残差,再求两残差的相关
+      口径   : 【只对路径B的 45 列计算】,其余列为空 —— 空值代表 not applicable,不代表失败。此列【没有】配套的 p、q 或 LOOCV,故不能据此说『控制后显著』
+
+[本次排除的字段]
+  ['auc', 'auc_partial_uamag']  —— 用户规格第三节明确排除;
+  另:所有 type=bin 的行本次不分析。
+
+>> 保存: outputs/understand_results/out/phase0/phase0__data_dictionary.csv
+
+==============================================================================
+PHASE 0 完成 —— 本阶段不对任何 feature 的表现作评价
+==============================================================================

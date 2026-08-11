@@ -1,0 +1,13 @@
+column,dtype,n_missing,pct_missing,n_unique
+target,object,0,0.0,20
+type,object,0,0.0,2
+feature,object,0,0.0,608
+rho,float64,6080,50.0,5309
+auc,float64,6080,50.0,685
+perm_p,float64,0,0.0,4730
+loo_r2cv,float64,6080,50.0,6080
+loo_rmse,float64,6080,50.0,6080
+loo_mae,float64,6080,50.0,6080
+rho_partial_uamag,float64,11710,96.3,450
+auc_partial_uamag,float64,11710,96.3,214
+q_fdr,float64,0,0.0,604
