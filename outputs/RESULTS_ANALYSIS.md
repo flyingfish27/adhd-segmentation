@@ -4,6 +4,9 @@ An analysis of the results already committed to this repository — not a new mo
 not a re-run of the two scripts that produced them.
 
 **Observation baseline.** Branch `results-analysis`, HEAD `5a0ca0e`; `main` at `beae3b0`.
+〔2026-08-11 note: `5a0ca0e` is where this document was first committed; seven later commits
+amended it (through `f6b3f14` and beyond) without refreshing this line. This file's git
+history, not this line, is the authoritative record of its versions.〕
 Every number below was measured from the CSV files by the three scripts listed under
 *Reproducing this*, and none was copied from prose. Where a number contradicts a
 document in the repository, the disagreement is reported in *Documents that no longer
