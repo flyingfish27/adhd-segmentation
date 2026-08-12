@@ -3,7 +3,7 @@
 **Do not hand-edit.** To update, re-run the producing script and let it overwrite this file.
 
 - Producing script: `analysis/70c_dedup_095_greedy.py`
-- Repository HEAD when this snapshot was generated: `90e0e9e288342e53b298bd25baa502c7b82160c4`
+- Repository HEAD when this snapshot was generated: `39012db04e09ddf47fc86d11ccbf85db3429b397`
 - Reproduce with: `.venv/bin/python analysis/70c_dedup_095_greedy.py`
 
 ```text
@@ -95,5 +95,6 @@
   protected column still present: frac_act_short_w10_p20: True
   protected column still present: act_bout_median_w0.5_p80: True
   verification: max pairwise |rho| among kept = 0.9496 (must be < 0.95)
+  keep-list materialised (FS-D5): analysis/feature_keeplist_512.csv (512 rows, features.csv column order)
 
 ```

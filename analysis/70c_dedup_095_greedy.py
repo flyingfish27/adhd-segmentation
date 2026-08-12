@@ -25,7 +25,12 @@
 #   3. smaller grid distance to centre / earlier elementary-form suffix;
 #   4. lexicographic, the stated-arbitrary fallback.
 #
-# Read-only apart from the stdout snapshot analysis/probe_outputs/dedup_095.md.
+# Writes (besides the stdout snapshot analysis/probe_outputs/dedup_095.md):
+#   analysis/feature_keeplist_512.csv -- the 512 surviving column names in
+#   features.csv column order.  Added 2026-08-12 under FS-D5: the K-grid
+#   baseline (71_) and any future wrapper must read the SAME frozen input,
+#   so the ledger chain FS-D1/D3/D4 is materialised here, by the script
+#   that computed it, rather than re-derived downstream.
 # Reproduce with: .venv/bin/python analysis/70c_dedup_095_greedy.py
 # =============================================================================
 import io, pathlib, re, subprocess, sys
@@ -182,6 +187,13 @@ np.fill_diagonal(Cr, 0.0)
 print(f"  verification: max pairwise |rho| among kept = {Cr.max():.4f} "
       f"(must be < {THR})")
 assert Cr.max() < THR
+
+keep_in_table_order = [c for c in cols if c in set(kept_names)]
+assert len(keep_in_table_order) == len(kept_names)
+KEEP_OUT = ROOT / "analysis" / "feature_keeplist_512.csv"
+pd.DataFrame({"feature": keep_in_table_order}).to_csv(KEEP_OUT, index=False)
+print(f"  keep-list materialised (FS-D5): {KEEP_OUT.relative_to(ROOT)} "
+      f"({len(keep_in_table_order)} rows, features.csv column order)")
 
 sys.stdout = sys.__stdout__
 head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
