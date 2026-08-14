@@ -6,11 +6,14 @@
 # Input : analysis/final_reg_metrics.csv
 # Output: outputs/figures/final_reg_rmse.png
 #
-# Dumbbell per target: grey dot = RMSE of predicting the mean (the dummy
-# baseline, recovered exactly as rmse / (1 - skill)); blue dot = RMSE of the
-# delivered nested-ridge model.  Blue left of grey = the model reduces error.
-# Units are each questionnaire's own points, so bars are NOT comparable
-# across rows -- the within-row gap is the message (stated on the figure).
+# Two renderings of the same content (user asked for a bar version too):
+#   outputs/figures/final_reg_rmse.png       -- dumbbell per target
+#   outputs/figures/final_reg_rmse_bars.png  -- paired horizontal bars
+# Grey = RMSE of predicting the mean (the dummy baseline, recovered exactly
+# as rmse / (1 - skill)); blue = RMSE of the delivered nested-ridge model.
+# Blue shorter than grey = the model reduces error.  Units are each
+# questionnaire's own points, so rows are NOT comparable to each other --
+# the within-row comparison is the message (stated on the figures).
 # Sorted by skill so the four genuine improvements sit on top.
 # Reproduce with: .venv/bin/python analysis/74d_reg_rmse_figure.py
 # =============================================================================
@@ -19,6 +22,7 @@ import pathlib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -69,3 +73,39 @@ fig.text(0.01, 0.925, "blue left of grey = the model reduces error; the "
 fig.tight_layout(rect=(0, 0, 1, 0.9))
 fig.savefig(OUT, dpi=150, facecolor=fig.get_facecolor())
 print(f"written: {OUT.relative_to(ROOT)}")
+
+# ---- paired-bar rendering ---------------------------------------------------
+OUT2 = ROOT / "outputs" / "figures" / "final_reg_rmse_bars.png"
+fig2, ax = plt.subplots(figsize=(11, 7))
+fig2.patch.set_facecolor("#fcfcfb")
+ys = np.arange(len(m))
+ax.barh(ys + 0.19, m["dummy"], height=0.34, color=GREY,
+        label="predict the mean (baseline)")
+ax.barh(ys - 0.19, m["rmse"], height=0.34, color=BLUE,
+        label="delivered ridge model")
+for y, (_, r) in zip(ys, m.iterrows()):
+    ax.annotate(f"{r['dummy']:.2f}", xy=(r["dummy"], y + 0.19),
+                xytext=(4, 0), textcoords="offset points", va="center",
+                fontsize=8.5, color=MUTED)
+    ax.annotate(f"{r['rmse']:.2f}", xy=(r["rmse"], y - 0.19),
+                xytext=(4, 0), textcoords="offset points", va="center",
+                fontsize=8.5, color=INK)
+ax.set_yticks(ys, [f"{t}  (K={int(k)})"
+                   for t, k in zip(m["target"], m["k_final"])], fontsize=9.5)
+ax.set_xlabel("leave-one-out RMSE, in each questionnaire's own points "
+              "(rows are NOT cross-comparable)", fontsize=10, color=INK)
+ax.legend(loc="lower right", frameon=False, fontsize=9.5)
+ax.grid(axis="x", color="#e8e7e0", lw=0.6)
+ax.set_axisbelow(True)
+for sp in ("top", "right"):
+    ax.spines[sp].set_visible(False)
+ax.tick_params(colors=MUTED, labelsize=9)
+fig2.suptitle("Regression delivery in RMSE units: model error vs "
+              "predicting the mean (bar form)", x=0.01, y=0.985, ha="left",
+              fontsize=13, color=INK)
+fig2.text(0.01, 0.93, "blue bar shorter than its grey partner = the model "
+          "reduces error. Nested numbers, no significance testing.",
+          fontsize=9.5, color=MUTED)
+fig2.tight_layout(rect=(0, 0, 1, 0.905))
+fig2.savefig(OUT2, dpi=150, facecolor=fig2.get_facecolor())
+print(f"written: {OUT2.relative_to(ROOT)}")
