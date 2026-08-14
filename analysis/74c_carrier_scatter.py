@@ -20,6 +20,7 @@ import pathlib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
@@ -54,13 +55,19 @@ for ax, p in zip(axes, PANELS):
                 xy=(0.98, med), xycoords=("axes fraction", "data"),
                 xytext=(0, 4), textcoords="offset points",
                 ha="right", fontsize=8, color=MUTED)
-    ax.scatter(x, y, s=55, facecolors="none", edgecolors=BLUE,
-               linewidths=1.6, alpha=0.9)
+    ax.scatter(x, y, s=55, color=BLUE, edgecolors="white",
+               linewidths=0.8, alpha=0.9, zorder=5)
     dup = pd.DataFrame({"x": x, "y": y}).value_counts()
     for (xi, yi), n in dup.items():
         if n > 1:
             ax.annotate(f"×{n}", xy=(xi, yi), xytext=(7, 5),
                         textcoords="offset points", fontsize=8, color=INK)
+    w, b = np.polyfit(x, y, 1)
+    xs = np.array([x.min(), x.max()])
+    ax.plot(xs, w * xs + b, color=BLUE, lw=1.8, alpha=0.75, zorder=4)
+    ax.annotate(f"OLS (descriptive):  y = {w:.1f}·x {b:+.1f}",
+                xy=(0.02, 0.895), xycoords="axes fraction", va="top",
+                fontsize=9, color=MUTED)
     ax.set_xlabel(p["ftext"], fontsize=9.5, color=INK)
     ax.set_ylabel(p["ttext"], fontsize=9.5, color=INK)
     ax.set_title(f"{p['feat']}  →  {p['target']}",
