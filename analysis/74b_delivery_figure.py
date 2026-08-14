@@ -52,7 +52,8 @@ for i, (e, b) in enumerate(zip(clf["excess"], clf["bacc"])):
                  textcoords="offset points", va="center",
                  ha="left" if e >= 0 else "right", fontsize=7.5, color=MUTED)
 ax1.axvline(0, color=INK, lw=0.9)
-ax1.set_xlabel("balanced accuracy − chance  (chance: 0.50 / 0.33 / 0.25)",
+ax1.set_xlabel("balanced accuracy − chance  (0.50 / 0.33 / 0.25 for "
+               "binary / tertile / quartile labels)",
                fontsize=10, color=INK)
 ax1.set_title("Classification delivery (nested logit)", loc="left",
               fontsize=12, color=INK)
