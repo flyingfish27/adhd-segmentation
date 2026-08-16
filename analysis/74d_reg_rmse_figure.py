@@ -75,42 +75,65 @@ fig.savefig(OUT, dpi=150, facecolor=fig.get_facecolor())
 print(f"written: {OUT.relative_to(ROOT)}")
 
 # ---- paired-bar rendering ---------------------------------------------------
-# user spec 2026-08-14: rows ordered by the DELIVERED model's RMSE, smallest
-# at the top; colors = the blue/green pair of the logit-bacc curve figure
-# (model blue #2a78d6, baseline green #1baf7a, validated palette slots 1/3).
-GREEN = "#1baf7a"
-mb = m.sort_values("rmse", ascending=False)   # barh: y=0 is the bottom row
+# Re-spec'd by the user 2026-08-16: the grey partner bar is now the REAL
+# all-512-feature ridge (LOO RMSE from kgrid_reg.csv, ridge rows at K=512 --
+# SelectKBest with k=512 selects everything), NOT the predict-the-mean dummy.
+# The user's requested legend ("all 512 features" vs "after feature
+# selection") would be false against the dummy, so the data was swapped to
+# match the label rather than the label lying about the data.  Rows ordered
+# by the delivered model's RMSE, smallest on top; grey/blue bars; +1 on all
+# font sizes; full scale names on the y axis.
+GREY2 = "#9a998f"
+kg = pd.read_csv(ROOT / "analysis" / "kgrid_reg.csv")
+b512 = kg[(kg["model"] == "ridge") & (kg["k"] == 512)].set_index("target")["rmse"]
+NAME = {"snap_inatt": "SNAP-IV_inattention",
+        "snap_hyper": "SNAP-IV_hyperactivity",
+        "snap_odd": "SNAP-IV_oppositional",
+        "snap_adhd_total": "SNAP-IV_ADHD_total",
+        "sdq_emo": "SDQ_emotional",
+        "sdq_cond": "SDQ_conduct",
+        "sdq_hyper": "SDQ_hyperactivity",
+        "sdq_peer": "SDQ_peer_problems",
+        "sdq_pro": "SDQ_prosocial",
+        "sdq_totdiff": "SDQ_total_difficulties"}
+mb = m.sort_values("rmse", ascending=False).copy()  # barh: y=0 = bottom row
+mb["base512"] = mb["target"].map(b512)
+assert not mb["base512"].isna().any()
 OUT2 = ROOT / "outputs" / "figures" / "final_reg_rmse_bars.png"
 fig2, ax = plt.subplots(figsize=(11, 7))
 fig2.patch.set_facecolor("#fcfcfb")
 ys = np.arange(len(mb))
-ax.barh(ys + 0.19, mb["dummy"], height=0.34, color=GREEN,
-        label="predict the mean (baseline)")
+ax.barh(ys + 0.19, mb["base512"], height=0.34, color=GREY2,
+        label="all 512 features")
 ax.barh(ys - 0.19, mb["rmse"], height=0.34, color=BLUE,
-        label="delivered ridge model")
+        label="after feature selection")
 for y, (_, r) in zip(ys, mb.iterrows()):
-    ax.annotate(f"{r['dummy']:.2f}", xy=(r["dummy"], y + 0.19),
+    ax.annotate(f"{r['base512']:.2f}", xy=(r["base512"], y + 0.19),
                 xytext=(4, 0), textcoords="offset points", va="center",
-                fontsize=8.5, color=MUTED)
+                fontsize=9.5, color=MUTED)
     ax.annotate(f"{r['rmse']:.2f}", xy=(r["rmse"], y - 0.19),
                 xytext=(4, 0), textcoords="offset points", va="center",
-                fontsize=8.5, color=INK)
-ax.set_yticks(ys, [f"{t}  (K={int(k)})"
-                   for t, k in zip(mb["target"], mb["k_final"])], fontsize=9.5)
+                fontsize=9.5, color=INK)
+ax.set_yticks(ys, [f"{NAME[t]}  (K={int(k)})"
+                   for t, k in zip(mb["target"], mb["k_final"])],
+              fontsize=10.5)
 ax.set_xlabel("leave-one-out RMSE, in each questionnaire's own points "
-              "(rows are NOT cross-comparable)", fontsize=10, color=INK)
-ax.legend(loc="upper right", frameon=False, fontsize=9.5)
+              "(rows are NOT cross-comparable)", fontsize=11, color=INK)
+leg = ax.legend(loc="upper right", frameon=False, fontsize=10.5)
+ax.annotate("K = feature counts in best performance",
+            xy=(0.985, 0.855), xycoords="axes fraction", ha="right",
+            fontsize=10.5, color=MUTED)
 ax.grid(axis="x", color="#e8e7e0", lw=0.6)
 ax.set_axisbelow(True)
 for sp in ("top", "right"):
     ax.spines[sp].set_visible(False)
-ax.tick_params(colors=MUTED, labelsize=9)
-fig2.suptitle("Regression delivery in RMSE units: model error vs "
-              "predicting the mean (bar form)", x=0.01, y=0.985, ha="left",
-              fontsize=13, color=INK)
-fig2.text(0.01, 0.93, "blue bar shorter than its green partner = the model "
-          "reduces error. Nested numbers, no significance testing.",
-          fontsize=9.5, color=MUTED)
+ax.tick_params(colors=MUTED, labelsize=10)
+fig2.suptitle("Regression delivery in RMSE units: feature selection vs "
+              "using all 512 features", x=0.01, y=0.985, ha="left",
+              fontsize=14, color=INK)
+fig2.text(0.01, 0.93, "blue bar shorter than its grey partner = feature "
+          "selection reduces error vs a ridge on all 512 features. Nested "
+          "numbers, no significance testing.", fontsize=10.5, color=MUTED)
 fig2.tight_layout(rect=(0, 0, 1, 0.905))
 fig2.savefig(OUT2, dpi=150, facecolor=fig2.get_facecolor())
 print(f"written: {OUT2.relative_to(ROOT)}")
