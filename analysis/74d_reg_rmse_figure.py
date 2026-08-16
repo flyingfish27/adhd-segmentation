@@ -106,7 +106,7 @@ for y, (_, r) in zip(ys, mb.iterrows()):
     ax.annotate(f"{r['rmse']:.2f}", xy=(r["rmse"], y - 0.19),
                 xytext=(4, 0), textcoords="offset points", va="center",
                 fontsize=9.5, color=INK)
-ax.set_yticks(ys, [f"{NAME[t]}  (K={int(k)})"
+ax.set_yticks(ys, [f"{NAME[t]}\n(K={int(k)})"
                    for t, k in zip(mb["target"], mb["k_final"])],
               fontsize=10.5)
 ax.set_xlabel("leave-one-out RMSE, in each questionnaire's own points "
